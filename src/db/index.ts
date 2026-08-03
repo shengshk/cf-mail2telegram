@@ -87,7 +87,7 @@ export class Dao {
     }
 }
 
-export function loadArrayFromRaw(raw: string | null): string[] {
+export function loadArrayFromRaw(raw: string | null | undefined): string[] {
     if (!raw) {
         return [];
     }

@@ -2,6 +2,7 @@ import type * as Telegram from 'telegram-bot-api-types';
 import type { EmailRender } from '../mail';
 import type { Environment } from '../types';
 import { Dao } from '../db';
+import { requireTelegram } from '../env';
 import { renderEmailDebugMode, renderEmailListMode, renderEmailPreviewMode, renderEmailSummaryMode, replyToEmail } from '../mail';
 // Summary / 旧 Preview 回调仅兼容历史消息；新消息已改为 URL「预览」
 import { createTelegramBotAPI } from './api';
@@ -51,10 +52,8 @@ function handleIDCommand(env: Environment): TelegramMessageHandler {
 
 function handleOpenTMACommand(mode: string, text: string | null, env: Environment): TelegramMessageHandler {
     return async (msg: Telegram.Message): Promise<Response> => {
-        const {
-            TELEGRAM_TOKEN,
-            DOMAIN,
-        } = env;
+        const { token } = requireTelegram(env);
+        const { DOMAIN } = env;
         const params: Telegram.SendMessageParams = {
             chat_id: msg.chat.id,
             text: text || tmaModeDescription[mode] || 'Address Manager',
@@ -75,18 +74,18 @@ function handleOpenTMACommand(mode: string, text: string | null, env: Environmen
             };
         }
 
-        return await createTelegramBotAPI(TELEGRAM_TOKEN).sendMessage(params);
+        return await createTelegramBotAPI(token).sendMessage(params);
     };
 }
 
 async function handleReplyEmailCommand(message: Telegram.Message, env: Environment): Promise<void> {
+    const { token } = requireTelegram(env);
     const {
-        TELEGRAM_TOKEN,
         RESEND_API_KEY,
         DB,
     } = env;
     const dao = new Dao(DB);
-    const api = createTelegramBotAPI(TELEGRAM_TOKEN);
+    const api = createTelegramBotAPI(token);
     const reply = async (text: string) => {
         await api.sendMessage({
             chat_id: message.chat.id,
@@ -171,16 +170,14 @@ async function telegramCommandHandler(message: Telegram.Message, env: Environmen
 }
 
 async function telegramCallbackHandler(callback: Telegram.CallbackQuery, env: Environment): Promise<void> {
-    const {
-        TELEGRAM_TOKEN,
-        DB,
-    } = env;
+    const { token } = requireTelegram(env);
+    const { DB } = env;
 
     const data = callback.data;
     const callbackId = callback.id;
     const chatId = callback.message?.chat?.id;
     const messageId = callback.message?.message_id;
-    const api = createTelegramBotAPI(TELEGRAM_TOKEN);
+    const api = createTelegramBotAPI(token);
     const dao = new Dao(DB);
 
     if (!data || !chatId || !messageId) {

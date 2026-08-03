@@ -4,6 +4,7 @@ import type { Environment } from '../../types';
 import { validate } from '@tma.js/init-data-node/web';
 import { json, Router } from 'itty-router';
 import { Dao } from '../../db';
+import { requireTelegram } from '../../env';
 import { renderPreviewPage, sanitizeHtmlForPreview } from '../../mail/preview';
 import { createTelegramBotAPI, telegramCommands, telegramWebhookHandler, tmaHTML } from '../../telegram';
 
@@ -16,22 +17,19 @@ class HTTPError extends Error {
 }
 
 function createTmaAuthMiddleware(env: Environment): (req: Request) => Promise<void> {
-    const {
-        TELEGRAM_TOKEN,
-        TELEGRAM_ID,
-    } = env;
+    const { token, chatId } = requireTelegram(env);
     return async (req: Request): Promise<void> => {
         const [authType, authData = ''] = (req.headers.get('Authorization') || '').split(' ');
         if (authType !== 'tma') {
             throw new HTTPError(401, 'Invalid authorization type');
         }
         try {
-            await validate(authData, TELEGRAM_TOKEN, {
+            await validate(authData, token, {
                 expiresIn: 3600,
             });
             const user = JSON.parse(new URLSearchParams(authData).get('user') || '{}');
-            for (const id of TELEGRAM_ID.split(',')) {
-                if (id === `${user.id}`) {
+            for (const id of chatId.split(',')) {
+                if (id.trim() === `${user.id}`) {
                     return;
                 }
             }
@@ -76,10 +74,10 @@ function createRouter(env: Environment): RouterType {
     });
 
     const {
-        TELEGRAM_TOKEN,
         DOMAIN,
         DB,
     } = env;
+    const { token: TELEGRAM_TOKEN } = requireTelegram(env);
     const dao = new Dao(DB);
     const auth = createTmaAuthMiddleware(env);
 

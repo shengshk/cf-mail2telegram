@@ -2845,6 +2845,33 @@ function loadArrayFromRaw(raw) {
   return list;
 }
 
+// src/env.ts
+function resolveTelegram(env) {
+  const bot = (env.TELEGRAM_BOT || "").trim();
+  if (bot) {
+    const parts = bot.split(",").map((s2) => s2.trim()).filter(Boolean);
+    if (parts.length >= 2) {
+      return {
+        token: parts[0],
+        chatId: parts[1],
+        junkChatId: parts[2] || ""
+      };
+    }
+  }
+  return {
+    token: (env.TELEGRAM_TOKEN || "").trim(),
+    chatId: (env.TELEGRAM_ID || "").trim(),
+    junkChatId: ""
+  };
+}
+function requireTelegram(env) {
+  const { token: token2, chatId } = resolveTelegram(env);
+  if (!token2 || !chatId) {
+    throw new Error("\u8BF7\u914D\u7F6E TELEGRAM_BOT=token,chat_id\uFF08\u6216\u65E7\u53D8\u91CF TELEGRAM_TOKEN + TELEGRAM_ID\uFF09");
+  }
+  return { token: token2, chatId };
+}
+
 // src/mail/preview.ts
 var PREVIEW_CSS = `
 *{box-sizing:border-box}
@@ -13585,10 +13612,8 @@ function handleIDCommand(env) {
 }
 function handleOpenTMACommand(mode, text, env) {
   return async (msg) => {
-    const {
-      TELEGRAM_TOKEN,
-      DOMAIN
-    } = env;
+    const { token: token2 } = requireTelegram(env);
+    const { DOMAIN } = env;
     const params = {
       chat_id: msg.chat.id,
       text: text || tmaModeDescription[mode] || "Address Manager"
@@ -13607,17 +13632,17 @@ function handleOpenTMACommand(mode, text, env) {
         ]
       };
     }
-    return await createTelegramBotAPI(TELEGRAM_TOKEN).sendMessage(params);
+    return await createTelegramBotAPI(token2).sendMessage(params);
   };
 }
 async function handleReplyEmailCommand(message, env) {
+  const { token: token2 } = requireTelegram(env);
   const {
-    TELEGRAM_TOKEN,
     RESEND_API_KEY,
     DB
   } = env;
   const dao = new Dao(DB);
-  const api = createTelegramBotAPI(TELEGRAM_TOKEN);
+  const api = createTelegramBotAPI(token2);
   const reply = async (text) => {
     await api.sendMessage({
       chat_id: message.chat.id,
@@ -13698,15 +13723,13 @@ async function telegramCommandHandler(message, env) {
   await handleOpenTMACommand("", `Unknown command: ${command}, try to reinitialize the bot.`, env)(message);
 }
 async function telegramCallbackHandler(callback, env) {
-  const {
-    TELEGRAM_TOKEN,
-    DB
-  } = env;
+  const { token: token2 } = requireTelegram(env);
+  const { DB } = env;
   const data = callback.data;
   const callbackId = callback.id;
   const chatId = callback.message?.chat?.id;
   const messageId = callback.message?.message_id;
-  const api = createTelegramBotAPI(TELEGRAM_TOKEN);
+  const api = createTelegramBotAPI(token2);
   const dao = new Dao(DB);
   if (!data || !chatId || !messageId) {
     logTelegram("callback.missing_fields", {
@@ -13812,22 +13835,19 @@ var HTTPError = class extends Error {
   }
 };
 function createTmaAuthMiddleware(env) {
-  const {
-    TELEGRAM_TOKEN,
-    TELEGRAM_ID
-  } = env;
+  const { token: token2, chatId } = requireTelegram(env);
   return async (req) => {
     const [authType, authData = ""] = (req.headers.get("Authorization") || "").split(" ");
     if (authType !== "tma") {
       throw new HTTPError(401, "Invalid authorization type");
     }
     try {
-      await validate(authData, TELEGRAM_TOKEN, {
+      await validate(authData, token2, {
         expiresIn: 3600
       });
       const user = JSON.parse(new URLSearchParams(authData).get("user") || "{}");
-      for (const id of TELEGRAM_ID.split(",")) {
-        if (id === `${user.id}`) {
+      for (const id of chatId.split(",")) {
+        if (id.trim() === `${user.id}`) {
           return;
         }
       }
@@ -13866,10 +13886,10 @@ function createRouter(env) {
     finally: [r]
   });
   const {
-    TELEGRAM_TOKEN,
     DOMAIN,
     DB
   } = env;
+  const { token: TELEGRAM_TOKEN } = requireTelegram(env);
   const dao = new Dao(DB);
   const auth = createTmaAuthMiddleware(env);
   router.get("/", async () => {
@@ -13987,16 +14007,17 @@ async function fetchHandler(request, env) {
 
 // src/handler/mail/index.ts
 async function sendMailToTelegram(mail, env, extract) {
-  const {
-    TELEGRAM_TOKEN,
-    TELEGRAM_ID
-  } = env;
+  const { token: token2, chatId } = requireTelegram(env);
   const req = await renderEmailListMode(mail, env, extract);
-  const api = createTelegramBotAPI(TELEGRAM_TOKEN);
+  const api = createTelegramBotAPI(token2);
   const messageID = [];
-  for (const id of TELEGRAM_ID.split(",")) {
+  for (const id of chatId.split(",")) {
+    const cid = id.trim();
+    if (!cid) {
+      continue;
+    }
     const msg = await api.sendMessageWithReturns({
-      chat_id: id,
+      chat_id: cid,
       ...req
     });
     messageID.push(msg.result.message_id);

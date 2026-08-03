@@ -2,20 +2,22 @@ import type { ForwardableEmailMessage } from '@cloudflare/workers-types';
 import type { ExtractResult } from '../../mail/extract';
 import type { BlockPolicy, EmailCache, Environment } from '../../types';
 import { Dao } from '../../db';
+import { requireTelegram } from '../../env';
 import { extractVerificationCode, isMessageBlock, parseEmail, renderEmailListMode } from '../../mail';
 import { createTelegramBotAPI } from '../../telegram';
 
 export async function sendMailToTelegram(mail: EmailCache, env: Environment, extract?: ExtractResult): Promise<number[]> {
-    const {
-        TELEGRAM_TOKEN,
-        TELEGRAM_ID,
-    } = env;
+    const { token, chatId } = requireTelegram(env);
     const req = await renderEmailListMode(mail, env, extract);
-    const api = createTelegramBotAPI(TELEGRAM_TOKEN);
+    const api = createTelegramBotAPI(token);
     const messageID: number[] = [];
-    for (const id of TELEGRAM_ID.split(',')) {
+    for (const id of chatId.split(',')) {
+        const cid = id.trim();
+        if (!cid) {
+            continue;
+        }
         const msg = await api.sendMessageWithReturns({
-            chat_id: id,
+            chat_id: cid,
             ...req,
         });
         messageID.push(msg.result.message_id);
