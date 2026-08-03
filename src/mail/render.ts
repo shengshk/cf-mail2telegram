@@ -6,13 +6,25 @@ import { buildKeyboard, mailboxButtonUrl } from './mailbox';
 
 export interface EmailDetailParams {
     text: string;
+    parse_mode?: 'HTML';
     reply_markup?: Telegram.InlineKeyboardMarkup;
     link_preview_options: Telegram.LinkPreviewOptions;
 }
 
 export type EmailRender = (mail: EmailCache, env: Environment) => Promise<EmailDetailParams>;
 
-/** 对齐 Docker 范本：文案 +「预览」「邮箱」并排 URL 按钮 */
+function escapeHtml(s: string): string {
+    return s
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
+function isDebug(env: Environment): boolean {
+    return (env.DEBUG || '').toLowerCase() === 'true';
+}
+
+/** 对齐 Docker：验证码 AI 加粗 / 本地斜体；DEBUG 才贴错误原因 */
 export async function renderEmailListMode(
     mail: EmailCache,
     env: Environment,
@@ -21,27 +33,25 @@ export async function renderEmailListMode(
     const { DOMAIN } = env;
     const lines: string[] = [];
     if (extract?.code) {
-        let codeLine = `验证码：${extract.code}`;
-        if (extract.source === 'local') {
-            codeLine += ' · 本地';
-            if (extract.reason) {
-                codeLine += ` (${truncateDisplay(extract.reason, 80)})`;
-            }
+        const code = escapeHtml(extract.code);
+        const styled = extract.source === 'local' ? `<i>${code}</i>` : `<b>${code}</b>`;
+        lines.push(`验证码：${styled}`);
+        if (extract.source === 'local' && extract.reason && isDebug(env)) {
+            lines.push(`调试：${escapeHtml(truncateDisplay(extract.reason, 80))}`);
         }
-        lines.push(codeLine);
     } else {
         const subject = (mail.subject || '').trim();
         if (subject) {
-            lines.push(`主题：${truncateDisplay(subject)}`);
+            lines.push(`主题：${escapeHtml(truncateDisplay(subject))}`);
         } else {
             const preview = truncateDisplay((mail.text || '').replace(/\s+/g, ' ').trim());
-            lines.push(`无主题：${preview || '(空)'}`);
+            lines.push(`无主题：${escapeHtml(preview || '(空)')}`);
         }
     }
-    lines.push(`发件人：${mail.from || ''}`);
-    lines.push(`收件人：${mail.to || ''}`);
+    lines.push(`发件人：${escapeHtml(mail.from || '')}`);
+    lines.push(`收件人：${escapeHtml(mail.to || '')}`);
     if (mail.date) {
-        lines.push(mail.date);
+        lines.push(escapeHtml(mail.date));
     }
 
     const previewUrl = (mail.html || mail.text) && DOMAIN
@@ -52,6 +62,7 @@ export async function renderEmailListMode(
 
     return {
         text: lines.join('\n'),
+        parse_mode: 'HTML',
         reply_markup,
         link_preview_options: {
             is_disabled: true,

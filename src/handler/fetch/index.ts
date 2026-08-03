@@ -137,18 +137,26 @@ function createRouter(env: Environment): RouterType {
     /// Webhook
 
     router.post('/telegram/:token/webhook', async (req: IRequest): Promise<any> => {
-        console.log(`[telegram] webhook.request ${JSON.stringify({
-            url: req.url,
-            method: req.method,
-            tokenMatched: req.params.token === TELEGRAM_TOKEN,
-        })}`);
-        if (req.params.token !== TELEGRAM_TOKEN) {
-            console.warn('[telegram] webhook.invalid_token');
+        const debug = (env.DEBUG || '').toLowerCase() === 'true';
+        const tokenMatched = req.params.token === TELEGRAM_TOKEN;
+        if (!tokenMatched) {
+            // 路径里的 token 与当前 TELEGRAM_BOT 不一致（常见：别的 bot 仍把 webhook 指到本 Worker）
+            if (debug) {
+                console.warn('[telegram] webhook.invalid_token');
+            }
             throw new HTTPError(403, 'Invalid token');
+        }
+        if (debug) {
+            console.log(`[telegram] webhook.request ${JSON.stringify({
+                url: req.url,
+                method: req.method,
+            })}`);
         }
         try {
             await telegramWebhookHandler(req, env);
-            console.log('[telegram] webhook.done');
+            if (debug) {
+                console.log('[telegram] webhook.done');
+            }
         } catch (e) {
             const err = e as Error;
             console.error(`[telegram] webhook.error ${JSON.stringify({
