@@ -25,7 +25,7 @@ export async function renderEmailListMode(
         if (extract.source === 'local') {
             codeLine += ' · 本地';
             if (extract.reason) {
-                codeLine += ` (${truncateDisplay(extract.reason, 60)})`;
+                codeLine += ` (${truncateDisplay(extract.reason, 80)})`;
             }
         }
         lines.push(codeLine);

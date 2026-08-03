@@ -47,6 +47,7 @@ export class LlmNetworkError extends Error {
 
 export function desensitizeText(text: string): string {
     return text
+        .replace(/&nbsp;|&#160;|\u00a0/gi, ' ')
         .replace(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g, '***.***.***.***')
         .replace(/http[s]?:\/\/\S+/g, 'http://****')
         .replace(/\b\d{10,11}\b/g, '**********')
@@ -67,10 +68,16 @@ export function extractCodeLocal(text: string): string | undefined {
         /(?<!\d)(\d{4,6})(?!\d)/g,
         /(?<![0-9a-zA-Z])([0-9a-zA-Z]{4,8})(?![0-9a-zA-Z])/g,
     ];
+    const skip = new Set(['nbsp', 'http', 'https', 'none', 'null', 'true', 'false']);
     for (const pattern of patterns) {
-        const match = pattern.exec(cleaned);
-        if (match?.[1]) {
-            return match[1];
+        pattern.lastIndex = 0;
+        let match: RegExpExecArray | null;
+        while ((match = pattern.exec(cleaned)) !== null) {
+            const cand = match[1];
+            if (!cand || skip.has(cand.toLowerCase())) {
+                continue;
+            }
+            return cand;
         }
     }
     return undefined;
@@ -128,8 +135,17 @@ export async function extractCodeGemini(text: string, env: Environment): Promise
     });
 
     if (!resp.ok) {
-        const body = (await resp.text()).slice(0, 300);
-        throw new LlmNetworkError(`Gemini API ${resp.status}: ${body}`);
+        const body = (await resp.text()).slice(0, 500);
+        let detail = body;
+        try {
+            const j = JSON.parse(body) as { error?: { message?: string; status?: string } };
+            if (j?.error?.message) {
+                detail = j.error.message;
+            }
+        } catch {
+            // keep raw body
+        }
+        throw new LlmNetworkError(`Gemini API ${resp.status}: ${detail}`);
     }
 
     const data = await resp.json() as ChatCompletionResponse;
