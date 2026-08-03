@@ -27,7 +27,36 @@ function truncateStream(stream: ReadableStream<Uint8Array>, maxBytes: number): R
     return stream.pipeThrough(tran);
 }
 
-export async function parseEmail(message: ForwardableEmailMessage, maxSize: number, maxSizePolicy: MaxEmailSizePolicy, useEmlHeaders: boolean = false): Promise<EmailCache> {
+export function formatMailDate(raw: string | null | undefined, timeZone = 'Asia/Shanghai'): string {
+    try {
+        const d = raw ? new Date(raw) : new Date();
+        if (Number.isNaN(d.getTime())) {
+            return new Date().toISOString().replace('T', ' ').slice(0, 19);
+        }
+        const parts = new Intl.DateTimeFormat('en-CA', {
+            timeZone,
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false,
+        }).formatToParts(d);
+        const get = (type: string) => parts.find(p => p.type === type)?.value || '';
+        return `${get('year')}-${get('month')}-${get('day')} ${get('hour')}:${get('minute')}:${get('second')}`;
+    } catch {
+        return new Date().toISOString().replace('T', ' ').slice(0, 19);
+    }
+}
+
+export async function parseEmail(
+    message: ForwardableEmailMessage,
+    maxSize: number,
+    maxSizePolicy: MaxEmailSizePolicy,
+    useEmlHeaders: boolean = false,
+    timeZone = 'Asia/Shanghai',
+): Promise<EmailCache> {
     const id = crypto.randomUUID();
     const cache: EmailCache = {
         id,
@@ -35,7 +64,12 @@ export async function parseEmail(message: ForwardableEmailMessage, maxSize: numb
         from: message.from,
         to: message.to,
         subject: message.headers.get('Subject') || '',
+        date: formatMailDate(message.headers.get('Date'), timeZone),
     };
+    const thridHeader = message.headers.get('X-GM-THRID');
+    if (thridHeader && /^\d+$/.test(thridHeader.trim())) {
+        cache.gmThrid = thridHeader.trim();
+    }
     let isTruncate = false;
     let emailRaw = message.raw;
     try {
@@ -58,6 +92,12 @@ export async function parseEmail(message: ForwardableEmailMessage, maxSize: numb
             cache.messageId = email.messageId || cache.messageId;
             cache.from = email.from?.address || cache.from;
             cache.to = email.to?.map(addr => addr.address).at(0) || cache.to;
+        }
+        if (email.date) {
+            const rawDate = typeof email.date === 'string'
+                ? email.date
+                : (email.date as Date).toISOString();
+            cache.date = formatMailDate(rawDate, timeZone);
         }
         cache.html = email.html;
         cache.text = email.text;

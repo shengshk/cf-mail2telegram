@@ -3,6 +3,7 @@ import type { EmailRender } from '../mail';
 import type { Environment } from '../types';
 import { Dao } from '../db';
 import { renderEmailDebugMode, renderEmailListMode, renderEmailPreviewMode, renderEmailSummaryMode, replyToEmail } from '../mail';
+// Summary / 旧 Preview 回调仅兼容历史消息；新消息已改为 URL「预览」
 import { createTelegramBotAPI } from './api';
 import { tmaModeDescription } from './const';
 

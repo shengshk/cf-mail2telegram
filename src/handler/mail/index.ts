@@ -1,15 +1,16 @@
 import type { ForwardableEmailMessage } from '@cloudflare/workers-types';
+import type { ExtractResult } from '../../mail/extract';
 import type { BlockPolicy, EmailCache, Environment } from '../../types';
 import { Dao } from '../../db';
-import { isMessageBlock, parseEmail, renderEmailListMode } from '../../mail';
+import { extractVerificationCode, isMessageBlock, parseEmail, renderEmailListMode } from '../../mail';
 import { createTelegramBotAPI } from '../../telegram';
 
-export async function sendMailToTelegram(mail: EmailCache, env: Environment): Promise<number[]> {
+export async function sendMailToTelegram(mail: EmailCache, env: Environment, extract?: ExtractResult): Promise<number[]> {
     const {
         TELEGRAM_TOKEN,
         TELEGRAM_ID,
     } = env;
-    const req = await renderEmailListMode(mail, env);
+    const req = await renderEmailListMode(mail, env, extract);
     const api = createTelegramBotAPI(TELEGRAM_TOKEN);
     const messageID: number[] = [];
     for (const id of TELEGRAM_ID.split(',')) {
@@ -31,6 +32,7 @@ export async function emailHandler(message: ForwardableEmailMessage, env: Enviro
         MAIL_TTL,
         MAX_EMAIL_SIZE,
         MAX_EMAIL_SIZE_POLICY,
+        TIMEZONE,
     } = env;
 
     const dao = new Dao(DB);
@@ -41,13 +43,11 @@ export async function emailHandler(message: ForwardableEmailMessage, env: Enviro
     const statusTTL = 60 * 60;
     const status = await dao.loadMailStatus(id, isGuardian);
 
-    // Reject the email
     if (isBlock && blockPolicy.includes('reject')) {
         message.setReject('Blocked');
         return;
     }
 
-    // Forward to email
     try {
         const blockForward = isBlock && blockPolicy.includes('forward');
         const forwardList = blockForward ? [] : (FORWARD_LIST || '').split(',');
@@ -70,16 +70,18 @@ export async function emailHandler(message: ForwardableEmailMessage, env: Enviro
         console.error(e);
     }
 
-    // Send to Telegram
     try {
         const blockTelegram = isBlock && blockPolicy.includes('telegram');
         if (!status.telegram && !blockTelegram) {
             const ttl = Number.parseInt(MAIL_TTL, 10) || 60 * 60 * 24;
             const maxSize = Number.parseInt(MAX_EMAIL_SIZE || '', 10) || 512 * 1024;
             const maxSizePolicy = MAX_EMAIL_SIZE_POLICY || 'truncate';
-            const mail = await parseEmail(message, maxSize, maxSizePolicy);
+            const mail = await parseEmail(message, maxSize, maxSizePolicy, false, TIMEZONE || 'Asia/Shanghai');
+            const extractText = [mail.subject, mail.text].filter(Boolean).join('\n');
+            const short = extractText.length <= 3000 ? extractText : `${extractText.slice(0, 3000)}...`;
+            const extract = await extractVerificationCode(short, env);
             await dao.saveMailCache(mail.id, mail, ttl);
-            const msgIDs = await sendMailToTelegram(mail, env);
+            const msgIDs = await sendMailToTelegram(mail, env, extract);
             for (const msgID of msgIDs) {
                 await dao.saveTelegramIDToMailID(`${msgID}`, mail.id, ttl);
             }

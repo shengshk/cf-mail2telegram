@@ -1,60 +1,55 @@
 import type * as Telegram from 'telegram-bot-api-types';
+import type { ExtractResult } from './extract';
 import type { EmailCache, Environment } from '../types';
-import { checkAddressStatus } from './check';
-import { summarizedByOpenAI, summarizedByWorkerAI } from './summarization';
+import { truncateDisplay } from './extract';
+import { buildKeyboard, gmailMailboxUrl } from './mailbox';
 
 export interface EmailDetailParams {
     text: string;
-    reply_markup: Telegram.InlineKeyboardMarkup;
+    reply_markup?: Telegram.InlineKeyboardMarkup;
     link_preview_options: Telegram.LinkPreviewOptions;
 }
 
 export type EmailRender = (mail: EmailCache, env: Environment) => Promise<EmailDetailParams>;
 
-export async function renderEmailListMode(mail: EmailCache, env: Environment): Promise<EmailDetailParams> {
-    const {
-        DEBUG,
-        OPENAI_API_KEY,
-        WORKERS_AI_MODEL,
-        AI,
-        DOMAIN,
-    } = env;
-    const text = `${mail.subject}\n\n-----------\nFrom\t:\t${mail.from}\nTo\t\t:\t${mail.to}`;
-    const keyboard: Telegram.InlineKeyboardButton[] = [
-        {
-            text: 'Preview',
-            callback_data: `p:${mail.id}`,
-        },
-    ];
-    if ((AI && WORKERS_AI_MODEL) || OPENAI_API_KEY) {
-        keyboard.push({
-            text: 'Summary',
-            callback_data: `s:${mail.id}`,
-        });
+/** 对齐 Docker 范本：文案 +「预览」「邮箱」并排 URL 按钮 */
+export async function renderEmailListMode(
+    mail: EmailCache,
+    env: Environment,
+    extract?: ExtractResult,
+): Promise<EmailDetailParams> {
+    const { DOMAIN } = env;
+    const lines: string[] = [];
+    if (extract?.code) {
+        let codeLine = `验证码：${extract.code}`;
+        if (extract.source === 'local') {
+            codeLine += ' · 本地';
+        }
+        lines.push(codeLine);
+    } else {
+        const subject = (mail.subject || '').trim();
+        if (subject) {
+            lines.push(`主题：${truncateDisplay(subject)}`);
+        } else {
+            const preview = truncateDisplay((mail.text || '').replace(/\s+/g, ' ').trim());
+            lines.push(`无主题：${preview || '(空)'}`);
+        }
     }
-    if (mail.text) {
-        keyboard.push({
-            text: 'Text',
-            url: `https://${DOMAIN}/email/${mail.id}?mode=text`,
-        });
+    lines.push(`发件人：${mail.from || ''}`);
+    lines.push(`收件人：${mail.to || ''}`);
+    if (mail.date) {
+        lines.push(mail.date);
     }
-    if (mail.html) {
-        keyboard.push({
-            text: 'HTML',
-            url: `https://${DOMAIN}/email/${mail.id}?mode=html`,
-        });
-    }
-    if (DEBUG === 'true') {
-        keyboard.push({
-            text: 'Debug',
-            callback_data: `d:${mail.id}`,
-        });
-    }
+
+    const previewUrl = (mail.html || mail.text) && DOMAIN
+        ? `https://${DOMAIN}/email/${mail.id}`
+        : undefined;
+    const mailboxUrl = gmailMailboxUrl(mail, env);
+    const reply_markup = buildKeyboard(previewUrl, mailboxUrl) as Telegram.InlineKeyboardMarkup | undefined;
+
     return {
-        text,
-        reply_markup: {
-            inline_keyboard: [keyboard],
-        },
+        text: lines.join('\n'),
+        reply_markup,
         link_preview_options: {
             is_disabled: true,
         },
@@ -68,11 +63,11 @@ function renderEmailDetail(text: string | undefined | null, id: string): EmailDe
             inline_keyboard: [
                 [
                     {
-                        text: 'Back',
+                        text: '返回',
                         callback_data: `l:${id}`,
                     },
                     {
-                        text: 'Delete',
+                        text: '删除',
                         callback_data: 'delete',
                     },
                 ],
@@ -84,50 +79,19 @@ function renderEmailDetail(text: string | undefined | null, id: string): EmailDe
     };
 }
 
-// eslint-disable-next-line unused-imports/no-unused-vars
-export async function renderEmailPreviewMode(mail: EmailCache, env: Environment): Promise<EmailDetailParams> {
+/** 兼容旧消息回调；新消息不再使用 */
+export async function renderEmailPreviewMode(mail: EmailCache, _env: Environment): Promise<EmailDetailParams> {
     return renderEmailDetail(mail.text?.substring(0, 4096), mail.id);
 }
 
-export async function renderEmailSummaryMode(mail: EmailCache, env: Environment): Promise<EmailDetailParams> {
-    const {
-        AI,
-        OPENAI_API_KEY,
-        WORKERS_AI_MODEL,
-        OPENAI_COMPLETIONS_API = 'https://api.openai.com/v1/chat/completions',
-        OPENAI_CHAT_MODEL = 'gpt-4o-mini',
-        SUMMARY_TARGET_LANG = 'english',
-    } = env;
-
-    const req = renderEmailDetail('', mail.id);
-    const prompt = `Summarize the following text in approximately 50 words with ${SUMMARY_TARGET_LANG}\n\n${mail.text}`;
-
-    try {
-        if (AI && WORKERS_AI_MODEL) {
-            req.text = await summarizedByWorkerAI(AI, WORKERS_AI_MODEL, prompt);
-        } else if (OPENAI_API_KEY) {
-            req.text = await summarizedByOpenAI(OPENAI_API_KEY, OPENAI_COMPLETIONS_API, OPENAI_CHAT_MODEL, prompt);
-        } else {
-            req.text = 'Sorry, no summarization provider is configured.';
-        }
-    } catch (e) {
-        req.text = `Failed to summarize the email: ${(e as Error).message}`;
-    }
-    return req;
+/** 兼容旧消息回调；Summary 已移除 */
+export async function renderEmailSummaryMode(mail: EmailCache, _env: Environment): Promise<EmailDetailParams> {
+    return renderEmailDetail('摘要功能已关闭，请使用预览按钮查看原文。', mail.id);
 }
 
-export async function renderEmailDebugMode(mail: EmailCache, env: Environment): Promise<EmailDetailParams> {
-    const addresses = [
-        mail.from,
-        mail.to,
-    ];
-    const res = await checkAddressStatus(addresses, env);
-    const obj = {
-        ...mail,
-        block: res,
-    };
+export async function renderEmailDebugMode(mail: EmailCache, _env: Environment): Promise<EmailDetailParams> {
+    const obj = { ...mail };
     delete obj.html;
     delete obj.text;
-    const text = JSON.stringify(obj, null, 2);
-    return renderEmailDetail(text, mail.id);
+    return renderEmailDetail(JSON.stringify(obj, null, 2), mail.id);
 }

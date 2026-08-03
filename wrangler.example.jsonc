@@ -11,19 +11,19 @@
             "id": ""
         }
     ],
-    "ai": {
-        "binding": "AI"
-    },
     "vars": {
         "DOMAIN": "mail2telegram.YOUR_NAME.workers.dev",
         "TELEGRAM_ID": "YOUR_TELEGRAM_ID",
         "TELEGRAM_TOKEN": "YOUR_TELEGRAM_TOKEN",
         "FORWARD_LIST": "YOUR_BACKUP_EMAIL",
-        // "WORKERS_AI_MODEL": "@cf/meta/llama-3-8b-instruct", // Remove the comment to enable Workers AI
-        // "OPENAI_API_KEY": "sk-", // Remove the comment to enable OpenAI
-        // "OPENAI_COMPLETIONS_API": "https://openrouter.ai/api/v1/chat/completions",
-        // "OPENAI_CHAT_MODEL": "openai/gpt-4o-mini",
-        // "SUMMARY_TARGET_LANG": "chinese",
+        // Gemini 抽验证码（对齐 Docker 范本；Secret 建议用 wrangler secret put GEMINI_API_KEY）
+        // "GEMINI_API_KEY": "AIza...",
+        "GEMINI_MODEL": "gemini-2.5-flash-lite",
+        "TIMEZONE": "Asia/Shanghai",
+        // Gmail「邮箱」按钮：u/N；有 X-GM-THRID 时走深链，否则 rfc822msgid 搜索
+        "GMAIL_U": "0",
+        // "GMAIL_LABEL": "INBOX",
+        // "PROMPT_TEMPLATE": "从以下文本中提取验证码。只输出验证码...\\n\\n文本：{input_text}\\n\\n验证码：",
         // "WHITE_LIST": "Suggested settings in the Telegram mini apps",
         // "BLOCK_LIST": "Suggested settings in the Telegram mini apps",
         // "MAIL_TTL": "3600",

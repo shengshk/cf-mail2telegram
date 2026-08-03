@@ -4,6 +4,7 @@ import type { Environment } from '../../types';
 import { validate } from '@tma.js/init-data-node/web';
 import { json, Router } from 'itty-router';
 import { Dao } from '../../db';
+import { renderPreviewPage, sanitizeHtmlForPreview } from '../../mail/preview';
 import { createTelegramBotAPI, telegramCommands, telegramWebhookHandler, tmaHTML } from '../../telegram';
 
 class HTTPError extends Error {
@@ -86,7 +87,7 @@ function createRouter(env: Environment): RouterType {
         return new Response(null, {
             status: 302,
             headers: {
-                location: 'https://github.com/TBXark/mail2telegram',
+                location: 'https://github.com/shengshk/mail2telegramcf',
             },
         });
     });
@@ -160,20 +161,42 @@ function createRouter(env: Environment): RouterType {
         return { success: true };
     });
 
-    /// Preview
+    /// Preview（默认浅灰白阅读壳 + 原 HTML；?mode=raw 吐原始片段）
 
     router.get('/email/:id', async (req: IRequest): Promise<Response> => {
         const id = req.params.id;
-        const mode = req.query.mode || 'text';
+        const mode = String(req.query.mode || 'page');
         const value = await dao.loadMailCache(id);
-        let text = value?.text || '';
-        let contentType = 'text/plain; charset=utf-8';
-        if (mode === 'html') {
-            text = value?.html || '';
-            contentType = 'text/html; charset=utf-8';
+        if (!value) {
+            return new Response('预览不存在或已过期', {
+                status: 404,
+                headers: { 'content-type': 'text/plain; charset=utf-8' },
+            });
         }
-        return new Response(text, {
-            headers: { 'content-type': contentType },
+
+        if (mode === 'text') {
+            return new Response(value.text || '', {
+                headers: { 'content-type': 'text/plain; charset=utf-8' },
+            });
+        }
+        if (mode === 'raw' || mode === 'html') {
+            return new Response(value.html || value.text || '', {
+                headers: {
+                    'content-type': 'text/html; charset=utf-8',
+                    'Referrer-Policy': 'no-referrer',
+                },
+            });
+        }
+
+        const body = value.html
+            ? sanitizeHtmlForPreview(value.html)
+            : '';
+        const page = renderPreviewPage(value, body);
+        return new Response(page, {
+            headers: {
+                'content-type': 'text/html; charset=utf-8',
+                'Referrer-Policy': 'no-referrer',
+            },
         });
     });
 

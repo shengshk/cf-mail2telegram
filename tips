@@ -1,0 +1,90 @@
+mail2telegram CF Worker 配置备忘（本 fork）
+==========================================
+
+核心能力：收信 → Gemini 抽验证码（失败才本地正则）→ Telegram 通知（预览 + 邮箱按钮）
+
+
+一、必须先做：创建 KV，并绑定名为 DB
+----------------------------------
+
+控制台：
+  Workers & Pages → KV → Create a namespace（随便起名）
+  打开 Worker → Settings → Bindings → Add → KV Namespace
+  Variable name 必须填：DB
+  Namespace 选刚建的那个
+
+或命令行：
+  npx wrangler kv namespace create mail2telegram-db
+  把返回的 id 写进 wrangler.jsonc：
+    binding 保持 "DB"
+    id 填返回值
+
+不绑 DB，服务不能用。
+
+
+二、必须配置（没这些跑不起来）
+----------------------------
+
+Secrets（推荐放密钥，控制台 Secrets 或 wrangler secret put）：
+
+  TELEGRAM_TOKEN     BotFather 的 Bot Token
+
+
+Vars（普通变量）：
+
+  DOMAIN             Worker 域名，不要带 https://
+                     例：mail2telegram.shengshk.workers.dev
+  TELEGRAM_ID        接收消息的 Chat ID（多个用英文逗号）
+
+
+三、抽验证码（要对齐 Docker 的 AI 抽码就配这些）
+----------------------------------------------
+
+只用 Gemini，不要配 OpenAI。
+
+Secrets：
+  GEMINI_API_KEY     Google AI Studio 的 AIza... 密钥
+
+Vars：
+  GEMINI_MODEL       建议：gemini-2.5-flash-lite
+  TIMEZONE           建议：Asia/Shanghai
+  PROMPT_TEMPLATE    一般不用改；若改必须保留 {input_text}
+
+
+四、邮箱按钮（可选，有默认值）
+----------------------------
+
+  GMAIL_U            默认 0（mail.google.com/mail/u/0）
+  GMAIL_LABEL        默认 INBOX（仅当邮件带 X-GM-THRID 时用）
+
+
+五、其它常用可选
+--------------
+
+  FORWARD_LIST              收到信后转发到哪些邮箱，逗号分隔，可空
+  MAIL_TTL                  预览缓存秒数，默认约 86400
+  GUARDIAN_MODE             true=KV 去重防重复推送，默认 false
+  BLOCK_LIST / WHITE_LIST   黑白名单（也可在 TG 小程序里管）
+  BLOCK_POLICY              默认 telegram；可选 reject / forward / telegram
+  MAX_EMAIL_SIZE            邮件解析大小上限（字节）
+  MAX_EMAIL_SIZE_POLICY     默认 truncate
+  DEBUG                     默认 false
+  RESEND_API_KEY            仅当你要在 TG 里「回复邮件」时才需要（Secret）
+
+
+六、部署后两步
+------------
+
+  1. Cloudflare Email Routing 把收信指到这个 Worker
+  2. 浏览器打开：https://你的DOMAIN/init
+     （注册 Telegram Webhook）
+
+
+七、核对
+------
+
+  [ ] KV 已绑，名字是 DB
+  [ ] TELEGRAM_TOKEN、TELEGRAM_ID、DOMAIN 已配
+  [ ] GEMINI_API_KEY + GEMINI_MODEL 已配（要用 AI 抽码）
+  [ ] Email Routing 已接上
+  [ ] 已访问 /init
