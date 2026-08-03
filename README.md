@@ -1,142 +1,111 @@
+# mail2telegram（Cloudflare Worker）
 
-<h1 align="center">
-mail2telegram
-</h1>
+私人仓库。基于 [TBXark/mail2telegram](https://github.com/TBXark/mail2telegram) 改造，对齐本仓库配套的 Docker `mail2telegram` 体验：
 
-<p align="center">
-    <br> English | <a href="doc/README_CN.md">中文</a>
-</p>
-<p align="center">
-    <em>Use Telegram Bot to get your temporary email..</em>
-</p>
+**收信 → Gemini 抽验证码（失败才本地正则）→ Telegram（预览 + 邮箱）**
 
+- 摘要 / Summary / OpenAI 路径已移除
+- 消息按钮只有 **预览**、**邮箱**（URL 直达）
+- 验证码样式：AI 解析 **加粗**；本地正则 *斜体*
+- 配置源码以 `src/` 为准；根目录旧 `worker.js` / `build/` 勿当现行逻辑
 
-![](./doc/social_preview.png)
+本地备忘见 [`tips`](./tips)。
 
-This is a Telegram Bot based on Cloudflare Email Routing Worker, which can convert emails into Telegram messages. You can forward emails from recipients with any prefix to the Bot, and then a temporary mailbox Bot with an infinite address will be created.
+---
 
-<details>
-<summary>Click to view the demo.</summary>
-<img style="max-width: 600px;" alt="image" src="doc/example.png">
-</details>
+## 快速配置
 
+### 1. KV（必须）
 
+Worker → **绑定** → KV Namespace，变量名必须是 **`DB`**。  
+仅有全局 KV 命名空间不够，必须绑到本 Worker。  
+本仓库 `wrangler.jsonc` 已写命名空间 id，CF Builds / `wrangler deploy` 应自动带上绑定。
 
-## Installation
+### 2. 变量
 
-### 0. Configure Telegram
+| 名称 | 类型 | 说明 |
+|------|------|------|
+| `TELEGRAM_BOT` | Secret 推荐 | `token,chat_id`（与 Docker 相同；兼容旧 `TELEGRAM_TOKEN` + `TELEGRAM_ID`） |
+| `GEMINI_API_KEY` | Secret 推荐 | Google AI Studio Key（`AIza…`）。Worker 出口常在受限地区，Gemini 可能 400，此时自动本地正则 |
+| `DOMAIN` | Var | Worker 域名，**不要** `https://`，如 `mail2telegram.xxx.workers.dev` |
+| `FORWARD_LIST` | Var | 可选。备份邮箱，逗号分隔；取**第一个**决定「邮箱」按钮；须在 Email Routing 目标地址已验证 |
+| `FORWARD_DIR` | Var | 可选。仅 Gmail：跳到该标签/文件夹（如 `Backup`）；非 Gmail 忽略；不配则 Gmail 首页 |
+| `DEBUG` | Var | 默认关。`true`：TG 显示本地兜底时的错误原因，并打 webhook 详日志 |
 
-1. Create a bot to obtain a token, use `@BotFather > /newbot`, create a bot and then copy the token.
-2. Call `https://project_name.user_name.workers.dev/init` to bind the Webhook, and check the returned result to confirm the binding status.
-3. To use Telegram mini programs, you must set a privacy policy. Please visit `@BotFather > /mybots > (select one) > Edit Bot > Edit Privacy Policy`, and then set it to the default privacy policy for Telegram mini programs: `https://telegram.org/privacy-tpa`
+一般不用改：`GEMINI_MODEL`（默认 `gemini-2.5-flash-lite`）、`TIMEZONE`（`Asia/Shanghai`）、`GMAIL_U`（`0`）、`MAIL_TTL`、黑白名单等。
 
-### 1. Deploy Workers
+`wrangler` 已 `keep_vars = true`，部署不会清空 Dashboard 明文 Vars（密钥仍建议用 Secret）。
 
-#### 1.1 Deploy via Command Line
+### 3. Email Routing
 
-1. Clone the repository:
+将域名 Catch-all（或规则）**发送到本 Worker**。  
+备份靠 `FORWARD_LIST`，不要指望 Catch-all 再转一份到邮箱。
 
-    `git clone git@github.com:TBXark/mail2telegram.git`
-2. Copy the configuration template and modify it with your own Telegram configuration: 
+### 4. 绑定 Webhook
 
-    `cp wrangler.example.jsonc wrangler.jsonc`
-3. Deploy 
+部署后打开一次：
 
-    `yarn & yarn pub`
+`https://<DOMAIN>/init`
 
-#### 1.2 Deploy via Copy and Paste
+---
 
-1. If you don't want to deploy using the command line and prefer to copy and paste, you can use the precompiled version > [`index.ts`](./build/index.js)
-2. When deploying via copy and paste, you need to manually set environment variables in the project's configuration page.
-3. Bind `KV Namespace Bindings` database to worker with the name `DB`
-4. To generate a whitelist/blacklist of regular expressions as a JSON array string, you can use this small tool which also includes some demos: [regexs2jsArray](https://codepen.io/tbxark/full/JjxdNEX)
+## 「邮箱」按钮规则
 
+| 条件 | 行为 |
+|------|------|
+| 邮件带 `X-GM-THRID` | 优先 Gmail 精准深链（Email Routing 通常没有） |
+| `FORWARD_LIST` 首个为 Gmail + 配了 `FORWARD_DIR` | 打开该标签/文件夹 |
+| Gmail 未配 `FORWARD_DIR` | Gmail 首页 |
+| Outlook / Hotmail / Live | Outlook 网页首页（忽略 `FORWARD_DIR`） |
+| 其它域名 | `https://mail.<域名>` |
+| 无 `FORWARD_LIST` 且无 `FORWARD_DIR` | 不显示「邮箱」，只留「预览」 |
 
-### 2. Configure Cloudflare Email Routing
+已**取消** `rfc822msgid` 搜索链接。
 
-1. Follow the official tutorial to configure [Cloudflare Email Routing](https://blog.cloudflare.com/introducing-email-routing/).
-2. Configure routing by changing the action of `Catch-all address` in `Email Routing - Routing Rules` to `Send to a Worker:mail2telegram`. Forward all remaining emails to this worker.
-3. If you set `Catch-all address` as workers, you won't be able to forward all remaining emails to your own email. If you need to backup emails, simply fill in your backup email in the `FORWARD_LIST` environment variable of the worker.
-4. The email address in `FORWARD_LIST` should be added to `Cloudflare Dashboard - Email Routing - Destination addresses` after authentication in order to receive emails.
+---
 
-### 3. Binding a Telegram Webhook
+## 部署
 
-Call `https://project_name.user_name.workers.dev/init` to bind the Webhook, check the return result to confirm the binding status.
+### Cloudflare Builds / Git 连接
 
-## Configuration
+推送到本私人仓库后，用 CF 连接该仓库构建即可。确保构建识别为 Worker（仓库内有 `wrangler.jsonc`）。
 
-Location: Workers & Pages - your_work_name - Settings - Variables
+### 命令行
 
-| KEY                    | Description                                                                                                                                                                                                                                                                                                                                                                                          |
-|:-----------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| TELEGRAM_ID            | The Chat ID of the destination to sent by the Bot (such as your own Telegram account ID), can be obtained through the bot's `/id` command, which is generally a series of numbers, GROUP's start with -100. Multiple IDs separated by English commas                                                                                                                                                 |
-| TELEGRAM_TOKEN         | Telegram Bot Token e.g., `7123456780:AAjkLAbvSgDdfsDdfsaSK0`                                                                                                                                                                                                                                                                                                                                         |
-| DOMAIN                 | Workers domain name, e.g., `project_name.user_name.workers.dev`                                                                                                                                                                                                                                                                                                                                      |
-| FORWARD_LIST           | Backup emails, can be forwarded to your own email for backup, leave blank if not forwarding, multiple values can be separated by `,`                                                                                                                                                                                                                                                                 |
-| ~~WHITE_LIST~~         | **To be deprecated soon, switch to using built-in mini programs for editing.**，Sender whitelist, an array of regular expressions or email address converted to a string, example: `[\".*@10086\\\\.cn\"]`                                                                                                                                                                                            |
-| ~~BLOCK_LIST~~         | **To be deprecated soon, switch to using built-in mini programs for editing.**，Sender blacklist, an array of regular expressions or email address converted to a string                                                                                                                                                                                                                              |
-| BLOCK_POLICY           | Optional values `reject,forward,telegram`, Separated by commas. `reject` means to reject the email, `forward` means to don't forward mail to backup email, `telegram` means to don't send to telegram. Default is `telegram`                                                                                                                                                                         |
-| MAIL_TTL               | Email cache retention time in seconds, default is one day. After expiration, emails will no longer be previewable, please back up.                                                                                                                                                                                                                                                                   |
-| WORKERS_AI_MODEL       | Workers AI model identifier. When the Worker binds the `AI` service and this value is set, email summaries will use Workers AI.                                                                                                                                                                                                                                                                       |
-| OPENAI_API_KEY         | OpenAI API Key, used for summarizing email content when Workers AI is not available. Without this and `WORKERS_AI_MODEL`, the "Summary" button will not appear.                                                                                                                                                                                                                                       |
-| OPENAI_COMPLETIONS_API | Customizable API, default value is `https://api.openai.com/v1/chat/completions`                                                                                                                                                                                                                                                                                                                      |
-| OPENAI_CHAT_MODEL      | Customizable model, default value is `gpt-4o-mini`                                                                                                                                                                                                                                                                                                                                                   |
-| SUMMARY_TARGET_LANG    | The language for customizing the summary, with a default value of `english`                                                                                                                                                                                                                                                                                                                          |
-| GUARDIAN_MODE          | Guard mode, default off, if you want to enable it, fill in `true`.                                                                                                                                                                                                                                                                                                                                   |
-| MAX_EMAIL_SIZE         | Maximum email size in bytes, emails exceeding this size will be processed according to `MAX_EMAIL_SIZE_POLICY`. The main purpose is to prevent the worker function from timing out due to too large attachments. Default is 512*1024.                                                                                                                                                                |
-| MAX_EMAIL_SIZE_POLICY  | The available values are `unhandled`, `truncate` and `continue`. `unhandled` means return the headers without parsing the message body, `truncate` means truncate the message body and only parse the allowed size, `continue` means continue to process the message regardless of the size limit. The default is `truncate`. This policy only affects Telegram push messages, not email forwarding. |
-| RESEND_API_KEY         | Resend API Key, https://resend.com/docs/introduction, Reply message to reply the email.                                                                                                                                                                                                                                                                                                              |
-| DB                     | Bind the database to the worker at the `KV Namespace Bindings` section. The `Variable Name` must be `DB`, and `KV Namespace` select any newly created KV.                                                                                                                                                                                                                                            |
-
-
-## Telegram Mini Apps
-
-The command-based management of black and white lists in the old version has been deprecated. Now, the management of black and white lists is done through a mini-program. The black and white lists in the environment variables cannot be displayed or modified in the mini program.
-
-> To use the telegram-mini-program, you need to re-call the `/init` api to bind the commands.
-
-| block list                         | white list                         | list test                            |
-|:-----------------------------------|:-----------------------------------|:-------------------------------------|
-| ![image](./doc/tma_block_list.png) | ![image](./doc/tma_white_list.png) | ![image](./doc/tma_test_address.png) |
-
-
-## Usage
-
-The default message structure is as follows.
+```bash
+git clone git@github.com:shengshk/mail2telegramcf.git
+cd mail2telegramcf
+# 按需改 wrangler.jsonc 里的 kv id
+pnpm i   # 或 npm / yarn
+pnpm pub # wrangler deploy --keep-vars
 ```
-[Subject]
 
------------
-From : [sender]
-To: [recipient]
+部署后访问 `/init`，并在 Dashboard 确认 **绑定 `DB`** 与 Vars/Secrets。
 
-(Preview)(Summary)(Text)(HTML)
+---
+
+## Telegram 行为摘要
 
 ```
-### Email Preview
-When the email forwarding notification is sent to Telegram, only the title, sender, recipient, and four buttons are displayed.
+验证码：123456          ← AI：加粗；本地：斜体
+发件人：…
+收件人：…
+时间
+[预览] [邮箱]
+```
 
-1. `Preview` mode: You can preview the plain text mode of the email directly in the bot, but there is a limit of 4096 characters.
-2. `Summary` mode: When Workers AI is bound with `WORKERS_AI_MODEL`, summaries are generated by Workers AI. If not, but `OPENAI_API_KEY` is set, OpenAI is used instead. Without either option, the `Summary` button is hidden.
-3. `TEXT` mode: Use the web page to view plain text emails, and read emails longer than 4096 characters.
-4. `HTML` mode: You can view rich text emails, but they may contain certain scripts or other tracking links. It is recommended to use rich text mode only when necessary or when the source is confirmed to be safe.
+黑白名单仍可用内置小程序（`/white` `/block` `/test` → Open Manager）维护，规则存在 KV。
 
+---
 
-### Security and Email Cache
-1. `MAIL_TTL`: For security reasons, when the email cache retention time exceeds `MAIL_TTL`, the link that the button jumps to cannot be opened. You can modify the environment variables to adjust the expiration time.
-2. Due to Workers restrictions, emails (especially with large attachments) may cause function timeouts and multiple retries, which may result in receiving duplicate notifications. It is recommended to add a backup email to the FORWARD_LIST to prevent email loss.
-3. Enabling `GUARDIAN_MODE` can reduce duplicate message interference, improve worker success rate, but will consume more KV write times. It is recommended to enable it when necessary.
+## 已知限制
 
-### Blacklist and Whitelist
-Regarding the matching rules for blacklists and whitelists, taking the whitelist as an example, first, the `WHITE_LIST` will be read from the environment variable and converted into an array. Then, the `WHITE_LIST` will be read from KV and converted into an array. Finally, the two arrays will be merged to obtain the complete whitelist rules. When matching, it will first determine whether the elements in the array are equal to the string to be matched. If they are equal, the match is successful. If they are not equal, the elements in the array will be converted into regular expressions and then matched. If the match is successful, it will return success. If all elements fail to match, it will return failure.
+1. **Gemini 地区**：Worker 出网 IP 可能被 Google 拒绝（`User location is not supported`），会回退本地正则；Docker 同 Key 往往正常。
+2. **无附件展示**：大附件靠 `FORWARD_LIST` 备份到真实邮箱查看。
+3. **预览依赖 KV**：`DB` 未绑定会导致缓存失败；发 TG 已尽量不因缓存失败而中断，但预览链接可能 404。
 
-To generate a regular JSON array string for the whitelist/blacklist, you can use this small tool, which also includes several demos. [regexs2jsArray](https://codepen.io/tbxark/full/JjxdNEX)
+---
 
-It is recommended to use a small program to manage the blacklist and whitelist, which can be more convenient to add and delete. The existing blacklist and whitelist in the environment variables will soon be deprecated.
+## 许可
 
-### Email Attachments
-This bot does not support attachments. If you need attachment support, you can use my other project [testmail-viewer](https://github.com/TBXark/testmail-viewer) to forward the email to your testmail using `FORWARD_LIST`, so that you can download your attachments using [testmail-viewer](https://github.com/TBXark/testmail-viewer).
-
-## License
-
-**mail2telegram** is released under the MIT license. [See LICENSE](LICENSE) for details.
+上游为 MIT。本仓库为私人修改版，仅供所有者使用。

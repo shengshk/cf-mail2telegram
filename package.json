@@ -2,13 +2,13 @@
     "name": "mail2telegram",
     "type": "module",
     "version": "1.0.0",
-    "description": "Forward email to telegram",
-    "author": "TBXark",
+    "description": "Forward email to telegram (OTP + preview)",
+    "author": "shengshk",
     "license": "MIT",
-    "homepage": "https://github.com/TBXark/mail2telegram",
+    "homepage": "https://github.com/shengshk/mail2telegramcf",
     "repository": {
         "type": "git",
-        "url": "https://github.com/TBXark/mail2telegram"
+        "url": "https://github.com/shengshk/mail2telegramcf"
     },
     "exports": {
         "import": "./index.js"
