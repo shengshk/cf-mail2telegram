@@ -144,7 +144,6 @@ dist
 # End of https://www.toptal.com/developers/gitignore/api/node
 
 # build
-wrangler.toml
 # wrangler.jsonc is committed for Cloudflare Builds
 .idea
 .wrangler
