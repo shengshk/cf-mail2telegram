@@ -20,6 +20,7 @@
     "scripts": {
         "dev": "wrangler dev",
         "pub": "wrangler deploy",
+        "deploy": "wrangler deploy",
         "build": "node esbuild.config.js",
         "lint": "eslint --fix src/index.ts src",
         "test": "tsx src/test.ts",
