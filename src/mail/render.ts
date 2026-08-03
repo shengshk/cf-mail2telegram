@@ -24,6 +24,9 @@ export async function renderEmailListMode(
         let codeLine = `验证码：${extract.code}`;
         if (extract.source === 'local') {
             codeLine += ' · 本地';
+            if (extract.reason) {
+                codeLine += ` (${truncateDisplay(extract.reason, 60)})`;
+            }
         }
         lines.push(codeLine);
     } else {

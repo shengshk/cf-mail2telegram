@@ -158,17 +158,18 @@ export async function extractVerificationCode(text: string, env: Environment): P
         console.log('[extract] gemini 返回 None，不进行本地兜底');
         return { reason: 'llm_none' };
     } catch (e) {
+        const errMsg = e instanceof Error ? e.message : String(e);
         if (!(e instanceof LlmNetworkError)) {
-            console.warn(`[extract] gemini 调用异常，启用本地正则兜底: ${(e as Error).message}`);
+            console.warn(`[extract] gemini 调用异常，启用本地正则兜底: ${errMsg}`);
         } else {
-            console.warn(`[extract] gemini 调用失败，启用本地正则兜底: ${e.message}`);
+            console.warn(`[extract] gemini 调用失败，启用本地正则兜底: ${errMsg}`);
         }
         const code = extractCodeLocal(text);
         if (code) {
             console.log(`[extract] 本地正则提取成功: ${code}`);
-            return { code, source: 'local' };
+            return { code, source: 'local', reason: errMsg };
         }
-        return { reason: 'local_none_after_error' };
+        return { reason: `local_none_after_error: ${errMsg}` };
     }
 }
 
