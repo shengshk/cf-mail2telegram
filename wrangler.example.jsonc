@@ -19,5 +19,7 @@
 		//   GEMINI_API_KEY=AIza...
 		// 可选 Vars：
 		//   FORWARD_LIST=backup@gmail.com
+		//   FORWARD_DIR=Backup
+		//   GMAIL_U=0
 	}
 }

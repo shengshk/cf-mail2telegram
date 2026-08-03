@@ -37,6 +37,8 @@ export interface Environment {
     TELEGRAM_ID?: string;
 
     FORWARD_LIST?: string;
+    /** Gmail 文件夹/标签（如 Backup）；仅 FORWARD_LIST 首个为 Gmail 时生效，非 Gmail 忽略 */
+    FORWARD_DIR?: string;
     BLOCK_LIST?: string;
     WHITE_LIST?: string;
     DISABLE_LOAD_REGEX_FROM_DB?: string;
@@ -51,9 +53,9 @@ export interface Environment {
     PROMPT_TEMPLATE?: string;
     /** 默认 Asia/Shanghai */
     TIMEZONE?: string;
-    /** 默认 0 */
+    /** Gmail 多账号序号，默认 0 */
     GMAIL_U?: string;
-    /** 默认 INBOX */
+    /** @deprecated 改用 FORWARD_DIR */
     GMAIL_LABEL?: string;
 
     GUARDIAN_MODE?: string;

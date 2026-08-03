@@ -2,7 +2,7 @@ import type * as Telegram from 'telegram-bot-api-types';
 import type { ExtractResult } from './extract';
 import type { EmailCache, Environment } from '../types';
 import { truncateDisplay } from './extract';
-import { buildKeyboard, gmailMailboxUrl } from './mailbox';
+import { buildKeyboard, mailboxButtonUrl } from './mailbox';
 
 export interface EmailDetailParams {
     text: string;
@@ -44,7 +44,7 @@ export async function renderEmailListMode(
     const previewUrl = (mail.html || mail.text) && DOMAIN
         ? `https://${DOMAIN}/email/${mail.id}`
         : undefined;
-    const mailboxUrl = gmailMailboxUrl(mail, env);
+    const mailboxUrl = mailboxButtonUrl(mail, env);
     const reply_markup = buildKeyboard(previewUrl, mailboxUrl) as Telegram.InlineKeyboardMarkup | undefined;
 
     return {

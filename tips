@@ -30,16 +30,23 @@ Vars：
   DOMAIN             Worker 域名，不要带 https://
                      例：mail2telegram.<name>.workers.dev
 
-  FORWARD_LIST       可选。备份邮箱，多个逗号分隔
+  FORWARD_LIST       可选。备份邮箱，多个逗号分隔（取第一个决定「邮箱」按钮）
                      须在 Email Routing「目标地址」里已验证
+
+  FORWARD_DIR        可选。仅 Gmail 有效：跳到该标签/文件夹（如 Backup）
+                     非 Gmail 忽略；不配则 Gmail 跳首页
+
+
+「邮箱」按钮：有 thrid 优先精准；否则 Gmail+FORWARD_DIR→文件夹，
+Gmail 无 DIR→首页；Outlook→outlook 首页；其它→https://mail.<域名>；
+无 FORWARD_LIST 且无 FORWARD_DIR→只显示「预览」
 
 
 有默认、一般不用配：
 
   GEMINI_MODEL       gemini-2.5-flash-lite
   TIMEZONE           Asia/Shanghai
-  GMAIL_U            0
-  GMAIL_LABEL        INBOX
+  GMAIL_U            0（Gmail 多账号时再改）
   MAIL_TTL / GUARDIAN_MODE / BLOCK_* / DEBUG / …
 
 
