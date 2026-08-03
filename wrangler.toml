@@ -9,3 +9,11 @@ keep_vars = true
 [[kv_namespaces]]
 binding = "DB"
 id = "203f3647cd8041508233fd48f9b651bf"
+
+[observability]
+enabled = true
+
+[observability.logs]
+enabled = true
+persist = true
+invocation_logs = true
