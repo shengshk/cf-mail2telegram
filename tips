@@ -1,5 +1,5 @@
-mail2telegram CF Worker 配置备忘（本 fork）
-==========================================
+mail2telegram CF Worker 配置备忘
+================================
 
 收信 → Gemini 抽验证码（失败才本地正则）→ Telegram（预览 + 邮箱）
 
@@ -16,23 +16,21 @@ Bindings → KV Namespace，Variable name 必须是：DB
 Secrets（推荐）：
 
   TELEGRAM_BOT       token,chat_id
-                     例：8557…:AAF-…,1639064318
-                     （对齐 Docker；也兼容旧 TELEGRAM_TOKEN + TELEGRAM_ID）
+                     格式同 Docker；也兼容旧 TELEGRAM_TOKEN + TELEGRAM_ID
 
-  GEMINI_API_KEY     Google AIza… Key（要 AI 抽码时）
+  GEMINI_API_KEY     Google AI Studio Key（要 AI 抽码时）
 
 
 Vars：
 
-  DOMAIN             例：mail2telegram.shengshk.workers.dev
-                     （不要 https://）
+  DOMAIN             Worker 域名，不要带 https://
+                     例：mail2telegram.<name>.workers.dev
 
   FORWARD_LIST       可选。备份邮箱，多个逗号分隔
-                     例：shengshk+bak@gmail.com
                      须在 Email Routing「目标地址」里已验证
 
 
-下面都有默认值，一般不用配：
+有默认、一般不用配：
 
   GEMINI_MODEL       gemini-2.5-flash-lite
   TIMEZONE           Asia/Shanghai
@@ -47,7 +45,7 @@ Vars：
 wrangler 已 keep_vars=true：不会清空 Dashboard 明文变量。
 密钥用 Secret 更稳。
 
-部署后打开一次：https://你的DOMAIN/init
+部署后打开一次：https://<DOMAIN>/init
 
 
 四、核对
