@@ -3,3 +3,5 @@ main = "src/index.ts"
 compatibility_date = "2025-09-15"
 compatibility_flags = [ "nodejs_compat_v2" ]
 workers_dev = true
+# 保留 Dashboard 里配置的明文变量，避免每次 deploy 清空
+keep_vars = true
