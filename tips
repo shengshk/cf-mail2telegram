@@ -7,7 +7,11 @@ mail2telegram CF Worker 配置备忘
 一、KV（必须）
 -------------
 
-Bindings → KV Namespace，Variable name 必须是：DB
+光有 Workers KV 命名空间不够，还要绑到这个 Worker：
+
+  Worker → 绑定 → KV Namespace
+  变量名必须是：DB
+  （本仓库 wrangler 已写 mail2telegram-db 的 id，部署后应自动带上）
 
 
 二、变量（精简）

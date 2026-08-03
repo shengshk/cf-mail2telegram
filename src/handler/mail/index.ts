@@ -37,6 +37,9 @@ export async function emailHandler(message: ForwardableEmailMessage, env: Enviro
         TIMEZONE,
     } = env;
 
+    if (!DB) {
+        console.error('[mail] KV 绑定 DB 缺失：去 Worker → 绑定，添加 KV，变量名必须是 DB');
+    }
     const dao = new Dao(DB);
     const id = message.headers.get('Message-ID')?.trim() || crypto.randomUUID();
     const isBlock = await isMessageBlock(message, env);
@@ -82,10 +85,19 @@ export async function emailHandler(message: ForwardableEmailMessage, env: Enviro
             const extractText = [mail.subject, mail.text].filter(Boolean).join('\n');
             const short = extractText.length <= 3000 ? extractText : `${extractText.slice(0, 3000)}...`;
             const extract = await extractVerificationCode(short, env);
-            await dao.saveMailCache(mail.id, mail, ttl);
+            // 先发 TG：KV 写失败不应挡住推送（预览依赖 cache，失败仅影响预览/回溯）
+            try {
+                await dao.saveMailCache(mail.id, mail, ttl);
+            } catch (e) {
+                console.error('[mail] saveMailCache failed', e);
+            }
             const msgIDs = await sendMailToTelegram(mail, env, extract);
             for (const msgID of msgIDs) {
-                await dao.saveTelegramIDToMailID(`${msgID}`, mail.id, ttl);
+                try {
+                    await dao.saveTelegramIDToMailID(`${msgID}`, mail.id, ttl);
+                } catch (e) {
+                    console.error('[mail] saveTelegramIDToMailID failed', e);
+                }
             }
         }
         if (isGuardian) {

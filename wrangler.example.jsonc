@@ -9,7 +9,7 @@
 	"kv_namespaces": [
 		{
 			"binding": "DB",
-			"id": ""
+			"id": "YOUR_KV_NAMESPACE_ID"
 		}
 	],
 	"vars": {

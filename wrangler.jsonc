@@ -6,5 +6,11 @@
 		"nodejs_compat_v2"
 	],
 	"workers_dev": true,
-	"keep_vars": true
+	"keep_vars": true,
+	"kv_namespaces": [
+		{
+			"binding": "DB",
+			"id": "203f3647cd8041508233fd48f9b651bf"
+		}
+	]
 }
