@@ -145,7 +145,7 @@ dist
 
 # build
 wrangler.toml
-wrangler.jsonc
+# wrangler.jsonc is committed for Cloudflare Builds
 .idea
 .wrangler
 example

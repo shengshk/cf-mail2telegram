@@ -1,0 +1,9 @@
+{
+	"name": "mail2telegram",
+	"main": "build/index.js",
+	"compatibility_date": "2025-09-15",
+	"compatibility_flags": [
+		"nodejs_compat_v2"
+	],
+	"workers_dev": true
+}
