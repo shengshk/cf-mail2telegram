@@ -80,16 +80,22 @@ Vars：
      （注册 Telegram Webhook）
 
 
-七、Cloudflare Builds
--------------------
+七、Cloudflare Builds（重要）
+---------------------------
 
-仓库根目录必须有 wrangler.jsonc（已提交），否则
-npx wrangler deploy 会报找不到静态资源目录。
+仓库根目录必须有 wrangler.jsonc / wrangler.toml，否则
+npx wrangler deploy 会当成静态站报错。
+
+已开启 keep_vars = true：
+  部署时不会清空你在 Dashboard 里配的明文变量。
+  （加密 Secret 本身也不会被 deploy 删掉。）
 
 KV 绑定继续在 Dashboard → Settings → Bindings 里配 DB。
 若某次部署后绑定丢失，把 KV namespace id 写进 wrangler.jsonc：
 
   "kv_namespaces": [{ "binding": "DB", "id": "你的KV_ID" }]
+
+变量被清空后：到 Dashboard 重新填一遍；之后有 keep_vars 不会再被冲掉。
 
 
 八、核对
