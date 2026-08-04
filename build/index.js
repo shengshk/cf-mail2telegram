@@ -6,27 +6,27 @@ var __export = (target, all2) => {
 
 // node_modules/better-promises/dist/index.js
 var $ = Object.defineProperty;
-var q = (r2, e, t2) => e in r2 ? $(r2, e, { enumerable: true, configurable: true, writable: true, value: t2 }) : r2[e] = t2;
-var w = (r2, e, t2) => q(r2, typeof e != "symbol" ? e + "" : e, t2);
+var q = (r2, e, t3) => e in r2 ? $(r2, e, { enumerable: true, configurable: true, writable: true, value: t3 }) : r2[e] = t3;
+var w = (r2, e, t3) => q(r2, typeof e != "symbol" ? e + "" : e, t3);
 var D = Object.defineProperty;
-var G = (r2, e, t2) => e in r2 ? D(r2, e, { enumerable: true, configurable: true, writable: true, value: t2 }) : r2[e] = t2;
-var E = (r2, e, t2) => G(r2, typeof e != "symbol" ? e + "" : e, t2);
+var G = (r2, e, t3) => e in r2 ? D(r2, e, { enumerable: true, configurable: true, writable: true, value: t3 }) : r2[e] = t3;
+var E = (r2, e, t3) => G(r2, typeof e != "symbol" ? e + "" : e, t3);
 function I(r2) {
   return (e) => e instanceof r2;
 }
 function L(r2, e) {
-  const t2 = class extends Error {
+  const t3 = class extends Error {
     constructor(...d2) {
       const l = typeof e == "function" ? e(...d2) : typeof e == "string" ? [e] : e || [];
       super(...l), this.name = r2;
     }
   };
-  E(t2, "is", I(t2));
-  let c = t2;
+  E(t3, "is", I(t3));
+  let c = t3;
   return Object.defineProperty(c, "name", { value: r2 }), c;
 }
-function H(r2, e, t2) {
-  const c = class extends L(r2, t2) {
+function H(r2, e, t3) {
+  const c = class extends L(r2, t3) {
     constructor(...l) {
       super(...l), E(this, "data"), this.data = e(...l);
     }
@@ -40,7 +40,7 @@ var J = class extends L("CancelledError", "Promise was canceled") {
 var K = class extends H(
   "TimeoutError",
   (e) => ({ timeout: e }),
-  (e, t2) => [`Timeout reached: ${e}ms`, { cause: t2 }]
+  (e, t3) => [`Timeout reached: ${e}ms`, { cause: t3 }]
 ) {
 };
 var S = /* @__PURE__ */ Symbol("resolved");
@@ -51,9 +51,9 @@ function C(r2, e) {
   return r2.reject = e.reject, r2.resolve = e.resolve, r2;
 }
 var g = class _g extends Promise {
-  constructor(t2, c) {
+  constructor(t3, c) {
     let o2, d2, l, p2;
-    typeof t2 == "function" ? (l = t2, p2 = c || {}) : p2 = t2 || {};
+    typeof t3 == "function" ? (l = t3, p2 = c || {}) : p2 = t3 || {};
     let u3, a2;
     const x = () => !!a2, O = () => !!u3;
     let f3 = {};
@@ -132,24 +132,24 @@ var g = class _g extends Promise {
     w(this, "resolve");
     this.reject = o2, this.resolve = d2;
   }
-  static fn(t2, c) {
+  static fn(t3, c) {
     return new _g(async (o2, d2, l) => {
       try {
-        o2(await t2(l));
+        o2(await t3(l));
       } catch (p2) {
         d2(p2);
       }
     }, c);
   }
-  static resolve(t2) {
-    return this.fn(() => t2);
+  static resolve(t3) {
+    return this.fn(() => t3);
   }
   /**
    * @see Promise.reject
    */
-  static reject(t2) {
+  static reject(t3) {
     return new _g((c, o2) => {
-      o2(t2);
+      o2(t3);
     });
   }
   /**
@@ -161,21 +161,21 @@ var g = class _g extends Promise {
   /**
    * @see Promise.catch
    */
-  catch(t2) {
-    return this.then(void 0, t2);
+  catch(t3) {
+    return this.then(void 0, t3);
   }
   /**
    * @see Promise.finally
    */
-  finally(t2) {
-    return C(super.finally(t2), this);
+  finally(t3) {
+    return C(super.finally(t3), this);
   }
   /**
    * @see Promise.then
    */
-  then(t2, c) {
+  then(t3, c) {
     return C(
-      super.then(t2, c),
+      super.then(t3, c),
       this
     );
   }
@@ -383,11 +383,11 @@ function flow(ab2, bc, cd, de, ef, fg, gh, hi, ij) {
   return;
 }
 function tuple() {
-  var t2 = [];
+  var t3 = [];
   for (var _i = 0; _i < arguments.length; _i++) {
-    t2[_i] = arguments[_i];
+    t3[_i] = arguments[_i];
   }
-  return t2;
+  return t3;
 }
 function increment(n) {
   return n + 1;
@@ -2020,9 +2020,9 @@ var __awaiter = function(thisArg, _arguments, P, generator) {
 };
 var __generator = function(thisArg, body) {
   var _ = { label: 0, sent: function() {
-    if (t2[0] & 1) throw t2[1];
-    return t2[1];
-  }, trys: [], ops: [] }, f3, y, t2, g3;
+    if (t3[0] & 1) throw t3[1];
+    return t3[1];
+  }, trys: [], ops: [] }, f3, y, t3, g3;
   return g3 = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g3[Symbol.iterator] = function() {
     return this;
   }), g3;
@@ -2034,12 +2034,12 @@ var __generator = function(thisArg, body) {
   function step(op) {
     if (f3) throw new TypeError("Generator is already executing.");
     while (g3 && (g3 = 0, op[0] && (_ = 0)), _) try {
-      if (f3 = 1, y && (t2 = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t2 = y["return"]) && t2.call(y), 0) : y.next) && !(t2 = t2.call(y, op[1])).done) return t2;
-      if (y = 0, t2) op = [op[0] & 2, t2.value];
+      if (f3 = 1, y && (t3 = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t3 = y["return"]) && t3.call(y), 0) : y.next) && !(t3 = t3.call(y, op[1])).done) return t3;
+      if (y = 0, t3) op = [op[0] & 2, t3.value];
       switch (op[0]) {
         case 0:
         case 1:
-          t2 = op;
+          t3 = op;
           break;
         case 4:
           _.label++;
@@ -2054,25 +2054,25 @@ var __generator = function(thisArg, body) {
           _.trys.pop();
           continue;
         default:
-          if (!(t2 = _.trys, t2 = t2.length > 0 && t2[t2.length - 1]) && (op[0] === 6 || op[0] === 2)) {
+          if (!(t3 = _.trys, t3 = t3.length > 0 && t3[t3.length - 1]) && (op[0] === 6 || op[0] === 2)) {
             _ = 0;
             continue;
           }
-          if (op[0] === 3 && (!t2 || op[1] > t2[0] && op[1] < t2[3])) {
+          if (op[0] === 3 && (!t3 || op[1] > t3[0] && op[1] < t3[3])) {
             _.label = op[1];
             break;
           }
-          if (op[0] === 6 && _.label < t2[1]) {
-            _.label = t2[1];
-            t2 = op;
+          if (op[0] === 6 && _.label < t3[1]) {
+            _.label = t3[1];
+            t3 = op;
             break;
           }
-          if (t2 && _.label < t2[2]) {
-            _.label = t2[2];
+          if (t3 && _.label < t3[2]) {
+            _.label = t3[2];
             _.ops.push(op);
             break;
           }
-          if (t2[2]) _.ops.pop();
+          if (t3[2]) _.ops.pop();
           _.trys.pop();
           continue;
       }
@@ -2081,7 +2081,7 @@ var __generator = function(thisArg, body) {
       op = [6, e];
       y = 0;
     } finally {
-      f3 = t2 = 0;
+      f3 = t3 = 0;
     }
     if (op[0] & 5) throw op[1];
     return { value: op[0] ? op[1] : void 0, done: true };
@@ -2551,10 +2551,10 @@ function getTaskValidation(SE) {
 
 // node_modules/error-kid/dist/index.js
 var u = Object.defineProperty;
-var f = (e, t2, r2) => t2 in e ? u(e, t2, { enumerable: true, configurable: true, writable: true, value: r2 }) : e[t2] = r2;
-var a = (e, t2, r2) => f(e, typeof t2 != "symbol" ? t2 + "" : t2, r2);
+var f = (e, t3, r2) => t3 in e ? u(e, t3, { enumerable: true, configurable: true, writable: true, value: r2 }) : e[t3] = r2;
+var a = (e, t3, r2) => f(e, typeof t3 != "symbol" ? t3 + "" : t3, r2);
 function s(e) {
-  return (t2) => t2 instanceof e;
+  return (t3) => t3 instanceof e;
 }
 function i(e) {
   const r2 = class r3 extends Error {
@@ -2563,8 +2563,8 @@ function i(e) {
     }
   };
   a(r2, "is", s(r2));
-  let t2 = r2;
-  return Object.defineProperty(t2, "name", { value: e.name }), t2;
+  let t3 = r2;
+  return Object.defineProperty(t3, "name", { value: e.name }), t3;
 }
 function d(e) {
   const r2 = class r3 extends i(e) {
@@ -2575,8 +2575,8 @@ function d(e) {
     }
   };
   a(r2, "is", s(r2));
-  let t2 = r2;
-  return Object.defineProperty(t2, "name", { value: e.name }), t2;
+  let t3 = r2;
+  return Object.defineProperty(t3, "name", { value: e.name }), t3;
 }
 
 // node_modules/@tma.js/init-data-node/dist/entries/parsing-Cn-1lfce.js
@@ -2722,30 +2722,30 @@ function validate(value, token2, options) {
 }
 
 // node_modules/itty-router/index.mjs
-var t = ({ base: e = "", routes: t2 = [], ...o2 } = {}) => ({ __proto__: new Proxy({}, { get: (o3, r2, a2, s2) => (o4, ...n) => t2.push([r2.toUpperCase?.(), RegExp(`^${(s2 = (e + o4).replace(/\/+(\/|$)/g, "$1")).replace(/(\/?\.?):(\w+)\+/g, "($1(?<$2>[^]+))").replace(/(\/?\.?):(\w+)/g, "($1(?<$2>[^$1/]+?))").replace(/\./g, "\\.").replace(/(\/?)\*/g, "($1.*)?")}/*$`), n, s2]) && a2 }), routes: t2, ...o2, async fetch(e2, ...r2) {
+var t = ({ base: e = "", routes: t3 = [], ...o2 } = {}) => ({ __proto__: new Proxy({}, { get: (o3, r2, a2, s2) => (o4, ...n) => t3.push([r2.toUpperCase?.(), RegExp(`^${(s2 = (e + o4).replace(/\/+(\/|$)/g, "$1")).replace(/(\/?\.?):(\w+)\+/g, "($1(?<$2>[^]+))").replace(/(\/?\.?):(\w+)/g, "($1(?<$2>[^$1/]+?))").replace(/\./g, "\\.").replace(/(\/?)\*/g, "($1.*)?")}/*$`), n, s2]) && a2 }), routes: t3, ...o2, async fetch(e2, ...r2) {
   let a2, s2, n = new URL(e2.url), c = e2.query = { __proto__: null };
-  for (let [e3, t3] of n.searchParams) c[e3] = c[e3] ? [].concat(c[e3], t3) : t3;
+  for (let [e3, t4] of n.searchParams) c[e3] = c[e3] ? [].concat(c[e3], t4) : t4;
   e: try {
-    for (let t3 of o2.before || []) if (null != (a2 = await t3(e2.proxy ?? e2, ...r2))) break e;
-    t: for (let [o3, c2, l, i2] of t2) if ((o3 == e2.method || "ALL" == o3) && (s2 = n.pathname.match(c2))) {
+    for (let t4 of o2.before || []) if (null != (a2 = await t4(e2.proxy ?? e2, ...r2))) break e;
+    t: for (let [o3, c2, l, i2] of t3) if ((o3 == e2.method || "ALL" == o3) && (s2 = n.pathname.match(c2))) {
       e2.params = s2.groups || {}, e2.route = i2;
-      for (let t3 of l) if (null != (a2 = await t3(e2.proxy ?? e2, ...r2))) break t;
+      for (let t4 of l) if (null != (a2 = await t4(e2.proxy ?? e2, ...r2))) break t;
     }
-  } catch (t3) {
-    if (!o2.catch) throw t3;
-    a2 = await o2.catch(t3, e2.proxy ?? e2, ...r2);
+  } catch (t4) {
+    if (!o2.catch) throw t4;
+    a2 = await o2.catch(t4, e2.proxy ?? e2, ...r2);
   }
   try {
-    for (let t3 of o2.finally || []) a2 = await t3(a2, e2.proxy ?? e2, ...r2) ?? a2;
-  } catch (t3) {
-    if (!o2.catch) throw t3;
-    a2 = await o2.catch(t3, e2.proxy ?? e2, ...r2);
+    for (let t4 of o2.finally || []) a2 = await t4(a2, e2.proxy ?? e2, ...r2) ?? a2;
+  } catch (t4) {
+    if (!o2.catch) throw t4;
+    a2 = await o2.catch(t4, e2.proxy ?? e2, ...r2);
   }
   return a2;
 } });
-var o = (e = "text/plain; charset=utf-8", t2) => (o2, r2 = {}) => {
+var o = (e = "text/plain; charset=utf-8", t3) => (o2, r2 = {}) => {
   if (void 0 === o2 || o2 instanceof Response) return o2;
-  const a2 = new Response(t2?.(o2) ?? o2, r2.url ? void 0 : r2);
+  const a2 = new Response(t3?.(o2) ?? o2, r2.url ? void 0 : r2);
   return a2.headers.set("content-type", e), a2;
 };
 var r = o("application/json; charset=utf-8", JSON.stringify);
@@ -2828,6 +2828,18 @@ var Dao = class {
   async saveTelegramIDToMailID(id, mailID, ttl) {
     await this.db.put(`TelegramID2MailID:${id}`, mailID, { expirationTtl: ttl });
   }
+  async loadPublicHost() {
+    try {
+      const raw = await this.db.get("PUBLIC_HOST");
+      return raw?.trim() || null;
+    } catch (e) {
+      console.error(e);
+      return null;
+    }
+  }
+  async savePublicHost(host) {
+    await this.db.put("PUBLIC_HOST", host);
+  }
 };
 function loadArrayFromRaw(raw) {
   if (!raw) {
@@ -2872,6 +2884,195 @@ function requireTelegram(env) {
   return { token: token2, chatId };
 }
 
+// src/i18n.ts
+var en = {
+  otp: "OTP:",
+  debug: "Debug:",
+  subject: "Subject:",
+  noSubject: "No subject:",
+  empty: "(empty)",
+  from: "From:",
+  to: "To:",
+  previewBtn: "Preview",
+  mailboxBtn: "Mailbox",
+  back: "Back",
+  delete: "Delete",
+  summaryDisabled: "Summary is disabled. Use the Preview button to open the original message.",
+  noContent: "No content",
+  previewTitle: "cf-mail2telegram preview",
+  previewFrom: "From:",
+  previewTo: "To:",
+  noSubjectShort: "(no subject)",
+  previewExpired: "Preview not found or expired",
+  openManager: "Open Manager",
+  addressManager: "Address Manager",
+  cmdCfmail: "Show Chat ID, Worker URL, and list managers",
+  tmaTest: "Test address rules",
+  tmaWhite: "Manage the white list",
+  tmaBlock: "Manage the block list",
+  yourChatId: "Your Chat ID is",
+  workerRoute: "Worker route is",
+  workerRouteMissing: "Worker route is not set. Open the Worker status page and tap the status text to run /init.",
+  tmaListMode: "List Mode",
+  tmaBlockList: "Block list",
+  tmaWhiteList: "White list",
+  tmaTestAddress: "Test",
+  tmaAddress: "address",
+  tmaType: "type",
+  tmaAction: "action",
+  tmaAdd: "Add",
+  tmaDelete: "Delete",
+  tmaPlaceholderBlock: "New block address regex",
+  tmaPlaceholderWhite: "New white address regex",
+  tmaPlaceholderTest: "Test",
+  tmaSendMail: "Send Mail",
+  tmaFrom: "From",
+  tmaTo: "To",
+  tmaSubject: "Subject",
+  tmaText: "Text",
+  tmaSend: "Send"
+};
+var zh = {
+  otp: "\u9A8C\u8BC1\u7801\uFF1A",
+  debug: "\u8C03\u8BD5\uFF1A",
+  subject: "\u4E3B\u9898\uFF1A",
+  noSubject: "\u65E0\u4E3B\u9898\uFF1A",
+  empty: "(\u7A7A)",
+  from: "\u53D1\u4EF6\u4EBA\uFF1A",
+  to: "\u6536\u4EF6\u4EBA\uFF1A",
+  previewBtn: "\u9884\u89C8",
+  mailboxBtn: "\u90AE\u7BB1",
+  back: "\u8FD4\u56DE",
+  delete: "\u5220\u9664",
+  summaryDisabled: "\u6458\u8981\u529F\u80FD\u5DF2\u5173\u95ED\uFF0C\u8BF7\u4F7F\u7528\u9884\u89C8\u6309\u94AE\u67E5\u770B\u539F\u6587\u3002",
+  noContent: "\u65E0\u5185\u5BB9",
+  previewTitle: "cf-mail2telegram \u9884\u89C8",
+  previewFrom: "\u53D1\u4EF6\u4EBA\uFF1A",
+  previewTo: "\u6536\u4EF6\u4EBA\uFF1A",
+  noSubjectShort: "(\u65E0\u4E3B\u9898)",
+  previewExpired: "\u9884\u89C8\u4E0D\u5B58\u5728\u6216\u5DF2\u8FC7\u671F",
+  openManager: "\u6253\u5F00\u7BA1\u7406",
+  addressManager: "\u5730\u5740\u7BA1\u7406",
+  cmdCfmail: "\u663E\u793A Chat ID\u3001Worker \u5730\u5740\u4E0E\u540D\u5355\u7BA1\u7406",
+  tmaTest: "\u6D4B\u8BD5\u5730\u5740\u89C4\u5219",
+  tmaWhite: "\u7BA1\u7406\u767D\u540D\u5355",
+  tmaBlock: "\u7BA1\u7406\u9ED1\u540D\u5355",
+  yourChatId: "\u4F60\u7684 Chat ID \u662F",
+  workerRoute: "Worker\u8DEF\u7531\u662F",
+  workerRouteMissing: "Worker \u8DEF\u7531\u672A\u8BBE\u7F6E\u3002\u8BF7\u6253\u5F00 Worker \u72B6\u6001\u9875\u5E76\u70B9\u51FB\u4E2D\u95F4\u6587\u5B57\u6267\u884C\u521D\u59CB\u5316\u3002",
+  tmaListMode: "\u540D\u5355\u6A21\u5F0F",
+  tmaBlockList: "\u9ED1\u540D\u5355",
+  tmaWhiteList: "\u767D\u540D\u5355",
+  tmaTestAddress: "\u6D4B\u8BD5",
+  tmaAddress: "\u5730\u5740",
+  tmaType: "\u7C7B\u578B",
+  tmaAction: "\u64CD\u4F5C",
+  tmaAdd: "\u6DFB\u52A0",
+  tmaDelete: "\u5220\u9664",
+  tmaPlaceholderBlock: "\u65B0\u9ED1\u540D\u5355\u5730\u5740\u6B63\u5219",
+  tmaPlaceholderWhite: "\u65B0\u767D\u540D\u5355\u5730\u5740\u6B63\u5219",
+  tmaPlaceholderTest: "\u6D4B\u8BD5",
+  tmaSendMail: "\u53D1\u9001\u90AE\u4EF6",
+  tmaFrom: "\u53D1\u4EF6\u4EBA",
+  tmaTo: "\u6536\u4EF6\u4EBA",
+  tmaSubject: "\u4E3B\u9898",
+  tmaText: "\u6B63\u6587",
+  tmaSend: "\u53D1\u9001"
+};
+var tw = {
+  otp: "\u9A57\u8B49\u78BC\uFF1A",
+  debug: "\u9664\u932F\uFF1A",
+  subject: "\u4E3B\u65E8\uFF1A",
+  noSubject: "\u7121\u4E3B\u65E8\uFF1A",
+  empty: "(\u7A7A)",
+  from: "\u5BC4\u4EF6\u8005\uFF1A",
+  to: "\u6536\u4EF6\u8005\uFF1A",
+  previewBtn: "\u9810\u89BD",
+  mailboxBtn: "\u4FE1\u7BB1",
+  back: "\u8FD4\u56DE",
+  delete: "\u522A\u9664",
+  summaryDisabled: "\u6458\u8981\u529F\u80FD\u5DF2\u95DC\u9589\uFF0C\u8ACB\u4F7F\u7528\u9810\u89BD\u6309\u9215\u67E5\u770B\u539F\u6587\u3002",
+  noContent: "\u7121\u5167\u5BB9",
+  previewTitle: "cf-mail2telegram \u9810\u89BD",
+  previewFrom: "\u5BC4\u4EF6\u8005\uFF1A",
+  previewTo: "\u6536\u4EF6\u8005\uFF1A",
+  noSubjectShort: "(\u7121\u4E3B\u65E8)",
+  previewExpired: "\u9810\u89BD\u4E0D\u5B58\u5728\u6216\u5DF2\u904E\u671F",
+  openManager: "\u958B\u555F\u7BA1\u7406",
+  addressManager: "\u5730\u5740\u7BA1\u7406",
+  cmdCfmail: "\u986F\u793A Chat ID\u3001Worker \u5730\u5740\u8207\u540D\u55AE\u7BA1\u7406",
+  tmaTest: "\u6E2C\u8A66\u5730\u5740\u898F\u5247",
+  tmaWhite: "\u7BA1\u7406\u767D\u540D\u55AE",
+  tmaBlock: "\u7BA1\u7406\u9ED1\u540D\u55AE",
+  yourChatId: "\u4F60\u7684 Chat ID \u662F",
+  workerRoute: "Worker\u8DEF\u7531\u662F",
+  workerRouteMissing: "Worker \u8DEF\u7531\u672A\u8A2D\u5B9A\u3002\u8ACB\u958B\u555F Worker \u72C0\u614B\u9801\u4E26\u9EDE\u64CA\u4E2D\u9593\u6587\u5B57\u57F7\u884C\u521D\u59CB\u5316\u3002",
+  tmaListMode: "\u540D\u55AE\u6A21\u5F0F",
+  tmaBlockList: "\u9ED1\u540D\u55AE",
+  tmaWhiteList: "\u767D\u540D\u55AE",
+  tmaTestAddress: "\u6E2C\u8A66",
+  tmaAddress: "\u5730\u5740",
+  tmaType: "\u985E\u578B",
+  tmaAction: "\u64CD\u4F5C",
+  tmaAdd: "\u65B0\u589E",
+  tmaDelete: "\u522A\u9664",
+  tmaPlaceholderBlock: "\u65B0\u9ED1\u540D\u55AE\u5730\u5740\u6B63\u898F\u8868\u793A\u5F0F",
+  tmaPlaceholderWhite: "\u65B0\u767D\u540D\u55AE\u5730\u5740\u6B63\u898F\u8868\u793A\u5F0F",
+  tmaPlaceholderTest: "\u6E2C\u8A66",
+  tmaSendMail: "\u50B3\u9001\u90F5\u4EF6",
+  tmaFrom: "\u5BC4\u4EF6\u8005",
+  tmaTo: "\u6536\u4EF6\u8005",
+  tmaSubject: "\u4E3B\u65E8",
+  tmaText: "\u6B63\u6587",
+  tmaSend: "\u50B3\u9001"
+};
+var catalog = { en, zh, tw };
+function resolveUiLang(env) {
+  const raw = (env.UI_LANG || "en").trim().toLowerCase().replace(/_/g, "-");
+  if (raw === "tw" || raw === "zh-tw" || raw === "zh-hant" || raw === "zh-hk" || raw === "zh-mo") {
+    return "tw";
+  }
+  if (raw === "zh" || raw === "zh-cn" || raw === "zh-hans" || raw === "zh-sg") {
+    return "zh";
+  }
+  return "en";
+}
+function htmlLang(lang) {
+  if (lang === "zh") {
+    return "zh-CN";
+  }
+  if (lang === "tw") {
+    return "zh-TW";
+  }
+  return "en";
+}
+function t2(lang, key) {
+  return catalog[lang][key] || catalog.en[key] || key;
+}
+function tmaI18nPayload(lang) {
+  return {
+    listMode: t2(lang, "tmaListMode"),
+    blockList: t2(lang, "tmaBlockList"),
+    whiteList: t2(lang, "tmaWhiteList"),
+    testAddress: t2(lang, "tmaTestAddress"),
+    address: t2(lang, "tmaAddress"),
+    type: t2(lang, "tmaType"),
+    action: t2(lang, "tmaAction"),
+    add: t2(lang, "tmaAdd"),
+    delete: t2(lang, "tmaDelete"),
+    test: t2(lang, "tmaTestAddress"),
+    placeholderBlock: t2(lang, "tmaPlaceholderBlock"),
+    placeholderWhite: t2(lang, "tmaPlaceholderWhite"),
+    placeholderTest: t2(lang, "tmaPlaceholderTest"),
+    sendMail: t2(lang, "tmaSendMail"),
+    from: t2(lang, "tmaFrom"),
+    to: t2(lang, "tmaTo"),
+    subject: t2(lang, "tmaSubject"),
+    text: t2(lang, "tmaText"),
+    send: t2(lang, "tmaSend")
+  };
+}
+
 // src/mail/preview.ts
 var PREVIEW_CSS = `
 *{box-sizing:border-box}
@@ -2905,23 +3106,24 @@ function sanitizeHtmlForPreview(rawHtml, maxLength = 2e5) {
   }
   return html;
 }
-function renderPreviewPage(mail, bodyHtml) {
-  const subject = escapeHtml(mail.subject || "(\u65E0\u4E3B\u9898)");
+function renderPreviewPage(mail, bodyHtml, env) {
+  const lang = resolveUiLang(env || {});
+  const subject = escapeHtml(mail.subject || t2(lang, "noSubjectShort"));
   const sender = escapeHtml(mail.from || "");
   const recipient = escapeHtml(mail.to || "");
   const when = escapeHtml(mail.date || "");
   const canvas = bodyHtml.trim() ? bodyHtml : `<pre style="white-space:pre-wrap;margin:0">${escapeHtml(mail.text || "")}</pre>`;
-  return `<!doctype html><html lang="zh"><head><meta charset="utf-8">
+  return `<!doctype html><html lang="${htmlLang(lang)}"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="referrer" content="no-referrer">
 <title>${subject}</title><style>${PREVIEW_CSS}</style></head>
 <body>
 <div class="preview">
-  <div class="preview-bar"><span>mail2telegram \u9884\u89C8</span></div>
+  <div class="preview-bar"><span>${escapeHtml(t2(lang, "previewTitle"))}</span></div>
   <div class="preview-sheet">
     <div class="preview-meta">
       <h1>${subject}</h1>
-      <div class="meta">\u53D1\u4EF6\u4EBA\uFF1A${sender}<br>\u6536\u4EF6\u4EBA\uFF1A${recipient}${when ? `<br>${when}` : ""}</div>
+      <div class="meta">${escapeHtml(t2(lang, "previewFrom"))} ${sender}<br>${escapeHtml(t2(lang, "previewTo"))} ${recipient}${when ? `<br>${when}` : ""}</div>
     </div>
     <div class="mail-canvas">${canvas}</div>
   </div>
@@ -2929,14 +3131,45 @@ function renderPreviewPage(mail, bodyHtml) {
 </body></html>`;
 }
 
+// src/public-host.ts
+function normalizePublicHost(raw) {
+  let host = raw.trim();
+  if (!host) {
+    return "";
+  }
+  host = host.replace(/^https?:\/\//i, "");
+  host = host.split("/")[0] || "";
+  host = host.replace(/:\d+$/, "");
+  return host.trim().toLowerCase();
+}
+function publicHostFromRequest(req) {
+  return normalizePublicHost(new URL(req.url).host);
+}
+async function savePublicHost(dao, host) {
+  const normalized = normalizePublicHost(host);
+  if (!normalized) {
+    throw new Error("Empty public host");
+  }
+  await dao.savePublicHost(normalized);
+  return normalized;
+}
+async function loadPublicHost(env) {
+  if (!env.DB) {
+    return void 0;
+  }
+  const dao = new Dao(env.DB);
+  const host = await dao.loadPublicHost();
+  return host || void 0;
+}
+
 // src/telegram/tma.html
 var tma_default = `<!DOCTYPE html>
-<html lang="zh">
+<html lang="__UI_LANG__">
 
 <head>
   <meta charset="UTF-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
-  <title>mail2telegram</title>
+  <title>cf-mail2telegram</title>
   <script src="https://telegram.org/js/telegram-web-app.js"><\/script>
   <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"><\/script>
   <link href="https://unpkg.com/boltcss/bolt.min.css" rel="stylesheet">
@@ -2983,19 +3216,19 @@ var tma_default = `<!DOCTYPE html>
   <div id="app">
     <div v-if="func === 'list'">
       <h3 class="growContainer">
-        List Mode
+        {{ i18n.listMode }}
         <select class="growItem" style="margin-left: 10px;" v-model="mode">
-          <option value="block">Block list</option>
-          <option value="white">White list</option>
-          <option value="test">Test address</option>
+          <option value="block">{{ i18n.blockList }}</option>
+          <option value="white">{{ i18n.whiteList }}</option>
+          <option value="test">{{ i18n.testAddress }}</option>
         </select>
       </h3>
       <p v-if="tipMessage">{{ tipMessage }}</p>
       <table>
         <thead>
           <tr>
-            <th>address</th>
-            <th>{{ mode === 'test' ? 'type' : 'action' }}</th>
+            <th>{{ i18n.address }}</th>
+            <th>{{ mode === 'test' ? i18n.type : i18n.action }}</th>
           </tr>
         </thead>
         <tbody v-if="mode!=='test'">
@@ -3004,13 +3237,13 @@ var tma_default = `<!DOCTYPE html>
               <input :placeholder="inputPlaceholder" class="growItem" v-model="inputAddress">
             </td>
             <td>
-              <button @click="addAddress">Add</button>
+              <button @click="addAddress">{{ i18n.add }}</button>
             </td>
           </tr>
           <tr :key="index" v-for="(address, index) in addresses">
             <td>{{ address }}</td>
             <td>
-              <button @click="removeAddress(index)">Delete</button>
+              <button @click="removeAddress(index)">{{ i18n.delete }}</button>
             </td>
           </tr>
         </tbody>
@@ -3020,7 +3253,7 @@ var tma_default = `<!DOCTYPE html>
               <input :placeholder="inputPlaceholder" class="growItem" v-model="inputAddress">
             </td>
             <td>
-              <button @click="testAddress">Test</button>
+              <button @click="testAddress">{{ i18n.test }}</button>
             </td>
           </tr>
           <tr :key="index" v-for="(item, index) in addresses">
@@ -3031,37 +3264,37 @@ var tma_default = `<!DOCTYPE html>
       </table>
     </div>
     <div v-if="func === 'sendmail'">
-      <h3>Send Mail</h3>
+      <h3>{{ i18n.sendMail }}</h3>
       <p v-if="tipMessage">{{ tipMessage }}</p>
       <table>
         <tbody>
           <tr>
-            <td style="width: 10px;">From</td>
+            <td style="width: 10px;">{{ i18n.from }}</td>
             <td>
               <input v-model="sendMail.from" class="growItem">
             </td>
           </tr>
           <tr>
-            <td>To</td>
+            <td>{{ i18n.to }}</td>
             <td>
               <input v-model="sendMail.to" class="growItem">
             </td>
           </tr>
           <tr>
-            <td>Subject</td>
+            <td>{{ i18n.subject }}</td>
             <td>
               <input v-model="sendMail.subject" class="growItem">
             </td>
           </tr>
           <tr>
-            <td>Text</td>
+            <td>{{ i18n.text }}</td>
             <td>
               <textarea v-model="sendMail.text" class="growItem"></textarea>
             </td>
           </tr>
           <tr>
             <td colspan="2">
-              <button>Send</button>
+              <button>{{ i18n.send }}</button>
             </td>
           </tr>
         </tbody>
@@ -3070,6 +3303,7 @@ var tma_default = `<!DOCTYPE html>
   </div>
 
   <script>
+    const I18N = __I18N_JSON__;
     const { createApp, computed, ref, onMounted, watch } = Vue;
 
 
@@ -3120,6 +3354,7 @@ var tma_default = `<!DOCTYPE html>
       setup() {
 
         const urlParams = new URLSearchParams(window.location.search);
+        const i18n = I18N;
 
         const blockList = ref([]);
         const whiteList = ref([]);
@@ -3152,11 +3387,11 @@ var tma_default = `<!DOCTYPE html>
         const inputPlaceholder = computed(() => {
           switch (mode.value) {
             case 'block':
-              return 'New block address regex';
+              return i18n.placeholderBlock;
             case 'white':
-              return 'New white address regex';
+              return i18n.placeholderWhite;
             case 'test':
-              return 'Test address';
+              return i18n.placeholderTest;
           }
         });
 
@@ -3255,6 +3490,7 @@ var tma_default = `<!DOCTYPE html>
         });
 
         return {
+          i18n,
           addresses,
           tipMessage,
           inputAddress,
@@ -3272,7 +3508,8 @@ var tma_default = `<!DOCTYPE html>
   <\/script>
 </body>
 
-</html>`;
+</html>
+`;
 
 // src/telegram/api.ts
 var APIClientBase = class {
@@ -3348,29 +3585,14 @@ function createTelegramBotAPI(token2) {
 }
 
 // src/telegram/const.ts
-var tmaModeDescription = {
-  test: "Test an email address",
-  white: "Manage the white list",
-  block: "Manage the block list"
-};
-var telegramCommands = [
-  {
-    command: "id",
-    description: "/id - Get your chat ID"
-  },
-  {
-    command: "test",
-    description: `/test - ${tmaModeDescription.test}`
-  },
-  {
-    command: "white",
-    description: `/white - ${tmaModeDescription.white}`
-  },
-  {
-    command: "block",
-    description: `/block - ${tmaModeDescription.block}`
-  }
-];
+function telegramCommands(lang) {
+  return [
+    {
+      command: "cfmail",
+      description: t2(lang, "cmdCfmail")
+    }
+  ];
+}
 
 // src/mail/check.ts
 function testAddress(address, pattern) {
@@ -3560,7 +3782,7 @@ var LlmNetworkError = class extends Error {
   }
 };
 function desensitizeText(text) {
-  return text.replace(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g, "***.***.***.***").replace(/http[s]?:\/\/\S+/g, "http://****").replace(/\b\d{10,11}\b/g, "**********").replace(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, "****@****.***").replace(/\b\d{13,19}\b/g, "********************");
+  return text.replace(/&nbsp;|&#160;|\u00a0/gi, " ").replace(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g, "***.***.***.***").replace(/http[s]?:\/\/\S+/g, "http://****").replace(/\b\d{10,11}\b/g, "**********").replace(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, "****@****.***").replace(/\b\d{13,19}\b/g, "********************");
 }
 function containsVerificationKeywords(text) {
   const lowered = text.toLowerCase();
@@ -3574,10 +3796,16 @@ function extractCodeLocal(text) {
     /(?<!\d)(\d{4,6})(?!\d)/g,
     /(?<![0-9a-zA-Z])([0-9a-zA-Z]{4,8})(?![0-9a-zA-Z])/g
   ];
+  const skip = /* @__PURE__ */ new Set(["nbsp", "http", "https", "none", "null", "true", "false"]);
   for (const pattern of patterns) {
-    const match4 = pattern.exec(cleaned);
-    if (match4?.[1]) {
-      return match4[1];
+    pattern.lastIndex = 0;
+    let match4;
+    while ((match4 = pattern.exec(cleaned)) !== null) {
+      const cand = match4[1];
+      if (!cand || skip.has(cand.toLowerCase())) {
+        continue;
+      }
+      return cand;
     }
   }
   return void 0;
@@ -3622,8 +3850,16 @@ async function extractCodeGemini(text, env) {
     })
   });
   if (!resp.ok) {
-    const body = (await resp.text()).slice(0, 300);
-    throw new LlmNetworkError(`Gemini API ${resp.status}: ${body}`);
+    const body = (await resp.text()).slice(0, 500);
+    let detail = body;
+    try {
+      const j = JSON.parse(body);
+      if (j?.error?.message) {
+        detail = j.error.message;
+      }
+    } catch {
+    }
+    throw new LlmNetworkError(`Gemini API ${resp.status}: ${detail}`);
   }
   const data = await resp.json();
   const choice = data.choices?.[0];
@@ -3646,59 +3882,188 @@ async function extractVerificationCode(text, env) {
     console.log("[extract] gemini \u8FD4\u56DE None\uFF0C\u4E0D\u8FDB\u884C\u672C\u5730\u515C\u5E95");
     return { reason: "llm_none" };
   } catch (e) {
+    const errMsg = e instanceof Error ? e.message : String(e);
     if (!(e instanceof LlmNetworkError)) {
-      console.warn(`[extract] gemini \u8C03\u7528\u5F02\u5E38\uFF0C\u542F\u7528\u672C\u5730\u6B63\u5219\u515C\u5E95: ${e.message}`);
+      console.warn(`[extract] gemini \u8C03\u7528\u5F02\u5E38\uFF0C\u542F\u7528\u672C\u5730\u6B63\u5219\u515C\u5E95: ${errMsg}`);
     } else {
-      console.warn(`[extract] gemini \u8C03\u7528\u5931\u8D25\uFF0C\u542F\u7528\u672C\u5730\u6B63\u5219\u515C\u5E95: ${e.message}`);
+      console.warn(`[extract] gemini \u8C03\u7528\u5931\u8D25\uFF0C\u542F\u7528\u672C\u5730\u6B63\u5219\u515C\u5E95: ${errMsg}`);
     }
     const code = extractCodeLocal(text);
     if (code) {
       console.log(`[extract] \u672C\u5730\u6B63\u5219\u63D0\u53D6\u6210\u529F: ${code}`);
-      return { code, source: "local" };
+      return { code, source: "local", reason: errMsg };
     }
-    return { reason: "local_none_after_error" };
+    return { reason: `local_none_after_error: ${errMsg}` };
   }
 }
 function truncateDisplay(text, maxLen = 80) {
-  const t2 = (text || "").replace(/\s+/g, " ").trim();
-  if (t2.length <= maxLen) {
-    return t2;
+  const t3 = (text || "").replace(/\s+/g, " ").trim();
+  if (t3.length <= maxLen) {
+    return t3;
   }
-  return `${t2.slice(0, maxLen)}\u2026`;
+  return `${t3.slice(0, maxLen)}\u2026`;
+}
+
+// src/mail/forward.ts
+var FORWARD_MAIL_RE = /^FORWARD_MAIL(\d*)$/;
+function parseForwardEmailValue(raw) {
+  const trimmed = raw.trim();
+  if (!trimmed) {
+    return void 0;
+  }
+  const comma = trimmed.indexOf(",");
+  if (comma < 0) {
+    return { email: trimmed };
+  }
+  const email = trimmed.slice(0, comma).trim();
+  const folder = trimmed.slice(comma + 1).trim();
+  if (!email) {
+    return void 0;
+  }
+  return folder ? { email, folder } : { email };
+}
+function listForwardTargets(env) {
+  const found = /* @__PURE__ */ new Map();
+  const consider = (order, raw) => {
+    const s2 = String(raw ?? "").trim();
+    if (!s2 || found.has(order)) {
+      return;
+    }
+    found.set(order, s2);
+  };
+  consider(-1, env.FORWARD_MAIL);
+  const bag = env;
+  for (const key of Object.keys(bag)) {
+    const m = FORWARD_MAIL_RE.exec(key);
+    if (!m) {
+      continue;
+    }
+    const order = m[1] === "" ? -1 : Number.parseInt(m[1], 10);
+    if (!Number.isFinite(order)) {
+      continue;
+    }
+    consider(order, bag[key]);
+  }
+  for (let i2 = 0; i2 <= 64; i2++) {
+    consider(i2, bag[`FORWARD_MAIL${i2}`]);
+  }
+  if (found.size > 0) {
+    const orders = [...found.keys()].sort((a2, b) => a2 - b);
+    const out = [];
+    const seen = /* @__PURE__ */ new Set();
+    for (const order of orders) {
+      const parsed = parseForwardEmailValue(found.get(order));
+      if (!parsed) {
+        continue;
+      }
+      const key = parsed.email.toLowerCase();
+      if (seen.has(key)) {
+        continue;
+      }
+      seen.add(key);
+      out.push(parsed);
+    }
+    return out;
+  }
+  const list = (env.FORWARD_LIST || "").split(",").map((s2) => s2.trim()).filter(Boolean);
+  const folder = (env.FORWARD_DIR || env.GMAIL_LABEL || "").trim();
+  return list.map((email, i2) => i2 === 0 && folder ? { email, folder } : { email });
+}
+function forwardEmailAddresses(env) {
+  return listForwardTargets(env).map((t3) => t3.email);
+}
+function primaryForwardTarget(env) {
+  return listForwardTargets(env)[0];
 }
 
 // src/mail/mailbox.ts
-function gmailMailboxUrl(mail, env) {
+function emailDomain(address) {
+  const at = address.lastIndexOf("@");
+  return at >= 0 ? address.slice(at + 1).toLowerCase() : "";
+}
+function isGmailDomain(domain) {
+  return domain === "gmail.com" || domain === "googlemail.com";
+}
+function isOutlookDomain(domain) {
+  return domain === "outlook.com" || domain === "hotmail.com" || domain === "live.com" || domain === "msn.com";
+}
+function gmailU(env) {
   const u3 = Number.parseInt(env.GMAIL_U || "0", 10);
-  const gmailU = Number.isFinite(u3) && u3 >= 0 ? u3 : 0;
-  if (mail.gmThrid) {
-    const raw = mail.gmThrid.trim();
-    if (/^\d+$/.test(raw)) {
-      try {
-        const hexId = BigInt(raw).toString(16);
-        const label = (env.GMAIL_LABEL || "INBOX").trim();
-        if (!label || label.toUpperCase() === "INBOX") {
-          return `https://mail.google.com/mail/u/${gmailU}/#inbox/${hexId}`;
-        }
-        return `https://mail.google.com/mail/u/${gmailU}/#label/${encodeURIComponent(label)}/${hexId}`;
-      } catch {
-      }
-    }
-  }
-  const mid = (mail.messageId || "").trim().replace(/^<|>$/g, "");
-  if (!mid) {
+  return Number.isFinite(u3) && u3 >= 0 ? u3 : 0;
+}
+function primaryFolder(env) {
+  return (primaryForwardTarget(env)?.folder || "").trim();
+}
+function gmailThridUrl(thrid, env) {
+  const raw = thrid.trim();
+  if (!/^\d+$/.test(raw)) {
     return void 0;
   }
-  const q2 = encodeURIComponent(`rfc822msgid:${mid}`);
-  return `https://mail.google.com/mail/u/${gmailU}/#search/${q2}`;
+  try {
+    const hexId = BigInt(raw).toString(16);
+    const label = primaryFolder(env) || "INBOX";
+    const u3 = gmailU(env);
+    if (label.toUpperCase() === "INBOX") {
+      return `https://mail.google.com/mail/u/${u3}/#inbox/${hexId}`;
+    }
+    return `https://mail.google.com/mail/u/${u3}/#label/${encodeURIComponent(label)}/${hexId}`;
+  } catch {
+    return void 0;
+  }
 }
-function buildKeyboard(previewUrl, mailboxUrl) {
+function gmailFolderOrHome(env) {
+  const u3 = gmailU(env);
+  const dir = primaryFolder(env);
+  if (dir) {
+    if (dir.toUpperCase() === "INBOX") {
+      return `https://mail.google.com/mail/u/${u3}/#inbox`;
+    }
+    return `https://mail.google.com/mail/u/${u3}/#label/${encodeURIComponent(dir)}`;
+  }
+  return `https://mail.google.com/mail/u/${u3}/`;
+}
+function providerHomeUrl(address) {
+  const domain = emailDomain(address);
+  if (!domain) {
+    return "https://mail.google.com/";
+  }
+  if (isGmailDomain(domain)) {
+    return "";
+  }
+  if (isOutlookDomain(domain)) {
+    return "https://outlook.live.com/mail/";
+  }
+  return `https://mail.${domain}`;
+}
+function mailboxButtonUrl(mail, env) {
+  if (mail.gmThrid) {
+    const precise = gmailThridUrl(mail.gmThrid, env);
+    if (precise) {
+      return precise;
+    }
+  }
+  const primary = primaryForwardTarget(env);
+  const first2 = primary?.email || "";
+  const dir = primary?.folder || "";
+  if (!first2) {
+    if (dir) {
+      return gmailFolderOrHome(env);
+    }
+    return void 0;
+  }
+  const domain = emailDomain(first2);
+  if (isGmailDomain(domain)) {
+    return gmailFolderOrHome(env);
+  }
+  return providerHomeUrl(first2) || void 0;
+}
+function buildKeyboard(previewUrl, mailboxUrl, lang) {
   const row = [];
   if (previewUrl) {
-    row.push({ text: "\u9884\u89C8", url: previewUrl });
+    row.push({ text: t2(lang, "previewBtn"), url: previewUrl });
   }
   if (mailboxUrl) {
-    row.push({ text: "\u90AE\u7BB1", url: mailboxUrl });
+    row.push({ text: t2(lang, "mailboxBtn"), url: mailboxUrl });
   }
   if (!row.length) {
     return void 0;
@@ -4486,9 +4851,9 @@ function maxSpec([a0, a1, a2], [b0, b1, b2]) {
 function maxAllSpec(ss) {
   return ss.reduce(maxSpec, [0, 0, 0]);
 }
-var unicodeEscapedSequence_ = token((t2) => t2.name === "unicode" ? String.fromCodePoint(parseInt(t2.text.slice(1), 16)) : void 0);
-var escapedSequence_ = token((t2) => t2.name === "escape" ? t2.text.slice(1) : void 0);
-var anyChar_ = token((t2) => t2.name === "any" ? t2.text : void 0);
+var unicodeEscapedSequence_ = token((t3) => t3.name === "unicode" ? String.fromCodePoint(parseInt(t3.text.slice(1), 16)) : void 0);
+var escapedSequence_ = token((t3) => t3.name === "escape" ? t3.text.slice(1) : void 0);
+var anyChar_ = token((t3) => t3.name === "any" ? t3.text : void 0);
 var escapedString_ = map7(many(first(unicodeEscapedSequence_, escapedSequence_, anyChar_)), (cs) => cs.join(""));
 function unescape(escapedString) {
   const lexerResult = lexEscapedString(escapedString);
@@ -4496,16 +4861,16 @@ function unescape(escapedString) {
   return result.value;
 }
 function literal(name2) {
-  return token((t2) => t2.name === name2 ? true : void 0);
+  return token((t3) => t3.name === name2 ? true : void 0);
 }
-var whitespace_ = token((t2) => t2.name === "ws" ? null : void 0);
+var whitespace_ = token((t3) => t3.name === "ws" ? null : void 0);
 var optionalWhitespace_ = option(whitespace_, null);
 function optionallySpaced(parser) {
   return middle(optionalWhitespace_, parser, optionalWhitespace_);
 }
-var identifier_ = token((t2) => t2.name === "ident" ? unescape(t2.text) : void 0);
-var hashId_ = token((t2) => t2.name === "hash" ? unescape(t2.text.slice(1)) : void 0);
-var string_ = token((t2) => t2.name.startsWith("str") ? unescape(t2.text.slice(1, -1)) : void 0);
+var identifier_ = token((t3) => t3.name === "ident" ? unescape(t3.text) : void 0);
+var hashId_ = token((t3) => t3.name === "hash" ? unescape(t3.text.slice(1)) : void 0);
+var string_ = token((t3) => t3.name.startsWith("str") ? unescape(t3.text.slice(1, -1)) : void 0);
 var namespace_ = left5(option(identifier_, ""), literal("|"));
 var qualifiedName_ = eitherOr(ab(namespace_, identifier_, (ns, name2) => ({ name: name2, namespace: ns })), map7(identifier_, (name2) => ({ name: name2, namespace: null })));
 var uniSelector_ = eitherOr(ab(namespace_, literal("*"), (ns) => ({ type: "universal", namespace: ns, specificity: [0, 0, 0] })), map7(literal("*"), () => ({ type: "universal", namespace: null, specificity: [0, 0, 0] })));
@@ -4525,12 +4890,12 @@ var idSelector_ = map7(hashId_, (name2) => ({
   name: name2,
   specificity: [1, 0, 0]
 }));
-var attrModifier_ = token((t2) => {
-  if (t2.name === "ident") {
-    if (t2.text === "i" || t2.text === "I") {
+var attrModifier_ = token((t3) => {
+  if (t3.name === "ident") {
+    if (t3.text === "i" || t3.text === "I") {
       return "i";
     }
-    if (t2.text === "s" || t2.text === "S") {
+    if (t3.text === "s" || t3.text === "S") {
       return "s";
     }
   }
@@ -4622,7 +4987,7 @@ function parse_(parser, str) {
   return result.value;
 }
 function prettyPrintPosition(str, offset, len = 1) {
-  return `${str.replace(/(\t)|(\r)|(\n)/g, (_m, t2, r2) => t2 ? "\u2409" : r2 ? "\u240D" : "\u240A")}
+  return `${str.replace(/(\t)|(\r)|(\n)/g, (_m, t3, r2) => t3 ? "\u2409" : r2 ? "\u240D" : "\u240A")}
 ${"".padEnd(offset)}${"^".repeat(len)}`;
 }
 function parse1(str) {
@@ -13487,52 +13852,62 @@ async function parseEmail(message, maxSize, maxSizePolicy, useEmlHeaders = false
 }
 
 // src/mail/render.ts
+function escapeHtml3(s2) {
+  return s2.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+function isDebug(env) {
+  return (env.DEBUG || "").toLowerCase() === "true";
+}
 async function renderEmailListMode(mail, env, extract) {
-  const { DOMAIN } = env;
+  const lang = resolveUiLang(env);
+  const host = await loadPublicHost(env);
   const lines = [];
   if (extract?.code) {
-    let codeLine = `\u9A8C\u8BC1\u7801\uFF1A${extract.code}`;
-    if (extract.source === "local") {
-      codeLine += " \xB7 \u672C\u5730";
+    const code = escapeHtml3(extract.code);
+    const styled = extract.source === "local" ? `<i>${code}</i>` : `<b>${code}</b>`;
+    lines.push(`${t2(lang, "otp")} ${styled}`);
+    if (extract.source === "local" && extract.reason && isDebug(env)) {
+      lines.push(`${t2(lang, "debug")} ${escapeHtml3(truncateDisplay(extract.reason, 80))}`);
     }
-    lines.push(codeLine);
   } else {
     const subject = (mail.subject || "").trim();
     if (subject) {
-      lines.push(`\u4E3B\u9898\uFF1A${truncateDisplay(subject)}`);
+      lines.push(`${t2(lang, "subject")} ${escapeHtml3(truncateDisplay(subject))}`);
     } else {
       const preview = truncateDisplay((mail.text || "").replace(/\s+/g, " ").trim());
-      lines.push(`\u65E0\u4E3B\u9898\uFF1A${preview || "(\u7A7A)"}`);
+      lines.push(`${t2(lang, "noSubject")} ${escapeHtml3(preview || t2(lang, "empty"))}`);
     }
   }
-  lines.push(`\u53D1\u4EF6\u4EBA\uFF1A${mail.from || ""}`);
-  lines.push(`\u6536\u4EF6\u4EBA\uFF1A${mail.to || ""}`);
+  lines.push(`${t2(lang, "from")} ${escapeHtml3(mail.from || "")}`);
+  lines.push(`${t2(lang, "to")} ${escapeHtml3(mail.to || "")}`);
   if (mail.date) {
-    lines.push(mail.date);
+    lines.push(escapeHtml3(mail.date));
   }
-  const previewUrl = (mail.html || mail.text) && DOMAIN ? `https://${DOMAIN}/email/${mail.id}` : void 0;
-  const mailboxUrl = gmailMailboxUrl(mail, env);
-  const reply_markup = buildKeyboard(previewUrl, mailboxUrl);
+  const previewUrl = (mail.html || mail.text) && host ? `https://${host}/email/${mail.id}` : void 0;
+  const mailboxUrl = mailboxButtonUrl(mail, env);
+  const reply_markup = buildKeyboard(previewUrl, mailboxUrl, lang);
   return {
     text: lines.join("\n"),
+    parse_mode: "HTML",
     reply_markup,
     link_preview_options: {
       is_disabled: true
     }
   };
 }
-function renderEmailDetail(text, id) {
+function renderEmailDetail(text, id, env) {
+  const lang = resolveUiLang(env);
   return {
-    text: text || "No content",
+    text: text || t2(lang, "noContent"),
     reply_markup: {
       inline_keyboard: [
         [
           {
-            text: "\u8FD4\u56DE",
+            text: t2(lang, "back"),
             callback_data: `l:${id}`
           },
           {
-            text: "\u5220\u9664",
+            text: t2(lang, "delete"),
             callback_data: "delete"
           }
         ]
@@ -13543,17 +13918,18 @@ function renderEmailDetail(text, id) {
     }
   };
 }
-async function renderEmailPreviewMode(mail, _env) {
-  return renderEmailDetail(mail.text?.substring(0, 4096), mail.id);
+async function renderEmailPreviewMode(mail, env) {
+  return renderEmailDetail(mail.text?.substring(0, 4096), mail.id, env);
 }
-async function renderEmailSummaryMode(mail, _env) {
-  return renderEmailDetail("\u6458\u8981\u529F\u80FD\u5DF2\u5173\u95ED\uFF0C\u8BF7\u4F7F\u7528\u9884\u89C8\u6309\u94AE\u67E5\u770B\u539F\u6587\u3002", mail.id);
+async function renderEmailSummaryMode(mail, env) {
+  const lang = resolveUiLang(env);
+  return renderEmailDetail(t2(lang, "summaryDisabled"), mail.id, env);
 }
-async function renderEmailDebugMode(mail, _env) {
+async function renderEmailDebugMode(mail, env) {
   const obj = { ...mail };
   delete obj.html;
   delete obj.text;
-  return renderEmailDetail(JSON.stringify(obj, null, 2), mail.id);
+  return renderEmailDetail(JSON.stringify(obj, null, 2), mail.id, env);
 }
 
 // src/mail/resend.ts
@@ -13604,29 +13980,35 @@ async function logTelegramResponse(method, response) {
   }
   logTelegram("api.response", data);
 }
-function handleIDCommand(env) {
-  return async (msg) => {
-    const text = `Your chat ID is ${msg.chat.id}`;
-    return await handleOpenTMACommand("", text, env)(msg);
-  };
-}
-function handleOpenTMACommand(mode, text, env) {
+function handleCfmailCommand(env) {
   return async (msg) => {
     const { token: token2 } = requireTelegram(env);
-    const { DOMAIN } = env;
+    const lang = resolveUiLang(env);
+    const host = await loadPublicHost(env);
+    const lines = [
+      `${t2(lang, "yourChatId")} ${msg.chat.id}`,
+      host ? `${t2(lang, "workerRoute")} https://${host}/` : t2(lang, "workerRouteMissing")
+    ];
     const params = {
       chat_id: msg.chat.id,
-      text: text || tmaModeDescription[mode] || "Address Manager"
+      text: lines.join("\n"),
+      disable_web_page_preview: true
     };
-    if (msg.chat.type === "private") {
+    if (msg.chat.type === "private" && host) {
       params.reply_markup = {
         inline_keyboard: [
           [
             {
-              text: "Open Manager",
-              web_app: {
-                url: `https://${DOMAIN}/tma?mode=${mode}`
-              }
+              text: t2(lang, "tmaBlockList"),
+              web_app: { url: `https://${host}/tma?mode=block` }
+            },
+            {
+              text: t2(lang, "tmaWhiteList"),
+              web_app: { url: `https://${host}/tma?mode=white` }
+            },
+            {
+              text: t2(lang, "tmaTestAddress"),
+              web_app: { url: `https://${host}/tma?mode=test` }
             }
           ]
         ]
@@ -13707,12 +14089,11 @@ async function telegramCommandHandler(message, env) {
     return;
   }
   command = command.substring(1);
+  command = command.split("@")[0] || command;
+  const cfmail = handleCfmailCommand(env);
   const handlers = {
-    id: handleIDCommand(env),
-    start: handleIDCommand(env),
-    test: handleOpenTMACommand("test", null, env),
-    white: handleOpenTMACommand("white", null, env),
-    block: handleOpenTMACommand("block", null, env)
+    cfmail,
+    start: cfmail
   };
   if (handlers[command]) {
     logTelegram("command.handle", { command, chatId: message.chat.id, messageId: message.message_id });
@@ -13720,7 +14101,7 @@ async function telegramCommandHandler(message, env) {
     return;
   }
   logTelegram("command.unknown", { command, chatId: message.chat.id, messageId: message.message_id });
-  await handleOpenTMACommand("", `Unknown command: ${command}, try to reinitialize the bot.`, env)(message);
+  await cfmail(message);
 }
 async function telegramCallbackHandler(callback, env) {
   const { token: token2 } = requireTelegram(env);
@@ -13826,6 +14207,227 @@ async function telegramWebhookHandler(req, env) {
   logTelegram("webhook.unhandled_update", { updateId: body?.update_id, keys: body ? Object.keys(body) : [] });
 }
 
+// src/status.html
+var status_default = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mail2Telegram</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3CradialGradient id='g' cx='35%25' cy='30%25' r='70%25'%3E%3Cstop offset='0%25' stop-color='%238dffc4'/%3E%3Cstop offset='45%25' stop-color='%233ecf8e'/%3E%3Cstop offset='100%25' stop-color='%231a5c3c'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='28' fill='url(%23g)'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;600;700&family=Noto+Sans+SC:wght@500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg0: #0b1210;
+      --glow: #3ecf8e;
+      --text: #e8f5ee;
+      --muted: #7a9a88;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+    }
+
+    body {
+      min-height: 100%;
+      display: grid;
+      place-items: center;
+      color: var(--text);
+      font-family: "Unbounded", "Noto Sans SC", sans-serif;
+      background:
+        radial-gradient(ellipse 80% 60% at 50% 35%, #1a3a2a 0%, transparent 55%),
+        radial-gradient(ellipse 100% 80% at 50% 100%, #0e1c16 0%, var(--bg0) 60%);
+      overflow: hidden;
+      cursor: default;
+      user-select: none;
+    }
+
+    .stage {
+      text-align: center;
+      padding: 1.5rem;
+      pointer-events: none;
+    }
+
+    .orb {
+      width: 72px;
+      height: 72px;
+      margin: 0 auto 0.9rem;
+      border-radius: 50%;
+      pointer-events: auto;
+      cursor: pointer;
+      background: radial-gradient(circle at 35% 30%, #8dffc4, var(--glow) 45%, #1a5c3c 100%);
+      box-shadow:
+        0 0 24px rgba(62, 207, 142, 0.45),
+        0 0 64px rgba(62, 207, 142, 0.2);
+      animation: breathe 3.2s ease-in-out infinite;
+    }
+
+    .orb::after {
+      content: "";
+      display: block;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      box-shadow: 0 0 0 0 rgba(62, 207, 142, 0.35);
+      animation: ring 3.2s ease-in-out infinite;
+    }
+
+    .status {
+      position: relative;
+      min-height: 2.6rem;
+      display: grid;
+      place-items: center;
+      line-height: 1.35;
+      padding: 0.1rem 0;
+      pointer-events: auto;
+      cursor: pointer;
+    }
+
+    .status span {
+      grid-area: 1 / 1;
+      font-size: clamp(1.35rem, 3.6vw, 1.85rem);
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      line-height: 1.35;
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 0.55s ease, transform 0.55s ease;
+    }
+
+    .status span.active {
+      opacity: 1;
+      transform: none;
+    }
+
+    .hint {
+      margin-top: 0.45rem;
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      line-height: 1.45;
+      opacity: 0.85;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 12%;
+      transform: translateX(-50%) translateY(12px);
+      padding: 0.55rem 1rem;
+      border-radius: 999px;
+      background: rgba(20, 40, 30, 0.88);
+      color: var(--text);
+      font-size: 0.85rem;
+      letter-spacing: 0.04em;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      backdrop-filter: blur(8px);
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    @keyframes breathe {
+      0%, 100% {
+        transform: scale(0.92);
+        filter: brightness(0.9);
+      }
+      50% {
+        transform: scale(1.06);
+        filter: brightness(1.15);
+      }
+    }
+
+    @keyframes ring {
+      0%, 100% {
+        box-shadow: 0 0 0 0 rgba(62, 207, 142, 0);
+      }
+      50% {
+        box-shadow: 0 0 0 18px rgba(62, 207, 142, 0);
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="stage">
+    <div class="orb" id="orb" title="Open GitHub" role="link" tabindex="0"></div>
+    <div class="status" id="status" aria-live="polite" title="Bind Telegram webhook">
+      <span class="active">\u8FD0\u884C\u4E2D</span>
+      <span>Working</span>
+      <span>\u904B\u4F5C\u4E2D</span>
+      <span>\u7A3C\u50CD\u4E2D</span>
+      <span>\uC791\uB3D9 \uC911</span>
+      <span>En cours</span>
+    </div>
+    <p class="hint">cf-mail2telegram \xB7 online</p>
+  </main>
+  <div class="toast" id="toast"></div>
+  <script>
+    const GITHUB = "https://github.com/shengshk/cf-mail2telegram";
+    const DEBOUNCE_MS = 1500;
+
+    const phrases = document.querySelectorAll("#status span");
+    let i = 0;
+    setInterval(() => {
+      phrases[i].classList.remove("active");
+      i = (i + 1) % phrases.length;
+      phrases[i].classList.add("active");
+    }, 2200);
+
+    const toast = document.getElementById("toast");
+    let toastTimer;
+    let lastInitAt = 0;
+    let initBusy = false;
+
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove("show"), 1600);
+    }
+
+    document.getElementById("orb").addEventListener("click", (e) => {
+      e.stopPropagation();
+      window.open(GITHUB, "_blank", "noopener,noreferrer");
+    });
+
+    document.getElementById("status").addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const now = Date.now();
+      if (initBusy || now - lastInitAt < DEBOUNCE_MS) {
+        showToast("\u8BF7\u7A0D\u5019\u2026");
+        return;
+      }
+      initBusy = true;
+      lastInitAt = now;
+      showToast("\u521D\u59CB\u5316\u4E2D\u2026");
+      try {
+        const res = await fetch("/init", { method: "GET", cache: "no-store" });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          showToast(data.error || ("\u5931\u8D25 " + res.status));
+          return;
+        }
+        showToast(data.host ? ("\u5DF2\u7ED1\u5B9A " + data.host) : "\u521D\u59CB\u5316\u5B8C\u6210");
+      } catch {
+        showToast("\u521D\u59CB\u5316\u5931\u8D25");
+      } finally {
+        initBusy = false;
+      }
+    });
+  <\/script>
+</body>
+</html>
+`;
+
 // src/handler/fetch/index.ts
 var HTTPError = class extends Error {
   status;
@@ -13886,35 +14488,46 @@ function createRouter(env) {
     finally: [r]
   });
   const {
-    DOMAIN,
     DB
   } = env;
   const { token: TELEGRAM_TOKEN } = requireTelegram(env);
   const dao = new Dao(DB);
   const auth = createTmaAuthMiddleware(env);
   router.get("/", async () => {
-    return new Response(null, {
-      status: 302,
+    return new Response(status_default, {
       headers: {
-        location: "https://github.com/shengshk/mail2telegramcf"
+        "content-type": "text/html; charset=utf-8"
       }
     });
   });
-  router.get("/init", async () => {
+  router.get("/init", async (req) => {
+    if (!DB) {
+      throw new HTTPError(500, "KV binding DB is required");
+    }
+    const host = publicHostFromRequest(req);
+    if (!host) {
+      throw new HTTPError(400, "Cannot detect public host from request URL");
+    }
+    const savedHost = await savePublicHost(dao, host);
     const api = createTelegramBotAPI(TELEGRAM_TOKEN);
+    const lang = resolveUiLang(env);
     const webhook = await api.setWebhook({
-      url: `https://${DOMAIN}/telegram/${TELEGRAM_TOKEN}/webhook`
+      url: `https://${savedHost}/telegram/${TELEGRAM_TOKEN}/webhook`
     });
     const commands = await api.setMyCommands({
-      commands: telegramCommands
+      commands: telegramCommands(lang)
     });
     return {
+      host: savedHost,
       webhook: await webhook.json(),
       commands: await commands.json()
     };
   });
   router.get("/tma", async () => {
-    return new Response(tma_default, {
+    const lang = resolveUiLang(env);
+    const payload = JSON.stringify(tmaI18nPayload(lang)).replace(/</g, "\\u003c");
+    const html = tma_default.replace(/__UI_LANG__/g, htmlLang(lang)).replace("__I18N_JSON__", payload);
+    return new Response(html, {
       headers: {
         "content-type": "text/html; charset=utf-8"
       }
@@ -13938,18 +14551,25 @@ function createRouter(env) {
     return { block, white };
   });
   router.post("/telegram/:token/webhook", async (req) => {
-    console.log(`[telegram] webhook.request ${JSON.stringify({
-      url: req.url,
-      method: req.method,
-      tokenMatched: req.params.token === TELEGRAM_TOKEN
-    })}`);
-    if (req.params.token !== TELEGRAM_TOKEN) {
-      console.warn("[telegram] webhook.invalid_token");
+    const debug = (env.DEBUG || "").toLowerCase() === "true";
+    const tokenMatched = req.params.token === TELEGRAM_TOKEN;
+    if (!tokenMatched) {
+      if (debug) {
+        console.warn("[telegram] webhook.invalid_token");
+      }
       throw new HTTPError(403, "Invalid token");
+    }
+    if (debug) {
+      console.log(`[telegram] webhook.request ${JSON.stringify({
+        url: req.url,
+        method: req.method
+      })}`);
     }
     try {
       await telegramWebhookHandler(req, env);
-      console.log("[telegram] webhook.done");
+      if (debug) {
+        console.log("[telegram] webhook.done");
+      }
     } catch (e) {
       const err = e;
       console.error(`[telegram] webhook.error ${JSON.stringify({
@@ -13964,7 +14584,8 @@ function createRouter(env) {
     const mode = String(req.query.mode || "page");
     const value = await dao.loadMailCache(id);
     if (!value) {
-      return new Response("\u9884\u89C8\u4E0D\u5B58\u5728\u6216\u5DF2\u8FC7\u671F", {
+      const lang = resolveUiLang(env);
+      return new Response(t2(lang, "previewExpired"), {
         status: 404,
         headers: { "content-type": "text/plain; charset=utf-8" }
       });
@@ -13983,7 +14604,7 @@ function createRouter(env) {
       });
     }
     const body = value.html ? sanitizeHtmlForPreview(value.html) : "";
-    const page = renderPreviewPage(value, body);
+    const page = renderPreviewPage(value, body, env);
     return new Response(page, {
       headers: {
         "content-type": "text/html; charset=utf-8",
@@ -14026,7 +14647,6 @@ async function sendMailToTelegram(mail, env, extract) {
 }
 async function emailHandler(message, env) {
   const {
-    FORWARD_LIST,
     BLOCK_POLICY,
     GUARDIAN_MODE,
     DB,
@@ -14035,6 +14655,9 @@ async function emailHandler(message, env) {
     MAX_EMAIL_SIZE_POLICY,
     TIMEZONE
   } = env;
+  if (!DB) {
+    console.error("[mail] KV binding DB missing: Worker \u2192 Bindings \u2192 KV, variable name must be DB");
+  }
   const dao = new Dao(DB);
   const id = message.headers.get("Message-ID")?.trim() || crypto.randomUUID();
   const isBlock = await isMessageBlock(message, env);
@@ -14048,11 +14671,10 @@ async function emailHandler(message, env) {
   }
   try {
     const blockForward = isBlock && blockPolicy.includes("forward");
-    const forwardList = blockForward ? [] : (FORWARD_LIST || "").split(",");
-    for (const forward of forwardList) {
+    const forwardList = blockForward ? [] : forwardEmailAddresses(env);
+    for (const add of forwardList) {
       try {
-        const add = forward.trim();
-        if (status.forward.includes(add)) {
+        if (!add || status.forward.includes(add)) {
           continue;
         }
         await message.forward(add);
@@ -14077,10 +14699,18 @@ async function emailHandler(message, env) {
       const extractText = [mail.subject, mail.text].filter(Boolean).join("\n");
       const short = extractText.length <= 3e3 ? extractText : `${extractText.slice(0, 3e3)}...`;
       const extract = await extractVerificationCode(short, env);
-      await dao.saveMailCache(mail.id, mail, ttl);
+      try {
+        await dao.saveMailCache(mail.id, mail, ttl);
+      } catch (e) {
+        console.error("[mail] saveMailCache failed", e);
+      }
       const msgIDs = await sendMailToTelegram(mail, env, extract);
       for (const msgID of msgIDs) {
-        await dao.saveTelegramIDToMailID(`${msgID}`, mail.id, ttl);
+        try {
+          await dao.saveTelegramIDToMailID(`${msgID}`, mail.id, ttl);
+        } catch (e) {
+          console.error("[mail] saveTelegramIDToMailID failed", e);
+        }
       }
     }
     if (isGuardian) {
