@@ -7,7 +7,7 @@ export interface ForwardTarget {
     folder?: string;
 }
 
-const FORWARD_EMAIL_RE = /^FORWARD_EMAIL(\d*)$/;
+const FORWARD_MAIL_RE = /^FORWARD_MAIL(\d*)$/;
 
 /** Parse one value: `user@gmail.com` or `user@gmail.com,Backup` */
 export function parseForwardEmailValue(raw: string): ForwardTarget | undefined {
@@ -28,8 +28,8 @@ export function parseForwardEmailValue(raw: string): ForwardTarget | undefined {
 }
 
 /**
- * Collect FORWARD_EMAIL, FORWARD_EMAIL0, FORWARD_EMAIL1, … (any digits).
- * Order: bare FORWARD_EMAIL first, then numeric suffixes ascending.
+ * Collect FORWARD_MAIL, FORWARD_MAIL0, FORWARD_MAIL1, … (any digits).
+ * Order: bare FORWARD_MAIL first, then numeric suffixes ascending.
  * Fallback: legacy FORWARD_LIST (+ FORWARD_DIR / GMAIL_LABEL on the first address).
  */
 export function listForwardTargets(env: Environment): ForwardTarget[] {
@@ -43,11 +43,11 @@ export function listForwardTargets(env: Environment): ForwardTarget[] {
         found.set(order, s);
     };
 
-    consider(-1, env.FORWARD_EMAIL);
+    consider(-1, env.FORWARD_MAIL);
 
     const bag = env as Record<string, unknown>;
     for (const key of Object.keys(bag)) {
-        const m = FORWARD_EMAIL_RE.exec(key);
+        const m = FORWARD_MAIL_RE.exec(key);
         if (!m) {
             continue;
         }
@@ -60,7 +60,7 @@ export function listForwardTargets(env: Environment): ForwardTarget[] {
 
     // Probe common numeric suffixes in case env keys are not fully enumerable
     for (let i = 0; i <= 64; i++) {
-        consider(i, bag[`FORWARD_EMAIL${i}`]);
+        consider(i, bag[`FORWARD_MAIL${i}`]);
     }
 
     if (found.size > 0) {

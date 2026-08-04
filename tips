@@ -27,12 +27,12 @@ Vars:
   UI_LANG            en (default) | zh | tw
                      Telegram labels, preview chrome, mini app, bot commands
 
-  FORWARD_EMAIL      Primary backup: email  or  email,GmailFolder
+  FORWARD_MAIL      Primary backup: email  or  email,GmailFolder
                      e.g. you+bak@gmail.com,Backup
 
-  FORWARD_EMAIL0     Extra backups (any digits: 0,1,2,…)
-  FORWARD_EMAIL1     Usually just an email; folder on extras is ignored for the button
-  FORWARD_EMAIL2     …
+  FORWARD_MAIL0     Extra backups (any digits: 0,1,2,…)
+  FORWARD_MAIL1     Usually just an email; folder on extras is ignored for the button
+  FORWARD_MAIL2     …
 
   DEBUG              true → show Gemini error on local OTP fallback
 
@@ -41,8 +41,8 @@ No DOMAIN variable.
 Public host is saved when you open /init (KV key PUBLIC_HOST).
 
 
-Mailbox button uses the primary FORWARD_EMAIL (and its folder if Gmail).
-All FORWARD_EMAIL* addresses receive Email Routing forwards.
+Mailbox button uses the primary FORWARD_MAIL (and its folder if Gmail).
+All FORWARD_MAIL* addresses receive Email Routing forwards.
 
 
 Defaults (usually leave alone):
@@ -52,7 +52,7 @@ Defaults (usually leave alone):
   GMAIL_U            0
 
 
-Legacy (still read if no FORWARD_EMAIL*):
+Legacy (still read if no FORWARD_MAIL*):
 
   FORWARD_LIST + FORWARD_DIR
 
@@ -83,6 +83,6 @@ A and B can both exist on Cloudflare, but only the last successful /init host is
   [ ] TELEGRAM_BOT
   [ ] UI_LANG if you want zh or tw
   [ ] GEMINI_API_KEY for AI OTP
-  [ ] FORWARD_EMAIL* verified in Email Routing destinations
+  [ ] FORWARD_MAIL* verified in Email Routing destinations
   [ ] Email Routing → this Worker
   [ ] Visited /init (and removed any old DOMAIN var if present)
