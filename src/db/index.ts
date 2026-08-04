@@ -85,6 +85,20 @@ export class Dao {
     async saveTelegramIDToMailID(id: string, mailID: string, ttl?: number): Promise<void> {
         await this.db.put(`TelegramID2MailID:${id}`, mailID, { expirationTtl: ttl });
     }
+
+    async loadPublicHost(): Promise<string | null> {
+        try {
+            const raw = await this.db.get('PUBLIC_HOST');
+            return raw?.trim() || null;
+        } catch (e) {
+            console.error(e);
+            return null;
+        }
+    }
+
+    async savePublicHost(host: string): Promise<void> {
+        await this.db.put('PUBLIC_HOST', host);
+    }
 }
 
 export function loadArrayFromRaw(raw: string | null | undefined): string[] {

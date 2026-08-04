@@ -1,112 +1,491 @@
-# mail2telegram（Cloudflare Worker）
+<h1 align="center">
+cf-mail2telegram
+</h1>
 
-私人仓库。基于 [TBXark/mail2telegram](https://github.com/TBXark/mail2telegram) 改造，对齐本仓库配套的 Docker `mail2telegram` 体验：
+<p align="center">
+    <em>Forward email to Telegram via Cloudflare Email Routing — with Gemini OTP extraction.<br>
+    通过 Cloudflare Email Routing 将邮件转发到 Telegram，并支持 Gemini 验证码提取。</em>
+</p>
 
-**收信 → Gemini 抽验证码（失败才本地正则）→ Telegram（预览 + 邮箱）**
+<p align="center">
+    Public fork of / 基于 <a href="https://github.com/tbxark/mail2telegram">tbxark/mail2telegram</a> 的公开 Fork
+</p>
 
-- 摘要 / Summary / OpenAI 路径已移除
-- 消息按钮只有 **预览**、**邮箱**（URL 直达）
-- 验证码样式：AI 解析 **加粗**；本地正则 *斜体*
-- 配置源码以 `src/` 为准；根目录旧 `worker.js` / `build/` 勿当现行逻辑
+<p align="center">
+    OTP recognition logic referenced from / 验证码识别逻辑参考自<br>
+    <a href="https://github.com/Heavrnl/Mail2Telegram">Heavrnl/Mail2Telegram</a>
+</p>
 
-本地备忘见 [`tips`](./tips)。
+<p align="center">
+    <a href="#english">English</a> · <a href="#中文">中文</a>
+</p>
+
+![](./doc/social_preview.png)
+
+<details>
+<summary>Demo / 演示</summary>
+<img style="max-width: 600px;" alt="demo" src="doc/example.png">
+</details>
+
+---
+
+# English
+
+This project is a Cloudflare Email Routing Worker that turns inbound mail into Telegram messages.  
+It is a **public fork** of [tbxark/mail2telegram](https://github.com/tbxark/mail2telegram), customized for a simpler OTP-first workflow.  
+OTP / verification-code recognition is referenced from [Heavrnl/Mail2Telegram](https://github.com/Heavrnl/Mail2Telegram).
+
+### Differences from upstream
+
+| Upstream | This fork |
+|----------|-----------|
+| Summary / Workers AI / OpenAI | Removed |
+| Buttons: Preview / Summary / Text / HTML | **Preview** + **Mailbox** only |
+| `TELEGRAM_TOKEN` + `TELEGRAM_ID` | Prefer `TELEGRAM_BOT=token,chat_id` (legacy vars still work) |
+| No built-in OTP AI | **Gemini** extracts OTP; local regex fallback |
+| OTP styling | AI match **bold**; local regex *italic* |
+| `FORWARD_LIST` + `FORWARD_DIR` | `FORWARD_EMAIL` (+ `FORWARD_EMAIL0/1/…`); folder as `email,Backup` |
+| English-only UI | `UI_LANG=en` (default) / `zh` / `tw` |
+
+Source of truth is `src/`. Do not treat root `worker.js` / stale `build/` as current logic.
+
+## Installation
+
+### 0. Configure Telegram
+
+1. Create a bot with `@BotFather > /newbot`, then copy the token.
+2. After deploy, open `/init` once using your Worker’s full public URL (see **Bind Telegram Webhook** below — either `workers.dev` with two name levels, or your own domain).
+3. For Telegram Mini Apps, set a privacy policy via `@BotFather > /mybots > Edit Bot > Edit Privacy Policy` (default TMA policy: `https://telegram.org/privacy-tpa`).
+
+### 1. Deploy Workers
+
+#### 1.1 Deploy via Git (Cloudflare Builds)
+
+1. Fork or clone this repository.
+2. Connect the repo in Cloudflare Workers Builds.
+3. Ensure the project is recognized as a Worker (`wrangler.jsonc` is included).
+4. Set Vars / Secrets in the dashboard (see [Configuration](#configuration)).
+5. Confirm KV binding name is **`DB`**.
+
+#### 1.2 Deploy via Command Line
+
+```bash
+git clone https://github.com/shengshk/cf-mail2telegram.git
+cd cf-mail2telegram
+cp wrangler.example.jsonc wrangler.jsonc   # if you need a fresh config
+# edit wrangler.jsonc KV id if needed
+pnpm i    # or npm / yarn
+pnpm pub  # wrangler deploy --keep-vars
+```
+
+`keep_vars = true` is enabled so deploys do not wipe dashboard plain-text Vars. Prefer Secrets for tokens/keys.
+
+#### 1.3 Deploy via Copy and Paste
+
+1. Use the prebuilt bundle in [`build/index.js`](./build/index.js) if you prefer paste deploy.
+2. Set environment variables manually in the Worker settings.
+3. Bind a KV namespace with variable name **`DB`**.
+
+### 2. Configure Cloudflare Email Routing
+
+1. Follow Cloudflare’s guide for [Email Routing](https://blog.cloudflare.com/introducing-email-routing/).
+2. In **Email Routing → Routing Rules**, set the Catch-all action to **Send to a Worker** (this Worker).
+3. If Catch-all goes only to the Worker, use `FORWARD_EMAIL` (and optional `FORWARD_EMAIL0/1/…`) for mailbox backups.
+4. Addresses in `FORWARD_EMAIL*` must be verified under **Email Routing → Destination addresses**.
+
+### 3. Bind Telegram Webhook (required once after deploy)
+
+This step tells Telegram where your Worker lives. Open `/init` in a browser using a **public HTTPS URL** that hits **this** Worker.
+
+Opening `/init` will:
+1. Register the Telegram webhook on that same host
+2. Save the host into KV (`PUBLIC_HOST`) for Preview / Mini App links later
+
+You can open `/init` directly, or open the Worker root URL (status page) and **click the center status text** (1.5s debounce). The glowing orb opens the GitHub repo; blank areas do nothing.
+
+There are **two common ways** to get that URL. Pick **one** and use it consistently.
+
+#### Mode A — Cloudflare `workers.dev` (default, no custom domain needed)
+
+1. Open **Cloudflare Dashboard → Workers & Pages →** your Worker (e.g. `mail2telegram`).
+2. Find the worker’s public URL. It has **two** name parts before `workers.dev`, for example:
+
+   ```text
+   https://mail2telegram.your-subdomain.workers.dev
+            └─ worker name ─┘ └─ account subdomain ─┘
+   ```
+
+   Do **not** shorten it to `https://something.workers.dev` (that is missing a level and will not work).
+3. In the browser address bar, open that URL with `/init` appended:
+
+   ```text
+   https://mail2telegram.your-subdomain.workers.dev/init
+   ```
+4. You should see a JSON response including `host`, plus webhook / commands results. Confirm there is no obvious error.
+5. Re-open the same `/init` URL after you change `UI_LANG`, or if you switch to a different public hostname.
+
+#### Mode B — Your own domain (optional)
+
+Only if you have already bound a custom domain / route to this Worker in Cloudflare (for example `mail.example.com` → this Worker).
+
+1. Confirm in the dashboard that visiting `https://mail.example.com` hits **this** Worker (not another site).
+2. In the browser, open:
+
+   ```text
+   https://mail.example.com/init
+   ```
+3. Check the JSON response the same way as Mode A (`host` should be `mail.example.com`).
+4. Afterwards, keep using this custom host for `/init`, Preview, and Mini App. Do not mix Mode A and Mode B casually; if you switch, open `/init` again on the new host.
+
+#### Notes for both modes
+
+- Always use `https://`, never `http://`.
+- Visiting the Worker **root URL** (for example the `….workers.dev` link in the Cloudflare dashboard) opens a status page (same look as cf-webhook): **orb → GitHub repo**; **click the rotating status text → run `/init`** (full bind every time; 1.5s debounce against double-taps). Blank page area does nothing.
+- You can still open `/init` directly in the address bar if you prefer.
+- `/init` is not a daily task: do it after deploy, after changing `UI_LANG`, or after changing which public hostname you want Telegram to use.
+- The easiest way to avoid typos: copy the Worker’s visit URL from the Cloudflare dashboard (two levels before `workers.dev`), open it, then click the status text.
+- If you never run `/init`, Telegram will not receive updates, and Preview / Mini App buttons may be missing.
+- You do **not** need a `DOMAIN` environment variable.
+
+#### Can Mode A and Mode B both exist?
+
+Yes. Cloudflare can serve the **same** Worker on both:
+
+- `https://mail2telegram.your-subdomain.workers.dev` (Mode A), and  
+- `https://mail.example.com` (Mode B),
+
+so both doors open the same shop.
+
+But Telegram / Preview / Mini App follow **only one** saved host (`PUBLIC_HOST` in KV): whatever host you used the **last** time `/init` succeeded. Opening `/init` on A, then later on B, switches everything to B.
+
+**Practical rule:** pick one primary host and only run `/init` on that host. Keeping the other URL as a spare entry is fine; do not casually open `/init` on the spare host, or you will rewrite the registered host.
+
+## Configuration
+
+**Workers → Settings → Variables / Bindings**
+
+| Key | Description |
+|:----|:------------|
+| `TELEGRAM_BOT` | Recommended. `token,chat_id` (same shape as the Docker companion). Compatible with legacy `TELEGRAM_TOKEN` + `TELEGRAM_ID`. |
+| `TELEGRAM_TOKEN` / `TELEGRAM_ID` | Legacy pair; used only if `TELEGRAM_BOT` is unset. |
+| `UI_LANG` | UI language: `en` (default), `zh` (Simplified), or `tw` (Traditional). Affects Telegram labels/buttons, preview chrome, Mini App, and bot command descriptions. Re-open `/init` after changing. |
+| `GEMINI_API_KEY` | Google AI Studio key (`AIza…`). Worker egress may hit region limits; on failure the Worker falls back to local regex. |
+| `GEMINI_MODEL` | Optional. Default `gemini-2.5-flash-lite`. |
+| `FORWARD_EMAIL` | Primary backup. `you@gmail.com` or `you@gmail.com,Backup` (Gmail label/folder after the comma). Must be a verified Email Routing destination. Drives the Mailbox button. |
+| `FORWARD_EMAIL0` / `1` / `2` / … | Extra backup addresses (any digit suffix). Usually just an email. All listed addresses receive forwards. |
+| `DB` | **Required** KV binding. Variable name must be exactly `DB`. |
+| `MAIL_TTL` | Cache TTL in seconds (default one day). Expired mail previews stop working. |
+| `TIMEZONE` | Optional. Default `Asia/Shanghai`. |
+| `GMAIL_U` | Optional. Gmail multi-account index, default `0`. |
+| `BLOCK_POLICY` | `reject`, `forward`, `telegram` (comma-separated). Default `telegram`. |
+| `GUARDIAN_MODE` | Optional. `true` to enable. |
+| `MAX_EMAIL_SIZE` | Bytes; default `512*1024`. |
+| `MAX_EMAIL_SIZE_POLICY` | `unhandled` / `truncate` / `continue`. Default `truncate`. |
+| `RESEND_API_KEY` | Optional. Reply-to-email via [Resend](https://resend.com/docs/introduction). |
+| `DEBUG` | Optional. `true` shows Gemini error reasons in Telegram on local fallback, and enables verbose webhook logs. |
+| ~~`FORWARD_LIST` / `FORWARD_DIR`~~ | Legacy. Still read if no `FORWARD_EMAIL*` is set. |
+| ~~`WHITE_LIST` / `BLOCK_LIST`~~ | Env lists are being phased out; prefer the built-in Mini App editors. |
+
+## Mailbox button rules
+
+| Condition | Behavior |
+|-----------|----------|
+| Message has `X-GM-THRID` | Prefer deep link into that Gmail thread (often missing via Email Routing) |
+| Primary `FORWARD_EMAIL` is Gmail + folder part set | Open that label/folder |
+| Gmail without folder | Gmail home |
+| Outlook / Hotmail / Live | Outlook web home (folder ignored) |
+| Other domains | `https://mail.<domain>` |
+| No `FORWARD_EMAIL*` (and no legacy list) | Hide Mailbox; Preview only |
+
+`rfc822msgid` search links are **removed** in this fork.
+
+## Telegram Mini Apps
+
+Black/white lists are managed via Mini Apps (`/white`, `/block`, `/test` → Open Manager). Rules are stored in KV.
+
+> After upgrading, call `/init` again so bot commands stay in sync.
+
+| Block list | White list | List test |
+|:-----------|:-----------|:----------|
+| ![block](./doc/tma_block_list.png) | ![white](./doc/tma_white_list.png) | ![test](./doc/tma_test_address.png) |
+
+*(Screenshots may be replaced later.)*
+
+## Usage
+
+Default Telegram message shape:
+
+```
+OTP: 123456          ← AI: bold; local regex: italic
+From: …
+To: …
+Time
+[Preview] [Mailbox]
+```
+
+### Email preview
+
+1. **Preview** — open cached HTML/text in the browser (`/email/<id>`). Requires KV `DB` and a successful `/init` (so the public host is saved).
+2. **Mailbox** — jump to webmail per [Mailbox button rules](#mailbox-button-rules).
+
+Summary / Text / HTML buttons from upstream are not used in this fork.
+
+### Security and cache
+
+1. After `MAIL_TTL`, preview links stop working — back up important mail.
+2. Large attachments may time out Workers; put a real mailbox in `FORWARD_EMAIL`.
+3. `GUARDIAN_MODE` can reduce duplicate notifications at the cost of more KV writes.
+
+### Blacklist and whitelist
+
+Env lists and KV lists are merged. Exact string match first, then regex. Prefer Mini Apps for day-to-day edits. Helper: [regexs2jsArray](https://codepen.io/tbxark/full/JjxdNEX).
+
+### Attachments
+
+This bot does not render attachments. Use `FORWARD_EMAIL*` to keep a real mailbox copy, or tools such as [testmail-viewer](https://github.com/TBXark/testmail-viewer).
+
+## Known limitations
+
+1. **Gemini region** — Worker egress IPs may get `User location is not supported`; local regex still runs.
+2. **No attachment UI** — rely on `FORWARD_EMAIL*` backups.
+3. **Preview needs KV** — missing `DB` binding can break cache; Telegram send tries not to fail solely because of cache errors, but Preview may 404.
+
+## License
+
+Released under the MIT license, same as upstream. See [LICENSE](LICENSE).
 
 ---
 
-## 快速配置
+# 中文
 
-### 1. KV（必须）
+本项目是一个基于 Cloudflare Email Routing Worker 的 Telegram 邮件通知机器人：把任意前缀收件地址收到的邮件转成 Telegram 消息。  
+这是 [tbxark/mail2telegram](https://github.com/tbxark/mail2telegram) 的**公开 Fork**，面向更简洁的「验证码优先」使用方式做了定制。  
+验证码识别逻辑参考自 [Heavrnl/Mail2Telegram](https://github.com/Heavrnl/Mail2Telegram)。
 
-Worker → **绑定** → KV Namespace，变量名必须是 **`DB`**。  
-仅有全局 KV 命名空间不够，必须绑到本 Worker。  
-本仓库 `wrangler.jsonc` 已写命名空间 id，CF Builds / `wrangler deploy` 应自动带上绑定。
+### 相对上游的差异
 
-### 2. 变量
+| 上游 | 本 Fork |
+|------|---------|
+| Summary / Workers AI / OpenAI | 已移除 |
+| 按钮：预览 / 摘要 / Text / HTML | 仅 **预览** + **邮箱** |
+| `TELEGRAM_TOKEN` + `TELEGRAM_ID` | 推荐 `TELEGRAM_BOT=token,chat_id`（仍兼容旧变量） |
+| 无内置验证码 AI | **Gemini** 抽码；失败回退本地正则 |
+| 验证码样式 | AI 结果 **加粗**；本地正则 *斜体* |
+| `FORWARD_LIST` + `FORWARD_DIR` | `FORWARD_EMAIL`（及 `FORWARD_EMAIL0/1/…`）；文件夹写成 `邮箱,Backup` |
+| 仅英文界面 | `UI_LANG=en`（默认）/ `zh` / `tw` |
 
-| 名称 | 类型 | 说明 |
-|------|------|------|
-| `TELEGRAM_BOT` | Secret 推荐 | `token,chat_id`（与 Docker 相同；兼容旧 `TELEGRAM_TOKEN` + `TELEGRAM_ID`） |
-| `GEMINI_API_KEY` | Secret 推荐 | Google AI Studio Key（`AIza…`）。Worker 出口常在受限地区，Gemini 可能 400，此时自动本地正则 |
-| `DOMAIN` | Var | Worker 域名，**不要** `https://`，如 `mail2telegram.xxx.workers.dev` |
-| `FORWARD_LIST` | Var | 可选。备份邮箱，逗号分隔；取**第一个**决定「邮箱」按钮；须在 Email Routing 目标地址已验证 |
-| `FORWARD_DIR` | Var | 可选。仅 Gmail：跳到该标签/文件夹（如 `Backup`）；非 Gmail 忽略；不配则 Gmail 首页 |
-| `DEBUG` | Var | 默认关。`true`：TG 显示本地兜底时的错误原因，并打 webhook 详日志 |
+配置与逻辑以 `src/` 为准；根目录旧 `worker.js` / 过期 `build/` 请勿当作现行实现。
 
-一般不用改：`GEMINI_MODEL`（默认 `gemini-2.5-flash-lite`）、`TIMEZONE`（`Asia/Shanghai`）、`GMAIL_U`（`0`）、`MAIL_TTL`、黑白名单等。
+## 安装流程
 
-`wrangler` 已 `keep_vars = true`，部署不会清空 Dashboard 明文 Vars（密钥仍建议用 Secret）。
+### 0. 配置 Telegram
 
-### 3. Email Routing
+1. 使用 `@BotFather > /newbot` 创建 Bot，并复制 Token。
+2. 部署完成后，用 Worker 的**完整公网地址**打开一次 `/init`（见下方 **绑定 Telegram Webhook**：方式 A 为 `workers.dev` 两级名称，方式 B 为你自己的域名，两种都有逐步说明）。
+3. 若使用 Telegram 小程序，请在 `@BotFather > /mybots > （选择一个） > 编辑机器人 > 编辑隐私政策` 设置隐私政策（可使用默认：`https://telegram.org/privacy-tpa`）。
 
-将域名 Catch-all（或规则）**发送到本 Worker**。  
-备份靠 `FORWARD_LIST`，不要指望 Catch-all 再转一份到邮箱。
+### 1. 部署 Workers
 
-### 4. 绑定 Webhook
+#### 1.1 通过 Git（Cloudflare Builds）
 
-部署后打开一次：
+1. Fork 或克隆本仓库。
+2. 在 Cloudflare Workers Builds 中连接该仓库。
+3. 确认识别为 Worker（仓库内含 `wrangler.jsonc`）。
+4. 在控制台配置 Vars / Secrets（见 [配置](#配置-1)）。
+5. 确认 KV 绑定变量名为 **`DB`**。
 
-`https://<DOMAIN>/init`
+#### 1.2 通过命令行部署
 
----
+```bash
+git clone https://github.com/shengshk/cf-mail2telegram.git
+cd cf-mail2telegram
+cp wrangler.example.jsonc wrangler.jsonc   # 如需全新配置
+# 按需修改 wrangler.jsonc 中的 KV id
+pnpm i    # 或 npm / yarn
+pnpm pub  # wrangler deploy --keep-vars
+```
+
+已启用 `keep_vars = true`，部署不会清空 Dashboard 明文 Vars。Token / API Key 建议使用 Secret。
+
+#### 1.3 复制粘贴部署
+
+1. 可使用预编译产物 [`build/index.js`](./build/index.js)。
+2. 在 Worker 配置页手动设置环境变量。
+3. 在 `KV 命名空间绑定` 处绑定数据库，**变量名称必须为 `DB`**。
+
+### 2. 配置 Cloudflare Email Routing
+
+1. 按官方文档配置 [Cloudflare Email Routing](https://blog.cloudflare.com/zh-cn/introducing-email-routing-zh-cn/)。
+2. 在 `Email Routing - Routing Rules` 中，将 `Catch-all address` 的 action 改成 `Send to a Worker`（本 Worker），把剩余邮件都转发到该 Worker。
+3. Catch-all 只指向 Worker 后，就无法再把剩余邮件转发到自己邮箱；若需备份，在环境变量 `FORWARD_EMAIL`（及可选的 `FORWARD_EMAIL0/1/…`）填入备份邮箱即可。
+4. `FORWARD_EMAIL*` 中的邮箱地址须在 `Cloudflare Dashboard - Email Routing - Destination addresses` 添加并完成认证后才能收到邮件。
+
+### 3. 绑定 Telegram Webhook（部署后必须做一次）
+
+这一步是告诉 Telegram「去哪个网址找你的 Worker」。请用能打开**本 Worker** 的 **HTTPS 公网地址**，在浏览器里打开一次 `/init`。
+
+打开 `/init` 会同时：
+1. 用当前这个主机注册 Telegram webhook  
+2. 把该主机名写入 KV（`PUBLIC_HOST`），供以后「预览 / 小程序」拼链接
+
+可以直接访问 `/init`，也可以先打开 Worker 根地址（状态页），再**点击中间那行状态文字**触发初始化（完整执行；1.5 秒防抖）。中心球打开 GitHub 仓库；空白处无效。
+
+常见有 **两种方式**。请 **选定一种并一直用同一种**。
+
+#### 方式 A — Cloudflare 自带的 `workers.dev`（默认，不用自己的域名）
+
+1. 打开 **Cloudflare 控制台 → Workers 和 Pages →** 你的 Worker（例如 `mail2telegram`）。
+2. 找到该 Worker 的访问地址。在 `workers.dev` 前面通常有 **两级** 名称，例如：
+
+   ```text
+   https://mail2telegram.your-subdomain.workers.dev
+            └─ Worker 名称 ─┘ └─ 账号子域 ─┘
+   ```
+
+   **不要**写成 `https://something.workers.dev`（少了一级，一般打不开）。
+3. 在浏览器地址栏打开：在上面的完整地址后面加上 `/init`，例如：
+
+   ```text
+   https://mail2telegram.your-subdomain.workers.dev/init
+   ```
+4. 页面会返回一段 JSON，其中应包含 `host`，以及 webhook / commands 结果。确认没有明显报错。
+5. 以后若修改了 `UI_LANG`，或更换了公网主机，请用**同一个（或新的）主机**再打开一次 `/init`。
+
+#### 方式 B — 使用你自己的域名（可选）
+
+仅当你已经在 Cloudflare 里给 **这个 Worker** 绑定了自定义域名 / 路由时才适用（例如 `mail.example.com` → 本 Worker）。
+
+1. 先在浏览器确认：打开 `https://mail.example.com` 访问到的就是 **这个** Worker（不是别的网站）。
+2. 在浏览器打开：
+
+   ```text
+   https://mail.example.com/init
+   ```
+3. 同样检查返回的 JSON（`host` 应为 `mail.example.com`）。
+4. 之后请固定使用这个自定义域名做 `/init`、预览和小程序。不要和方式 A 混着用；若要更换，用**新主机**再打开一次 `/init`。
+
+#### 两种方式的共同注意点
+
+- 必须用 `https://`，不要用 `http://`。
+- 访问 Worker **根地址**（例如控制台里的 `….workers.dev` 链接）会打开状态页（样式同 cf-webhook）：**球 → GitHub 仓库**；**点击轮换的状态文字 → 执行 `/init`**（每次完整绑定；1.5 秒防抖防连点）。页面空白处不触发。
+- 仍可直接在地址栏打开 `/init`。
+- `/init` 不是每天都要做：部署后做一次；改 `UI_LANG`，或要更换「给 Telegram 用的公网主机」后再做。
+- 最稳妥的做法：从 Cloudflare 控制台复制 Worker 的「访问」完整链接（`workers.dev` 前两级名称都要有），打开后点击中间状态文字。
+- 如果从未成功执行过 `/init`，Telegram 收不到更新，预览 / 小程序按钮也可能没有。
+- **不需要**再配置名为 `DOMAIN` 的环境变量。
+
+#### 方式 A 和方式 B 可以同时存在吗？
+
+可以。Cloudflare 可以让**同一个** Worker 同时挂在：
+
+- `https://mail2telegram.your-subdomain.workers.dev`（方式 A），以及  
+- `https://mail.example.com`（方式 B），
+
+两个门都能进同一家店。
+
+但 Telegram / 预览 / 小程序只认 **一个** 已保存的主机（KV 里的 `PUBLIC_HOST`）：以**最近一次**成功打开 `/init` 时用的主机为准。先在 A 上 `/init`，再在 B 上 `/init`，就会全部改跟 B。
+
+**实用建议：** 选定一个主用主机，只在这个主机上做 `/init`。另一个地址当备用入口可以，但不要随便在备用地址上再打开一次 `/init`，否则会改写已登记的主机。
+
+## 配置
+
+位置：Workers 和 Pages - 你的 worker 名称 - 设置 - 变量 / 绑定
+
+| KEY | 描述 |
+|:----|:-----|
+| `TELEGRAM_BOT` | **推荐**。`token,chat_id`（与 Docker 版同格式）。未配置时回退旧变量。 |
+| `TELEGRAM_TOKEN` | 旧版 Bot Token。仅在未设置 `TELEGRAM_BOT` 时使用。 |
+| `TELEGRAM_ID` | 旧版 Chat ID。仅在未设置 `TELEGRAM_BOT` 时使用。 |
+| `UI_LANG` | 界面语言：`en`（默认）、`zh`（简体）或 `tw`（繁体）。影响 TG 文案/按钮、预览页、小程序、Bot 命令描述。修改后请重新打开 `/init`。 |
+| `GEMINI_API_KEY` | Google AI Studio Key（`AIza…`）。出网可能受地区限制；失败时自动本地正则。 |
+| `GEMINI_MODEL` | 可选。默认 `gemini-2.5-flash-lite`。 |
+| `FORWARD_EMAIL` | 主备份。`you@gmail.com` 或 `you@gmail.com,Backup`（逗号后为 Gmail 标签）。须已验证。决定「邮箱」按钮。 |
+| `FORWARD_EMAIL0` / `1` / `2` / … | 额外备份（任意数字后缀），一般只写邮箱。所有地址都会收到转发。 |
+| `DB` | **必须**的 KV 绑定，变量名必须是 `DB`。 |
+| `MAIL_TTL` | 邮件缓存秒数，默认一天。 |
+| `TIMEZONE` | 可选。默认 `Asia/Shanghai`。 |
+| `GMAIL_U` | 可选。Gmail 多账号序号，默认 `0`。 |
+| `BLOCK_POLICY` | `reject` / `forward` / `telegram`，逗号分隔。默认 `telegram`。 |
+| `GUARDIAN_MODE` | 可选。`true` 开启。 |
+| `MAX_EMAIL_SIZE` | 字节；默认 `512*1024`。 |
+| `MAX_EMAIL_SIZE_POLICY` | `unhandled` / `truncate` / `continue`。默认 `truncate`。 |
+| `RESEND_API_KEY` | 可选。通过 [Resend](https://resend.com/docs/introduction) 回复邮件。 |
+| `DEBUG` | 可选。`true`：本地兜底时在 TG 显示 Gemini 错误原因。 |
+| ~~`FORWARD_LIST` / `FORWARD_DIR`~~ | 旧变量。未配置任何 `FORWARD_EMAIL*` 时仍会读取。 |
+| ~~`WHITE_LIST` / `BLOCK_LIST`~~ | 环境变量名单将淘汰，建议用内置小程序维护。 |
+
+> 本 Fork **已移除**上游的 `WORKERS_AI_MODEL` / `OPENAI_*` / `SUMMARY_TARGET_LANG` 摘要能力；验证码请配置 `GEMINI_API_KEY`。
 
 ## 「邮箱」按钮规则
 
 | 条件 | 行为 |
 |------|------|
-| 邮件带 `X-GM-THRID` | 优先 Gmail 精准深链（Email Routing 通常没有） |
-| `FORWARD_LIST` 首个为 Gmail + 配了 `FORWARD_DIR` | 打开该标签/文件夹 |
-| Gmail 未配 `FORWARD_DIR` | Gmail 首页 |
-| Outlook / Hotmail / Live | Outlook 网页首页（忽略 `FORWARD_DIR`） |
+| 邮件带 `X-GM-THRID` | 优先 Gmail 线程深链（Email Routing 通常没有） |
+| 主 `FORWARD_EMAIL` 为 Gmail 且带了文件夹 | 打开该标签/文件夹 |
+| Gmail 未配文件夹 | Gmail 首页 |
+| Outlook / Hotmail / Live | Outlook 网页首页（忽略文件夹） |
 | 其它域名 | `https://mail.<域名>` |
-| 无 `FORWARD_LIST` 且无 `FORWARD_DIR` | 不显示「邮箱」，只留「预览」 |
+| 未配置任何 `FORWARD_EMAIL*`（且无旧变量） | 不显示「邮箱」，仅「预览」 |
 
-已**取消** `rfc822msgid` 搜索链接。
+本 Fork **已取消** `rfc822msgid` 搜索链接。
 
----
+## Telegram 小程序
 
-## 部署
+旧版使用命令方式管理黑白名单已废弃，现在使用小程序管理黑白名单。环境变量中的黑白名单无法在小程序中显示和修改。
 
-### Cloudflare Builds / Git 连接
+> 使用小程序需要重新调用 `/init` 接口绑定指令。
 
-推送到本私人仓库后，用 CF 连接该仓库构建即可。确保构建识别为 Worker（仓库内有 `wrangler.jsonc`）。
+| 黑名单 | 白名单 | 名单测试 |
+|:-------|:-------|:---------|
+| ![block](./doc/tma_block_list.png) | ![white](./doc/tma_white_list.png) | ![test](./doc/tma_test_address.png) |
 
-### 命令行
+*（截图后续可自行替换。）*
 
-```bash
-git clone git@github.com:shengshk/mail2telegramcf.git
-cd mail2telegramcf
-# 按需改 wrangler.jsonc 里的 kv id
-pnpm i   # 或 npm / yarn
-pnpm pub # wrangler deploy --keep-vars
-```
+## 使用说明
 
-部署后访问 `/init`，并在 Dashboard 确认 **绑定 `DB`** 与 Vars/Secrets。
-
----
-
-## Telegram 行为摘要
+默认消息结构如下：
 
 ```
-验证码：123456          ← AI：加粗；本地：斜体
+验证码：123456          ← AI：加粗；本地正则：斜体
 发件人：…
 收件人：…
 时间
 [预览] [邮箱]
 ```
 
-黑白名单仍可用内置小程序（`/white` `/block` `/test` → Open Manager）维护，规则存在 KV。
+### 邮件预览
 
----
+当邮件转发通知到 Telegram 时，展示验证码（如有）、发件人、收件人、时间，以及按钮：
+
+1. **预览**：浏览器打开缓存的 HTML/文本（`/email/<id>`）。需要 KV `DB`，并且已经成功打开过 `/init`（公网主机已写入 KV）。
+2. **邮箱**：按 [「邮箱」按钮规则](#邮箱按钮规则) 跳转网页邮箱。
+
+上游的 `Summary` / `TEXT` / `HTML` 按钮在本 Fork 中**不使用**。
+
+### 安全与邮件缓存
+
+1. `MAIL_TTL`：为了安全起见，当超过邮件缓存保存时间，按钮跳转的链接无法打开。你可以自行修改环境变量调整过期时间。
+2. 由于 Workers 限制，邮件（特别是附件较大时）可能导致函数超时和多次重试，从而可能收到重复通知。建议在 `FORWARD_EMAIL` 中添加备份邮箱，以防邮件丢失。
+3. 开启 `GUARDIAN_MODE` 可减少重复消息干扰，提高 Worker 成功率，但会消耗较多 KV 写入次数。建议在必要时开启。
+
+### 黑名单与白名单
+
+关于黑白名单匹配规则，以白名单为例：首先从环境变量读取 `WHITE_LIST` 转换成数组，再从 KV 读取 `WHITE_LIST` 转换成数组，然后合并得到完整规则。匹配时先判断数组元素是否与待匹配字符串相等；不相等再把元素当成正则匹配。全部失败则匹配失败。
+
+生成白名单/黑名单正则 JSON 数组字符串可用：[regexs2jsArray](https://codepen.io/tbxark/full/JjxdNEX)
+
+建议使用小程序管理黑白名单，更方便添加和删除。环境变量中的黑白名单即将废弃。
+
+### 邮件附件
+
+此 Bot **不支持展示附件**。若需附件，可配合 [testmail-viewer](https://github.com/TBXark/testmail-viewer)，用 `FORWARD_EMAIL*` 把邮件转到可下载附件的邮箱；或直接用真实备份邮箱查看。
 
 ## 已知限制
 
-1. **Gemini 地区**：Worker 出网 IP 可能被 Google 拒绝（`User location is not supported`），会回退本地正则；Docker 同 Key 往往正常。
-2. **无附件展示**：大附件靠 `FORWARD_LIST` 备份到真实邮箱查看。
-3. **预览依赖 KV**：`DB` 未绑定会导致缓存失败；发 TG 已尽量不因缓存失败而中断，但预览链接可能 404。
+1. **Gemini 地区**：Worker 出网 IP 可能被 Google 拒绝（`User location is not supported`），会回退本地正则。
+2. **无附件展示**：大附件靠 `FORWARD_EMAIL*` 备份到真实邮箱查看。
+3. **预览依赖 KV**：未绑定 `DB` 会导致缓存失败；发 TG 已尽量不因缓存失败中断，但预览链接可能 404。
 
----
+## 许可证
 
-## 许可
-
-上游为 MIT。本仓库为私人修改版，仅供所有者使用。
-
+**cf-mail2telegram** 以 MIT 许可证发布（与上游相同）。详见 [LICENSE](LICENSE)。

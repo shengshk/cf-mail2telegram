@@ -1,5 +1,6 @@
 export * from './check';
 export * from './extract';
+export * from './forward';
 export * from './mailbox';
 export * from './parse';
 export * from './preview';

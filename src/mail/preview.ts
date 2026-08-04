@@ -1,4 +1,5 @@
-import type { EmailCache } from '../types';
+import type { EmailCache, Environment } from '../types';
+import { resolveUiLang, htmlLang, t } from '../i18n';
 
 const PREVIEW_CSS = `
 *{box-sizing:border-box}
@@ -47,8 +48,9 @@ export function sanitizeHtmlForPreview(rawHtml: string, maxLength = 200000): str
     return html;
 }
 
-export function renderPreviewPage(mail: EmailCache, bodyHtml: string): string {
-    const subject = escapeHtml(mail.subject || '(无主题)');
+export function renderPreviewPage(mail: EmailCache, bodyHtml: string, env?: Environment): string {
+    const lang = resolveUiLang(env || {});
+    const subject = escapeHtml(mail.subject || t(lang, 'noSubjectShort'));
     const sender = escapeHtml(mail.from || '');
     const recipient = escapeHtml(mail.to || '');
     const when = escapeHtml(mail.date || '');
@@ -56,17 +58,17 @@ export function renderPreviewPage(mail: EmailCache, bodyHtml: string): string {
         ? bodyHtml
         : `<pre style="white-space:pre-wrap;margin:0">${escapeHtml(mail.text || '')}</pre>`;
 
-    return `<!doctype html><html lang="zh"><head><meta charset="utf-8">
+    return `<!doctype html><html lang="${htmlLang(lang)}"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="referrer" content="no-referrer">
 <title>${subject}</title><style>${PREVIEW_CSS}</style></head>
 <body>
 <div class="preview">
-  <div class="preview-bar"><span>mail2telegram 预览</span></div>
+  <div class="preview-bar"><span>${escapeHtml(t(lang, 'previewTitle'))}</span></div>
   <div class="preview-sheet">
     <div class="preview-meta">
       <h1>${subject}</h1>
-      <div class="meta">发件人：${sender}<br>收件人：${recipient}${when ? `<br>${when}` : ''}</div>
+      <div class="meta">${escapeHtml(t(lang, 'previewFrom'))} ${sender}<br>${escapeHtml(t(lang, 'previewTo'))} ${recipient}${when ? `<br>${when}` : ''}</div>
     </div>
     <div class="mail-canvas">${canvas}</div>
   </div>

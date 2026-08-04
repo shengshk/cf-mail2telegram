@@ -22,22 +22,30 @@ export type MaxEmailSizePolicy = 'unhandled' | 'continue' | 'truncate';
 export type BlockPolicy = 'reject' | 'forward' | 'telegram';
 
 /**
- * 精简配置（对齐 Docker）：
- * 必填：DOMAIN、TELEGRAM_BOT（或旧 TOKEN+ID）、KV 绑定 DB
- * 建议：GEMINI_API_KEY、FORWARD_LIST
- * 其余均有代码默认，可不配
+ * Required: TELEGRAM_BOT (or legacy TOKEN+ID), KV binding DB
+ * Recommended: GEMINI_API_KEY, FORWARD_EMAIL
+ * Optional: UI_LANG (en|zh|tw, default en), FORWARD_EMAIL0/1/2/…
+ * Public hostname is saved automatically when you open /init (stored in KV as PUBLIC_HOST).
  */
 export interface Environment {
-    DOMAIN: string;
-    /** token,chat_id[,junk_chat_id] — 优先于旧变量 */
+    /** token,chat_id[,junk_chat_id] — preferred over legacy vars */
     TELEGRAM_BOT?: string;
-    /** @deprecated 用 TELEGRAM_BOT */
+    /** @deprecated use TELEGRAM_BOT */
     TELEGRAM_TOKEN?: string;
-    /** @deprecated 用 TELEGRAM_BOT */
+    /** @deprecated use TELEGRAM_BOT */
     TELEGRAM_ID?: string;
 
+    /** UI language: en (default) | zh | tw */
+    UI_LANG?: string;
+
+    /**
+     * Primary backup: `user@gmail.com` or `user@gmail.com,Backup`
+     * Extra backups: FORWARD_EMAIL0 / FORWARD_EMAIL1 / … (any digits)
+     */
+    FORWARD_EMAIL?: string;
+    /** @deprecated use FORWARD_EMAIL / FORWARD_EMAILn */
     FORWARD_LIST?: string;
-    /** Gmail 文件夹/标签（如 Backup）；仅 FORWARD_LIST 首个为 Gmail 时生效，非 Gmail 忽略 */
+    /** @deprecated fold into FORWARD_EMAIL as `email,Folder` */
     FORWARD_DIR?: string;
     BLOCK_LIST?: string;
     WHITE_LIST?: string;
@@ -48,14 +56,14 @@ export interface Environment {
     MAX_EMAIL_SIZE_POLICY?: MaxEmailSizePolicy;
 
     GEMINI_API_KEY?: string;
-    /** 默认 gemini-2.5-flash-lite */
+    /** default gemini-2.5-flash-lite */
     GEMINI_MODEL?: string;
     PROMPT_TEMPLATE?: string;
-    /** 默认 Asia/Shanghai */
+    /** default Asia/Shanghai */
     TIMEZONE?: string;
-    /** Gmail 多账号序号，默认 0 */
+    /** Gmail multi-account index, default 0 */
     GMAIL_U?: string;
-    /** @deprecated 改用 FORWARD_DIR */
+    /** @deprecated use FORWARD_EMAIL folder part */
     GMAIL_LABEL?: string;
 
     GUARDIAN_MODE?: string;
@@ -64,7 +72,7 @@ export interface Environment {
     AI?: Ai;
     DEBUG?: string;
 
-    /** @deprecated 摘要已移除 */
+    /** @deprecated summary removed */
     OPENAI_API_KEY?: string;
     OPENAI_COMPLETIONS_API?: string;
     OPENAI_CHAT_MODEL?: string;

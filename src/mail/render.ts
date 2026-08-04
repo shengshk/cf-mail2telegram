@@ -1,6 +1,8 @@
 import type * as Telegram from 'telegram-bot-api-types';
 import type { ExtractResult } from './extract';
 import type { EmailCache, Environment } from '../types';
+import { resolveUiLang, t } from '../i18n';
+import { loadPublicHost } from '../public-host';
 import { truncateDisplay } from './extract';
 import { buildKeyboard, mailboxButtonUrl } from './mailbox';
 
@@ -24,41 +26,42 @@ function isDebug(env: Environment): boolean {
     return (env.DEBUG || '').toLowerCase() === 'true';
 }
 
-/** 对齐 Docker：验证码 AI 加粗 / 本地斜体；DEBUG 才贴错误原因 */
+/** OTP AI bold / local italic; DEBUG shows fallback reason */
 export async function renderEmailListMode(
     mail: EmailCache,
     env: Environment,
     extract?: ExtractResult,
 ): Promise<EmailDetailParams> {
-    const { DOMAIN } = env;
+    const lang = resolveUiLang(env);
+    const host = await loadPublicHost(env);
     const lines: string[] = [];
     if (extract?.code) {
         const code = escapeHtml(extract.code);
         const styled = extract.source === 'local' ? `<i>${code}</i>` : `<b>${code}</b>`;
-        lines.push(`验证码：${styled}`);
+        lines.push(`${t(lang, 'otp')} ${styled}`);
         if (extract.source === 'local' && extract.reason && isDebug(env)) {
-            lines.push(`调试：${escapeHtml(truncateDisplay(extract.reason, 80))}`);
+            lines.push(`${t(lang, 'debug')} ${escapeHtml(truncateDisplay(extract.reason, 80))}`);
         }
     } else {
         const subject = (mail.subject || '').trim();
         if (subject) {
-            lines.push(`主题：${escapeHtml(truncateDisplay(subject))}`);
+            lines.push(`${t(lang, 'subject')} ${escapeHtml(truncateDisplay(subject))}`);
         } else {
             const preview = truncateDisplay((mail.text || '').replace(/\s+/g, ' ').trim());
-            lines.push(`无主题：${escapeHtml(preview || '(空)')}`);
+            lines.push(`${t(lang, 'noSubject')} ${escapeHtml(preview || t(lang, 'empty'))}`);
         }
     }
-    lines.push(`发件人：${escapeHtml(mail.from || '')}`);
-    lines.push(`收件人：${escapeHtml(mail.to || '')}`);
+    lines.push(`${t(lang, 'from')} ${escapeHtml(mail.from || '')}`);
+    lines.push(`${t(lang, 'to')} ${escapeHtml(mail.to || '')}`);
     if (mail.date) {
         lines.push(escapeHtml(mail.date));
     }
 
-    const previewUrl = (mail.html || mail.text) && DOMAIN
-        ? `https://${DOMAIN}/email/${mail.id}`
+    const previewUrl = (mail.html || mail.text) && host
+        ? `https://${host}/email/${mail.id}`
         : undefined;
     const mailboxUrl = mailboxButtonUrl(mail, env);
-    const reply_markup = buildKeyboard(previewUrl, mailboxUrl) as Telegram.InlineKeyboardMarkup | undefined;
+    const reply_markup = buildKeyboard(previewUrl, mailboxUrl, lang) as Telegram.InlineKeyboardMarkup | undefined;
 
     return {
         text: lines.join('\n'),
@@ -70,18 +73,19 @@ export async function renderEmailListMode(
     };
 }
 
-function renderEmailDetail(text: string | undefined | null, id: string): EmailDetailParams {
+function renderEmailDetail(text: string | undefined | null, id: string, env: Environment): EmailDetailParams {
+    const lang = resolveUiLang(env);
     return {
-        text: text || 'No content',
+        text: text || t(lang, 'noContent'),
         reply_markup: {
             inline_keyboard: [
                 [
                     {
-                        text: '返回',
+                        text: t(lang, 'back'),
                         callback_data: `l:${id}`,
                     },
                     {
-                        text: '删除',
+                        text: t(lang, 'delete'),
                         callback_data: 'delete',
                     },
                 ],
@@ -93,19 +97,20 @@ function renderEmailDetail(text: string | undefined | null, id: string): EmailDe
     };
 }
 
-/** 兼容旧消息回调；新消息不再使用 */
-export async function renderEmailPreviewMode(mail: EmailCache, _env: Environment): Promise<EmailDetailParams> {
-    return renderEmailDetail(mail.text?.substring(0, 4096), mail.id);
+/** Compat for old message callbacks */
+export async function renderEmailPreviewMode(mail: EmailCache, env: Environment): Promise<EmailDetailParams> {
+    return renderEmailDetail(mail.text?.substring(0, 4096), mail.id, env);
 }
 
-/** 兼容旧消息回调；Summary 已移除 */
-export async function renderEmailSummaryMode(mail: EmailCache, _env: Environment): Promise<EmailDetailParams> {
-    return renderEmailDetail('摘要功能已关闭，请使用预览按钮查看原文。', mail.id);
+/** Compat; Summary removed */
+export async function renderEmailSummaryMode(mail: EmailCache, env: Environment): Promise<EmailDetailParams> {
+    const lang = resolveUiLang(env);
+    return renderEmailDetail(t(lang, 'summaryDisabled'), mail.id, env);
 }
 
-export async function renderEmailDebugMode(mail: EmailCache, _env: Environment): Promise<EmailDetailParams> {
+export async function renderEmailDebugMode(mail: EmailCache, env: Environment): Promise<EmailDetailParams> {
     const obj = { ...mail };
     delete obj.html;
     delete obj.text;
-    return renderEmailDetail(JSON.stringify(obj, null, 2), mail.id);
+    return renderEmailDetail(JSON.stringify(obj, null, 2), mail.id, env);
 }

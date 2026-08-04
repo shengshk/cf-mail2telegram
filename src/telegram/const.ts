@@ -1,24 +1,32 @@
-export const tmaModeDescription: { [key: string]: string } = {
-    test: 'Test an email address',
-    white: 'Manage the white list',
-    block: 'Manage the block list',
-};
+import type { UiLang } from '../i18n';
+import { t } from '../i18n';
 
-export const telegramCommands = [
-    {
-        command: 'id',
-        description: '/id - Get your chat ID',
-    },
-    {
-        command: 'test',
-        description: `/test - ${tmaModeDescription.test}`,
-    },
-    {
-        command: 'white',
-        description: `/white - ${tmaModeDescription.white}`,
-    },
-    {
-        command: 'block',
-        description: `/block - ${tmaModeDescription.block}`,
-    },
-];
+export function tmaModeDescription(lang: UiLang): { [key: string]: string } {
+    return {
+        test: t(lang, 'tmaTest'),
+        white: t(lang, 'tmaWhite'),
+        block: t(lang, 'tmaBlock'),
+    };
+}
+
+export function telegramCommands(lang: UiLang) {
+    const modes = tmaModeDescription(lang);
+    return [
+        {
+            command: 'id',
+            description: t(lang, 'cmdId'),
+        },
+        {
+            command: 'test',
+            description: `/test - ${modes.test}`,
+        },
+        {
+            command: 'white',
+            description: `/white - ${modes.white}`,
+        },
+        {
+            command: 'block',
+            description: `/block - ${modes.block}`,
+        },
+    ];
+}

@@ -5,8 +5,11 @@ import { validate } from '@tma.js/init-data-node/web';
 import { json, Router } from 'itty-router';
 import { Dao } from '../../db';
 import { requireTelegram } from '../../env';
+import { resolveUiLang, htmlLang, t, tmaI18nPayload } from '../../i18n';
 import { renderPreviewPage, sanitizeHtmlForPreview } from '../../mail/preview';
+import { publicHostFromRequest, savePublicHost } from '../../public-host';
 import { createTelegramBotAPI, telegramCommands, telegramWebhookHandler, tmaHTML } from '../../telegram';
+import statusHtml from '../../status.html';
 
 class HTTPError extends Error {
     readonly status: number;
@@ -74,7 +77,6 @@ function createRouter(env: Environment): RouterType {
     });
 
     const {
-        DOMAIN,
         DB,
     } = env;
     const { token: TELEGRAM_TOKEN } = requireTelegram(env);
@@ -82,23 +84,32 @@ function createRouter(env: Environment): RouterType {
     const auth = createTmaAuthMiddleware(env);
 
     router.get('/', async (): Promise<Response> => {
-        return new Response(null, {
-            status: 302,
+        return new Response(statusHtml, {
             headers: {
-                location: 'https://github.com/shengshk/mail2telegramcf',
+                'content-type': 'text/html; charset=utf-8',
             },
         });
     });
 
-    router.get('/init', async (): Promise<any> => {
+    router.get('/init', async (req: IRequest): Promise<any> => {
+        if (!DB) {
+            throw new HTTPError(500, 'KV binding DB is required');
+        }
+        const host = publicHostFromRequest(req as unknown as Request);
+        if (!host) {
+            throw new HTTPError(400, 'Cannot detect public host from request URL');
+        }
+        const savedHost = await savePublicHost(dao, host);
         const api = createTelegramBotAPI(TELEGRAM_TOKEN);
+        const lang = resolveUiLang(env);
         const webhook = await api.setWebhook({
-            url: `https://${DOMAIN}/telegram/${TELEGRAM_TOKEN}/webhook`,
+            url: `https://${savedHost}/telegram/${TELEGRAM_TOKEN}/webhook`,
         });
         const commands = await api.setMyCommands({
-            commands: telegramCommands,
+            commands: telegramCommands(lang),
         });
         return {
+            host: savedHost,
             webhook: await webhook.json(),
             commands: await commands.json(),
         };
@@ -107,7 +118,12 @@ function createRouter(env: Environment): RouterType {
     /// Telegram Mini Apps
 
     router.get('/tma', async (): Promise<Response> => {
-        return new Response(tmaHTML, {
+        const lang = resolveUiLang(env);
+        const payload = JSON.stringify(tmaI18nPayload(lang)).replace(/</g, '\\u003c');
+        const html = tmaHTML
+            .replace(/__UI_LANG__/g, htmlLang(lang))
+            .replace('__I18N_JSON__', payload);
+        return new Response(html, {
             headers: {
                 'content-type': 'text/html; charset=utf-8',
             },
@@ -174,7 +190,8 @@ function createRouter(env: Environment): RouterType {
         const mode = String(req.query.mode || 'page');
         const value = await dao.loadMailCache(id);
         if (!value) {
-            return new Response('预览不存在或已过期', {
+            const lang = resolveUiLang(env);
+            return new Response(t(lang, 'previewExpired'), {
                 status: 404,
                 headers: { 'content-type': 'text/plain; charset=utf-8' },
             });
@@ -197,7 +214,7 @@ function createRouter(env: Environment): RouterType {
         const body = value.html
             ? sanitizeHtmlForPreview(value.html)
             : '';
-        const page = renderPreviewPage(value, body);
+        const page = renderPreviewPage(value, body, env);
         return new Response(page, {
             headers: {
                 'content-type': 'text/html; charset=utf-8',

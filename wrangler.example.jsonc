@@ -13,13 +13,14 @@
 		}
 	],
 	"vars": {
-		"DOMAIN": "mail2telegram.YOUR_NAME.workers.dev"
-		// Secrets 建议用控制台 / wrangler secret：
+		"UI_LANG": "en"
+		// Secrets (dashboard / wrangler secret):
 		//   TELEGRAM_BOT=token,chat_id
 		//   GEMINI_API_KEY=AIza...
-		// 可选 Vars：
-		//   FORWARD_LIST=backup@gmail.com
-		//   FORWARD_DIR=Backup
+		// Optional:
+		//   FORWARD_EMAIL=you+bak@gmail.com,Backup
+		//   FORWARD_EMAIL0=other@outlook.com
 		//   GMAIL_U=0
+		// Public host: open https://<worker-host>/init once (saved to KV). No DOMAIN var.
 	}
 }

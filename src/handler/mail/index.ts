@@ -3,7 +3,7 @@ import type { ExtractResult } from '../../mail/extract';
 import type { BlockPolicy, EmailCache, Environment } from '../../types';
 import { Dao } from '../../db';
 import { requireTelegram } from '../../env';
-import { extractVerificationCode, isMessageBlock, parseEmail, renderEmailListMode } from '../../mail';
+import { extractVerificationCode, forwardEmailAddresses, isMessageBlock, parseEmail, renderEmailListMode } from '../../mail';
 import { createTelegramBotAPI } from '../../telegram';
 
 export async function sendMailToTelegram(mail: EmailCache, env: Environment, extract?: ExtractResult): Promise<number[]> {
@@ -27,7 +27,6 @@ export async function sendMailToTelegram(mail: EmailCache, env: Environment, ext
 
 export async function emailHandler(message: ForwardableEmailMessage, env: Environment): Promise<void> {
     const {
-        FORWARD_LIST,
         BLOCK_POLICY,
         GUARDIAN_MODE,
         DB,
@@ -38,7 +37,7 @@ export async function emailHandler(message: ForwardableEmailMessage, env: Enviro
     } = env;
 
     if (!DB) {
-        console.error('[mail] KV 绑定 DB 缺失：去 Worker → 绑定，添加 KV，变量名必须是 DB');
+        console.error('[mail] KV binding DB missing: Worker → Bindings → KV, variable name must be DB');
     }
     const dao = new Dao(DB);
     const id = message.headers.get('Message-ID')?.trim() || crypto.randomUUID();
@@ -55,11 +54,10 @@ export async function emailHandler(message: ForwardableEmailMessage, env: Enviro
 
     try {
         const blockForward = isBlock && blockPolicy.includes('forward');
-        const forwardList = blockForward ? [] : (FORWARD_LIST || '').split(',');
-        for (const forward of forwardList) {
+        const forwardList = blockForward ? [] : forwardEmailAddresses(env);
+        for (const add of forwardList) {
             try {
-                const add = forward.trim();
-                if (status.forward.includes(add)) {
+                if (!add || status.forward.includes(add)) {
                     continue;
                 }
                 await message.forward(add);

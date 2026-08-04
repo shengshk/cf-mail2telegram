@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="__UI_LANG__">
 
 <head>
   <meta charset="UTF-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
-  <title>mail2telegram</title>
+  <title>cf-mail2telegram</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
   <link href="https://unpkg.com/boltcss/bolt.min.css" rel="stylesheet">
@@ -51,19 +51,19 @@
   <div id="app">
     <div v-if="func === 'list'">
       <h3 class="growContainer">
-        List Mode
+        {{ i18n.listMode }}
         <select class="growItem" style="margin-left: 10px;" v-model="mode">
-          <option value="block">Block list</option>
-          <option value="white">White list</option>
-          <option value="test">Test address</option>
+          <option value="block">{{ i18n.blockList }}</option>
+          <option value="white">{{ i18n.whiteList }}</option>
+          <option value="test">{{ i18n.testAddress }}</option>
         </select>
       </h3>
       <p v-if="tipMessage">{{ tipMessage }}</p>
       <table>
         <thead>
           <tr>
-            <th>address</th>
-            <th>{{ mode === 'test' ? 'type' : 'action' }}</th>
+            <th>{{ i18n.address }}</th>
+            <th>{{ mode === 'test' ? i18n.type : i18n.action }}</th>
           </tr>
         </thead>
         <tbody v-if="mode!=='test'">
@@ -72,13 +72,13 @@
               <input :placeholder="inputPlaceholder" class="growItem" v-model="inputAddress">
             </td>
             <td>
-              <button @click="addAddress">Add</button>
+              <button @click="addAddress">{{ i18n.add }}</button>
             </td>
           </tr>
           <tr :key="index" v-for="(address, index) in addresses">
             <td>{{ address }}</td>
             <td>
-              <button @click="removeAddress(index)">Delete</button>
+              <button @click="removeAddress(index)">{{ i18n.delete }}</button>
             </td>
           </tr>
         </tbody>
@@ -88,7 +88,7 @@
               <input :placeholder="inputPlaceholder" class="growItem" v-model="inputAddress">
             </td>
             <td>
-              <button @click="testAddress">Test</button>
+              <button @click="testAddress">{{ i18n.test }}</button>
             </td>
           </tr>
           <tr :key="index" v-for="(item, index) in addresses">
@@ -99,37 +99,37 @@
       </table>
     </div>
     <div v-if="func === 'sendmail'">
-      <h3>Send Mail</h3>
+      <h3>{{ i18n.sendMail }}</h3>
       <p v-if="tipMessage">{{ tipMessage }}</p>
       <table>
         <tbody>
           <tr>
-            <td style="width: 10px;">From</td>
+            <td style="width: 10px;">{{ i18n.from }}</td>
             <td>
               <input v-model="sendMail.from" class="growItem">
             </td>
           </tr>
           <tr>
-            <td>To</td>
+            <td>{{ i18n.to }}</td>
             <td>
               <input v-model="sendMail.to" class="growItem">
             </td>
           </tr>
           <tr>
-            <td>Subject</td>
+            <td>{{ i18n.subject }}</td>
             <td>
               <input v-model="sendMail.subject" class="growItem">
             </td>
           </tr>
           <tr>
-            <td>Text</td>
+            <td>{{ i18n.text }}</td>
             <td>
               <textarea v-model="sendMail.text" class="growItem"></textarea>
             </td>
           </tr>
           <tr>
             <td colspan="2">
-              <button>Send</button>
+              <button>{{ i18n.send }}</button>
             </td>
           </tr>
         </tbody>
@@ -138,6 +138,7 @@
   </div>
 
   <script>
+    const I18N = __I18N_JSON__;
     const { createApp, computed, ref, onMounted, watch } = Vue;
 
 
@@ -188,6 +189,7 @@
       setup() {
 
         const urlParams = new URLSearchParams(window.location.search);
+        const i18n = I18N;
 
         const blockList = ref([]);
         const whiteList = ref([]);
@@ -220,11 +222,11 @@
         const inputPlaceholder = computed(() => {
           switch (mode.value) {
             case 'block':
-              return 'New block address regex';
+              return i18n.placeholderBlock;
             case 'white':
-              return 'New white address regex';
+              return i18n.placeholderWhite;
             case 'test':
-              return 'Test address';
+              return i18n.placeholderTest;
           }
         });
 
@@ -323,6 +325,7 @@
         });
 
         return {
+          i18n,
           addresses,
           tipMessage,
           inputAddress,

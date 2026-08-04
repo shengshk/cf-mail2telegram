@@ -5,10 +5,10 @@
     "description": "Forward email to telegram (OTP + preview)",
     "author": "shengshk",
     "license": "MIT",
-    "homepage": "https://github.com/shengshk/mail2telegramcf",
+    "homepage": "https://github.com/shengshk/cf-mail2telegram",
     "repository": {
         "type": "git",
-        "url": "https://github.com/shengshk/mail2telegramcf"
+        "url": "https://github.com/shengshk/cf-mail2telegram"
     },
     "exports": {
         "import": "./index.js"

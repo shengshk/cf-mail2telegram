@@ -5,6 +5,8 @@ import { Dao } from '../db';
 import { requireTelegram } from '../env';
 import { renderEmailDebugMode, renderEmailListMode, renderEmailPreviewMode, renderEmailSummaryMode, replyToEmail } from '../mail';
 // Summary / 旧 Preview 回调仅兼容历史消息；新消息已改为 URL「预览」
+import { resolveUiLang, t } from '../i18n';
+import { loadPublicHost } from '../public-host';
 import { createTelegramBotAPI } from './api';
 import { tmaModeDescription } from './const';
 
@@ -45,7 +47,8 @@ async function logTelegramResponse(method: string, response: Response): Promise<
 
 function handleIDCommand(env: Environment): TelegramMessageHandler {
     return async (msg: Telegram.Message): Promise<Response> => {
-        const text = `Your chat ID is ${msg.chat.id}`;
+        const lang = resolveUiLang(env);
+        const text = `${t(lang, 'yourChatId')} ${msg.chat.id}`;
         return await handleOpenTMACommand('', text, env)(msg);
     };
 }
@@ -53,25 +56,29 @@ function handleIDCommand(env: Environment): TelegramMessageHandler {
 function handleOpenTMACommand(mode: string, text: string | null, env: Environment): TelegramMessageHandler {
     return async (msg: Telegram.Message): Promise<Response> => {
         const { token } = requireTelegram(env);
-        const { DOMAIN } = env;
+        const lang = resolveUiLang(env);
+        const modes = tmaModeDescription(lang);
         const params: Telegram.SendMessageParams = {
             chat_id: msg.chat.id,
-            text: text || tmaModeDescription[mode] || 'Address Manager',
+            text: text || modes[mode] || t(lang, 'addressManager'),
         };
 
         if (msg.chat.type === 'private') {
-            params.reply_markup = {
-                inline_keyboard: [
-                    [
-                        {
-                            text: 'Open Manager',
-                            web_app: {
-                                url: `https://${DOMAIN}/tma?mode=${mode}`,
+            const host = await loadPublicHost(env);
+            if (host) {
+                params.reply_markup = {
+                    inline_keyboard: [
+                        [
+                            {
+                                text: t(lang, 'openManager'),
+                                web_app: {
+                                    url: `https://${host}/tma?mode=${mode}`,
+                                },
                             },
-                        },
+                        ],
                     ],
-                ],
-            };
+                };
+            }
         }
 
         return await createTelegramBotAPI(token).sendMessage(params);

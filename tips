@@ -1,76 +1,88 @@
-mail2telegram CF Worker 配置备忘
+cf-mail2telegram CF Worker notes
 ================================
 
-收信 → Gemini 抽验证码（失败才本地正则）→ Telegram（预览 + 邮箱）
+Inbound mail → Gemini OTP (local regex fallback) → Telegram (Preview + Mailbox)
 
 
-一、KV（必须）
--------------
+1) KV (required)
+----------------
 
-光有 Workers KV 命名空间不够，还要绑到这个 Worker：
+Bind a KV namespace to this Worker:
 
-  Worker → 绑定 → KV Namespace
-  变量名必须是：DB
-  （本仓库 wrangler 已写 mail2telegram-db 的 id，部署后应自动带上）
+  Worker → Bindings → KV Namespace
+  Variable name must be: DB
 
 
-二、变量（精简）
----------------
+2) Variables
+------------
 
-Secrets（推荐）：
+Secrets (recommended):
 
   TELEGRAM_BOT       token,chat_id
-                     格式同 Docker；也兼容旧 TELEGRAM_TOKEN + TELEGRAM_ID
-
-  GEMINI_API_KEY     Google AI Studio Key（要 AI 抽码时）
+  GEMINI_API_KEY     Google AI Studio key (AIza…)
 
 
-Vars：
+Vars:
 
-  DOMAIN             Worker 域名，不要带 https://
-                     例：mail2telegram.<name>.workers.dev
+  UI_LANG            en (default) | zh | tw
+                     Telegram labels, preview chrome, mini app, bot commands
 
-  FORWARD_LIST       可选。备份邮箱，多个逗号分隔（取第一个决定「邮箱」按钮）
-                     须在 Email Routing「目标地址」里已验证
+  FORWARD_EMAIL      Primary backup: email  or  email,GmailFolder
+                     e.g. you+bak@gmail.com,Backup
 
-  FORWARD_DIR        可选。仅 Gmail 有效：跳到该标签/文件夹（如 Backup）
-                     非 Gmail 忽略；不配则 Gmail 跳首页
+  FORWARD_EMAIL0     Extra backups (any digits: 0,1,2,…)
+  FORWARD_EMAIL1     Usually just an email; folder on extras is ignored for the button
+  FORWARD_EMAIL2     …
 
-  DEBUG              可选。默认 false / 不配
-                     true：TG 显示本地兜底时的 Gemini 错误原因；webhook 详日志
-                     false：TG 不贴错误；无效 webhook 不刷 warn
-
-
-「邮箱」按钮：有 thrid 优先精准；否则 Gmail+FORWARD_DIR→文件夹，
-Gmail 无 DIR→首页；Outlook→outlook 首页；其它→https://mail.<域名>；
-无 FORWARD_LIST 且无 FORWARD_DIR→只显示「预览」
-
-TG 验证码样式：AI 加粗，本地斜体（无「· 本地」字样）
+  DEBUG              true → show Gemini error on local OTP fallback
 
 
-有默认、一般不用配：
+No DOMAIN variable.
+Public host is saved when you open /init (KV key PUBLIC_HOST).
+
+
+Mailbox button uses the primary FORWARD_EMAIL (and its folder if Gmail).
+All FORWARD_EMAIL* addresses receive Email Routing forwards.
+
+
+Defaults (usually leave alone):
 
   GEMINI_MODEL       gemini-2.5-flash-lite
   TIMEZONE           Asia/Shanghai
-  GMAIL_U            0（Gmail 多账号时再改）
-  MAIL_TTL / GUARDIAN_MODE / BLOCK_* / …
+  GMAIL_U            0
 
 
-三、部署注意
------------
+Legacy (still read if no FORWARD_EMAIL*):
 
-wrangler 已 keep_vars=true：不会清空 Dashboard 明文变量。
-密钥用 Secret 更稳。
-
-部署后打开一次：https://<DOMAIN>/init
+  FORWARD_LIST + FORWARD_DIR
 
 
-四、核对
--------
+3) Deploy
+---------
 
-  [ ] KV 绑定名 DB
-  [ ] TELEGRAM_BOT + DOMAIN
-  [ ] GEMINI_API_KEY（要用 AI 抽码）
-  [ ] FORWARD_LIST 若要用：目标地址已验证
-  [ ] Email Routing → 该 Worker
-  [ ] 访问过 /init
+keep_vars=true — dashboard plain Vars survive deploy.
+
+After deploy open the Worker public URL (status page), then click the center status text to run /init
+(orb → GitHub; blank area does nothing; 1.5s debounce). Or open .../init directly.
+
+  Mode A (workers.dev — two levels before workers.dev):
+    https://mail2telegram.your-subdomain.workers.dev
+
+  Mode B (your own domain routed to this Worker):
+    https://mail.example.com
+
+JSON/toast should show host. Re-run /init after changing UI_LANG or switching primary host.
+
+A and B can both exist on Cloudflare, but only the last successful /init host is used for Telegram/Preview/Mini App. Pick one primary; do not casually /init on the other.
+
+
+4) Checklist
+------------
+
+  [ ] KV binding name DB
+  [ ] TELEGRAM_BOT
+  [ ] UI_LANG if you want zh or tw
+  [ ] GEMINI_API_KEY for AI OTP
+  [ ] FORWARD_EMAIL* verified in Email Routing destinations
+  [ ] Email Routing → this Worker
+  [ ] Visited /init (and removed any old DOMAIN var if present)

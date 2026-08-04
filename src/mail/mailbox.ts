@@ -1,8 +1,7 @@
 import type { EmailCache, Environment } from '../types';
-
-function firstForwardAddress(env: Environment): string {
-    return (env.FORWARD_LIST || '').split(',').map(s => s.trim()).find(Boolean) || '';
-}
+import type { UiLang } from '../i18n';
+import { t } from '../i18n';
+import { primaryForwardTarget } from './forward';
 
 function emailDomain(address: string): string {
     const at = address.lastIndexOf('@');
@@ -22,7 +21,11 @@ function gmailU(env: Environment): number {
     return Number.isFinite(u) && u >= 0 ? u : 0;
 }
 
-/** 有 thrid 时直达该线程（Gmail）；文件夹优先 FORWARD_DIR，否则 INBOX */
+function primaryFolder(env: Environment): string {
+    return (primaryForwardTarget(env)?.folder || '').trim();
+}
+
+/** 有 thrid 时直达该线程（Gmail）；文件夹优先主 FORWARD_EMAIL 的 folder，否则 INBOX */
 function gmailThridUrl(thrid: string, env: Environment): string | undefined {
     const raw = thrid.trim();
     if (!/^\d+$/.test(raw)) {
@@ -30,7 +33,7 @@ function gmailThridUrl(thrid: string, env: Environment): string | undefined {
     }
     try {
         const hexId = BigInt(raw).toString(16);
-        const label = (env.FORWARD_DIR || '').trim() || 'INBOX';
+        const label = primaryFolder(env) || 'INBOX';
         const u = gmailU(env);
         if (label.toUpperCase() === 'INBOX') {
             return `https://mail.google.com/mail/u/${u}/#inbox/${hexId}`;
@@ -43,7 +46,7 @@ function gmailThridUrl(thrid: string, env: Environment): string | undefined {
 
 function gmailFolderOrHome(env: Environment): string {
     const u = gmailU(env);
-    const dir = (env.FORWARD_DIR || '').trim();
+    const dir = primaryFolder(env);
     if (dir) {
         if (dir.toUpperCase() === 'INBOX') {
             return `https://mail.google.com/mail/u/${u}/#inbox`;
@@ -59,7 +62,7 @@ function providerHomeUrl(address: string): string {
         return 'https://mail.google.com/';
     }
     if (isGmailDomain(domain)) {
-        return ''; // caller handles gmail
+        return '';
     }
     if (isOutlookDomain(domain)) {
         return 'https://outlook.live.com/mail/';
@@ -70,9 +73,9 @@ function providerHomeUrl(address: string): string {
 /**
  * 「邮箱」按钮：
  * - 有 X-GM-THRID → 精准深链（优先）
- * - Gmail（FORWARD_LIST 首个，或仅配了 FORWARD_DIR）：FORWARD_DIR → 标签页，否则 Gmail 首页
- * - 非 Gmail：忽略 FORWARD_DIR，按首个 FORWARD_LIST 跳对应首页；未配 FORWARD_LIST → 不显示按钮
- * - 已废止 rfc822msgid 搜索
+ * - 主 FORWARD_EMAIL 为 Gmail：folder → 标签页，否则 Gmail 首页
+ * - 非 Gmail：忽略 folder，跳对应首页
+ * - 未配置任何 FORWARD_EMAIL* → 不显示按钮（仅 folder 且无邮箱时仍按 Gmail 处理）
  */
 export function mailboxButtonUrl(mail: EmailCache, env: Environment): string | undefined {
     if (mail.gmThrid) {
@@ -82,11 +85,11 @@ export function mailboxButtonUrl(mail: EmailCache, env: Environment): string | u
         }
     }
 
-    const first = firstForwardAddress(env);
-    const dir = (env.FORWARD_DIR || '').trim();
+    const primary = primaryForwardTarget(env);
+    const first = primary?.email || '';
+    const dir = primary?.folder || '';
 
     if (!first) {
-        // 仅配了文件夹：按 Gmail 处理
         if (dir) {
             return gmailFolderOrHome(env);
         }
@@ -98,7 +101,6 @@ export function mailboxButtonUrl(mail: EmailCache, env: Environment): string | u
         return gmailFolderOrHome(env);
     }
 
-    // 非 Gmail：忽略 FORWARD_DIR
     return providerHomeUrl(first) || undefined;
 }
 
@@ -110,13 +112,14 @@ export function gmailMailboxUrl(mail: EmailCache, env: Environment): string | un
 export function buildKeyboard(
     previewUrl: string | undefined,
     mailboxUrl: string | undefined,
+    lang: UiLang,
 ): { inline_keyboard: Array<Array<{ text: string; url: string }>> } | undefined {
     const row: Array<{ text: string; url: string }> = [];
     if (previewUrl) {
-        row.push({ text: '预览', url: previewUrl });
+        row.push({ text: t(lang, 'previewBtn'), url: previewUrl });
     }
     if (mailboxUrl) {
-        row.push({ text: '邮箱', url: mailboxUrl });
+        row.push({ text: t(lang, 'mailboxBtn'), url: mailboxUrl });
     }
     if (!row.length) {
         return undefined;
