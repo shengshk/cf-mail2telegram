@@ -1,4 +1,4 @@
-import type { Environment } from '../types';
+import type { Environment } from './types';
 import { Dao } from './db';
 
 const PUBLIC_HOST_KEY = 'PUBLIC_HOST';
