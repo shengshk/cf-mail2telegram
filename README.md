@@ -201,7 +201,7 @@ But Telegram / Preview / Mini App follow **only one** saved host (`PUBLIC_HOST` 
 
 ## Telegram Mini Apps
 
-Black/white lists are managed via Mini Apps (`/white`, `/block`, `/test` → Open Manager). Rules are stored in KV.
+Black/white lists are managed via Mini Apps. Use `/cfmail` to see your Chat ID, Worker URL (from `/init`), and open Block / White / Test. Rules are stored in KV.
 
 > After upgrading, call `/init` again so bot commands stay in sync.
 
@@ -431,9 +431,9 @@ pnpm pub  # wrangler deploy --keep-vars
 
 ## Telegram 小程序
 
-旧版使用命令方式管理黑白名单已废弃，现在使用小程序管理黑白名单。环境变量中的黑白名单无法在小程序中显示和修改。
+黑白名单通过小程序管理。使用 `/cfmail` 查看 Chat ID、Worker 地址（来自 `/init`），并打开「黑名单 / 白名单 / 测试」三个按钮。规则保存在 KV。环境变量中的黑白名单无法在小程序中显示和修改。
 
-> 使用小程序需要重新调用 `/init` 接口绑定指令。
+> 升级后请重新执行 `/init`，以同步 Bot 命令（仅保留 `/cfmail`）。
 
 | 黑名单 | 白名单 | 名单测试 |
 |:-------|:-------|:---------|

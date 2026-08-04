@@ -21,11 +21,13 @@ export type I18nKey =
     | 'previewExpired'
     | 'openManager'
     | 'addressManager'
-    | 'cmdId'
+    | 'cmdCfmail'
     | 'tmaTest'
     | 'tmaWhite'
     | 'tmaBlock'
     | 'yourChatId'
+    | 'workerRoute'
+    | 'workerRouteMissing'
     | 'tmaListMode'
     | 'tmaBlockList'
     | 'tmaWhiteList'
@@ -66,15 +68,17 @@ const en: Record<I18nKey, string> = {
     previewExpired: 'Preview not found or expired',
     openManager: 'Open Manager',
     addressManager: 'Address Manager',
-    cmdId: '/id - Get your chat ID',
-    tmaTest: 'Test an email address',
+    cmdCfmail: 'Show Chat ID, Worker URL, and list managers',
+    tmaTest: 'Test address rules',
     tmaWhite: 'Manage the white list',
     tmaBlock: 'Manage the block list',
-    yourChatId: 'Your chat ID is',
+    yourChatId: 'Your Chat ID is',
+    workerRoute: 'Worker route is',
+    workerRouteMissing: 'Worker route is not set. Open the Worker status page and tap the status text to run /init.',
     tmaListMode: 'List Mode',
     tmaBlockList: 'Block list',
     tmaWhiteList: 'White list',
-    tmaTestAddress: 'Test address',
+    tmaTestAddress: 'Test',
     tmaAddress: 'address',
     tmaType: 'type',
     tmaAction: 'action',
@@ -82,7 +86,7 @@ const en: Record<I18nKey, string> = {
     tmaDelete: 'Delete',
     tmaPlaceholderBlock: 'New block address regex',
     tmaPlaceholderWhite: 'New white address regex',
-    tmaPlaceholderTest: 'Test address',
+    tmaPlaceholderTest: 'Test',
     tmaSendMail: 'Send Mail',
     tmaFrom: 'From',
     tmaTo: 'To',
@@ -112,15 +116,17 @@ const zh: Record<I18nKey, string> = {
     previewExpired: '预览不存在或已过期',
     openManager: '打开管理',
     addressManager: '地址管理',
-    cmdId: '/id - 获取你的 Chat ID',
-    tmaTest: '测试邮箱地址',
+    cmdCfmail: '显示 Chat ID、Worker 地址与名单管理',
+    tmaTest: '测试地址规则',
     tmaWhite: '管理白名单',
     tmaBlock: '管理黑名单',
     yourChatId: '你的 Chat ID 是',
+    workerRoute: 'Worker路由是',
+    workerRouteMissing: 'Worker 路由未设置。请打开 Worker 状态页并点击中间文字执行初始化。',
     tmaListMode: '名单模式',
     tmaBlockList: '黑名单',
     tmaWhiteList: '白名单',
-    tmaTestAddress: '测试地址',
+    tmaTestAddress: '测试',
     tmaAddress: '地址',
     tmaType: '类型',
     tmaAction: '操作',
@@ -128,7 +134,7 @@ const zh: Record<I18nKey, string> = {
     tmaDelete: '删除',
     tmaPlaceholderBlock: '新黑名单地址正则',
     tmaPlaceholderWhite: '新白名单地址正则',
-    tmaPlaceholderTest: '测试地址',
+    tmaPlaceholderTest: '测试',
     tmaSendMail: '发送邮件',
     tmaFrom: '发件人',
     tmaTo: '收件人',
@@ -158,15 +164,17 @@ const tw: Record<I18nKey, string> = {
     previewExpired: '預覽不存在或已過期',
     openManager: '開啟管理',
     addressManager: '地址管理',
-    cmdId: '/id - 取得你的 Chat ID',
-    tmaTest: '測試電子郵件地址',
+    cmdCfmail: '顯示 Chat ID、Worker 地址與名單管理',
+    tmaTest: '測試地址規則',
     tmaWhite: '管理白名單',
     tmaBlock: '管理黑名單',
     yourChatId: '你的 Chat ID 是',
+    workerRoute: 'Worker路由是',
+    workerRouteMissing: 'Worker 路由未設定。請開啟 Worker 狀態頁並點擊中間文字執行初始化。',
     tmaListMode: '名單模式',
     tmaBlockList: '黑名單',
     tmaWhiteList: '白名單',
-    tmaTestAddress: '測試地址',
+    tmaTestAddress: '測試',
     tmaAddress: '地址',
     tmaType: '類型',
     tmaAction: '操作',
@@ -174,7 +182,7 @@ const tw: Record<I18nKey, string> = {
     tmaDelete: '刪除',
     tmaPlaceholderBlock: '新黑名單地址正規表示式',
     tmaPlaceholderWhite: '新白名單地址正規表示式',
-    tmaPlaceholderTest: '測試地址',
+    tmaPlaceholderTest: '測試',
     tmaSendMail: '傳送郵件',
     tmaFrom: '寄件者',
     tmaTo: '收件者',

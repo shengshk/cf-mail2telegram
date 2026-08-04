@@ -8,7 +8,6 @@ import { renderEmailDebugMode, renderEmailListMode, renderEmailPreviewMode, rend
 import { resolveUiLang, t } from '../i18n';
 import { loadPublicHost } from '../public-host';
 import { createTelegramBotAPI } from './api';
-import { tmaModeDescription } from './const';
 
 type TelegramMessageHandler = (message: Telegram.Message) => Promise<Response>;
 type CommandHandlerGroup = Record<string, TelegramMessageHandler>;
@@ -45,40 +44,42 @@ async function logTelegramResponse(method: string, response: Response): Promise<
     logTelegram('api.response', data);
 }
 
-function handleIDCommand(env: Environment): TelegramMessageHandler {
-    return async (msg: Telegram.Message): Promise<Response> => {
-        const lang = resolveUiLang(env);
-        const text = `${t(lang, 'yourChatId')} ${msg.chat.id}`;
-        return await handleOpenTMACommand('', text, env)(msg);
-    };
-}
-
-function handleOpenTMACommand(mode: string, text: string | null, env: Environment): TelegramMessageHandler {
+function handleCfmailCommand(env: Environment): TelegramMessageHandler {
     return async (msg: Telegram.Message): Promise<Response> => {
         const { token } = requireTelegram(env);
         const lang = resolveUiLang(env);
-        const modes = tmaModeDescription(lang);
+        const host = await loadPublicHost(env);
+        const lines = [
+            `${t(lang, 'yourChatId')} ${msg.chat.id}`,
+            host
+                ? `${t(lang, 'workerRoute')} https://${host}/`
+                : t(lang, 'workerRouteMissing'),
+        ];
         const params: Telegram.SendMessageParams = {
             chat_id: msg.chat.id,
-            text: text || modes[mode] || t(lang, 'addressManager'),
-        };
+            text: lines.join('\n'),
+            disable_web_page_preview: true,
+        } as Telegram.SendMessageParams;
 
-        if (msg.chat.type === 'private') {
-            const host = await loadPublicHost(env);
-            if (host) {
-                params.reply_markup = {
-                    inline_keyboard: [
-                        [
-                            {
-                                text: t(lang, 'openManager'),
-                                web_app: {
-                                    url: `https://${host}/tma?mode=${mode}`,
-                                },
-                            },
-                        ],
+        if (msg.chat.type === 'private' && host) {
+            params.reply_markup = {
+                inline_keyboard: [
+                    [
+                        {
+                            text: t(lang, 'tmaBlockList'),
+                            web_app: { url: `https://${host}/tma?mode=block` },
+                        },
+                        {
+                            text: t(lang, 'tmaWhiteList'),
+                            web_app: { url: `https://${host}/tma?mode=white` },
+                        },
+                        {
+                            text: t(lang, 'tmaTestAddress'),
+                            web_app: { url: `https://${host}/tma?mode=test` },
+                        },
                     ],
-                };
-            }
+                ],
+            };
         }
 
         return await createTelegramBotAPI(token).sendMessage(params);
@@ -158,12 +159,12 @@ async function telegramCommandHandler(message: Telegram.Message, env: Environmen
         return;
     }
     command = command.substring(1);
+    // Telegram may send "cfmail@BotName"
+    command = command.split('@')[0] || command;
+    const cfmail = handleCfmailCommand(env);
     const handlers: CommandHandlerGroup = {
-        id: handleIDCommand(env),
-        start: handleIDCommand(env),
-        test: handleOpenTMACommand('test', null, env),
-        white: handleOpenTMACommand('white', null, env),
-        block: handleOpenTMACommand('block', null, env),
+        cfmail,
+        start: cfmail,
     };
 
     if (handlers[command]) {
@@ -171,9 +172,8 @@ async function telegramCommandHandler(message: Telegram.Message, env: Environmen
         await handlers[command](message);
         return;
     }
-    // 兼容旧版命令返回默认信息
     logTelegram('command.unknown', { command, chatId: message.chat.id, messageId: message.message_id });
-    await handleOpenTMACommand('', `Unknown command: ${command}, try to reinitialize the bot.`, env)(message);
+    await cfmail(message);
 }
 
 async function telegramCallbackHandler(callback: Telegram.CallbackQuery, env: Environment): Promise<void> {
