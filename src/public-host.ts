@@ -1,5 +1,5 @@
 import type { Environment } from '../types';
-import { Dao } from '../db';
+import { Dao } from './db';
 
 const PUBLIC_HOST_KEY = 'PUBLIC_HOST';
 
