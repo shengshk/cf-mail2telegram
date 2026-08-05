@@ -265,17 +265,15 @@
       document.body.classList.remove("state-unbound", "state-switchable", "state-running");
       document.body.classList.add("state-" + nextMode);
       renderPhrases(nextMode);
+      statusEl.classList.add("clickable");
 
       if (nextMode === "running") {
-        statusEl.classList.remove("clickable");
-        statusEl.removeAttribute("title");
-        hintEl.textContent = "cf-mail2telegram · online";
+        statusEl.title = "Re-run /init (webhook + commands)";
+        hintEl.textContent = "cf-mail2telegram · online · tap to re-init";
       } else if (nextMode === "unbound") {
-        statusEl.classList.add("clickable");
         statusEl.title = "Bind Telegram webhook";
         hintEl.textContent = "cf-mail2telegram · unbound · " + pageHost;
       } else {
-        statusEl.classList.add("clickable");
         statusEl.title = "Re-bind with this host";
         hintEl.textContent = (boundHost || "?") + " → " + pageHost;
       }
@@ -284,7 +282,7 @@
     async function refreshStatus() {
       pageHost = normalizeHost(location.host);
       try {
-        const res = await fetch("/api/status", { cache: "no-store" });
+        const res = await fetch("/api/status", { cache: "no-store", credentials: "same-origin" });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
           showToast(data.error || ("状态失败 " + res.status));
@@ -297,9 +295,7 @@
         applyState(resolveMode(boundHost, pageHost));
         if (new URLSearchParams(location.search).get("runInit") === "1") {
           history.replaceState({}, "", "/");
-          if (mode !== "running") {
-            void runInit(true);
-          }
+          void runInit(true);
         }
       } catch {
         showToast("状态加载失败");
@@ -308,7 +304,6 @@
     }
 
     async function runInit(skipConfirm) {
-      if (mode === "running") return;
       if (!skipConfirm) {
         if (mode === "unbound") {
           if (!confirm("用当前域名绑定 Telegram webhook？\n" + pageHost)) return;
@@ -317,6 +312,12 @@
             "将绑定从旧域名切换到当前域名？\n"
             + (boundHost || "?") + " → " + pageHost + "\n"
             + "Webhook / 预览 / 小程序将改用新域名。"
+          )) return;
+        } else {
+          if (!confirm(
+            "重新初始化？\n"
+            + "将刷新 Telegram webhook 与 Bot 命令。\n"
+            + pageHost
           )) return;
         }
       }
@@ -365,7 +366,6 @@
 
     statusEl.addEventListener("click", async (e) => {
       e.stopPropagation();
-      if (mode === "running") return;
       const now = Date.now();
       if (initBusy || now - lastInitAt < DEBOUNCE_MS) {
         showToast("请稍候…");

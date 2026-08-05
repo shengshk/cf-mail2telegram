@@ -155,7 +155,10 @@ h1{margin:0;font-size:1.25rem;font-weight:650;color:#111827;letter-spacing:-.01e
 input{width:100%;border-radius:8px;border:1px solid #d1d5db;background:#fff;
 color:#111827;padding:.65rem .75rem;font-size:.9rem;outline:none}
 input:focus{border-color:#9ca3af;box-shadow:0 0 0 3px rgba(156,163,175,.25)}
-label.rem{display:flex;align-items:center;gap:.5rem;font-size:.8rem;color:#4b5563;cursor:pointer;user-select:none}
+input[type=checkbox]{width:auto;padding:0;margin:0;flex-shrink:0;accent-color:#374151;
+box-shadow:none;border:none}
+label.rem{display:flex;align-items:center;gap:.5rem;font-size:.8rem;color:#4b5563;
+cursor:pointer;user-select:none;white-space:nowrap;width:fit-content}
 .err{margin:0;font-size:.875rem;color:#b91c1c}
 button{width:100%;border:none;border-radius:8px;padding:.7rem 1rem;font-size:.95rem;font-weight:600;
 color:#fff;background:#374151;cursor:pointer}

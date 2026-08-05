@@ -99,7 +99,7 @@ You can open `/init` directly, or open the Worker root URL (status page). The pa
 |-------|-------|-------------------|
 | Unbound | Red | Confirm → login if `WEB_USER` set → `/init` |
 | Switchable | Yellow | Confirm → login if `WEB_USER` set → `/init` with new host |
-| Running | Green | Not clickable |
+| Running | Green | Confirm → re-run `/init` (refresh webhook + bot commands) |
 
 The glowing orb always opens the GitHub repo; blank areas do nothing.
 
@@ -140,7 +140,7 @@ Only if you have already bound a custom domain / route to this Worker in Cloudfl
 #### Notes for both modes
 
 - Always use `https://`, never `http://`.
-- Visiting the Worker **root URL** opens a status page: **orb → GitHub**; status text is **red / yellow / green** (unbound / switchable / running) by comparing KV `PUBLIC_HOST` with the page host. Only unbound/switchable are clickable (confirm → web login when `WEB_USER` is set → `/init`; UI updates on success without reload). Status page itself stays public.
+- Visiting the Worker **root URL** opens a status page: **orb → GitHub**; status text is **red / yellow / green** (unbound / switchable / running) by comparing KV `PUBLIC_HOST` with the page host. All three states are clickable (confirm → web login when `WEB_USER` is set → `/init`; green re-runs webhook/commands). Status page itself stays public.
 - You can still open `/init` directly in the address bar if you prefer.
 - `/init` is not a daily task: do it after deploy, after changing `UI_LANG`, or after changing which public hostname you want Telegram to use.
 - The easiest way to avoid typos: copy the Worker’s visit URL from the Cloudflare dashboard (two levels before `workers.dev`), open it, then click the status text.
@@ -330,7 +330,7 @@ pnpm pub  # wrangler deploy --keep-vars
 |------|------|------------|
 | 待绑定 | 红 | 确认 → 若配置了 `WEB_USER` 则先登录 → `/init` |
 | 可切换 | 黄 | 确认 → 若配置了 `WEB_USER` 则先登录 → 用新域名 `/init` |
-| 运行中 | 绿 | 不可点 |
+| 运行中 | 绿 | 确认 → 重新执行 `/init`（刷新 webhook 与 Bot 命令） |
 
 中心球仍打开 GitHub 仓库；空白处无效。
 
@@ -371,7 +371,7 @@ pnpm pub  # wrangler deploy --keep-vars
 #### 两种方式的共同注意点
 
 - 必须用 `https://`，不要用 `http://`。
-- 访问 Worker **根地址**会打开状态页：**球 → GitHub**；状态文字按 KV `PUBLIC_HOST` 与当前域名对比为 **红 / 黄 / 绿**（待绑定 / 可切换 / 运行中）。仅前两种可点（确认 → 若配置了 `WEB_USER` 则先网页登录 → `/init`；成功后自动切到运行中，无需手动刷新）。状态页本身不要求登录。
+- 访问 Worker **根地址**会打开状态页：**球 → GitHub**；状态文字按 KV `PUBLIC_HOST` 与当前域名对比为 **红 / 黄 / 绿**（待绑定 / 可切换 / 运行中）。三种状态均可点（确认 → 若配置了 `WEB_USER` 则先网页登录 → `/init`；绿色为重新初始化以刷新 webhook/命令；成功后自动更新，无需手动刷新）。状态页本身不要求登录。
 - 仍可直接在地址栏打开 `/init`。
 - `/init` 不是每天都要做：部署后做一次；改 `UI_LANG`，或要更换「给 Telegram 用的公网主机」后再做。
 - 最稳妥的做法：从 Cloudflare 控制台复制 Worker 的「访问」完整链接（`workers.dev` 前两级名称都要有），打开后点击中间状态文字。

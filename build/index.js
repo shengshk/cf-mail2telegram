@@ -3743,17 +3743,15 @@ var status_default = `<!DOCTYPE html>
       document.body.classList.remove("state-unbound", "state-switchable", "state-running");
       document.body.classList.add("state-" + nextMode);
       renderPhrases(nextMode);
+      statusEl.classList.add("clickable");
 
       if (nextMode === "running") {
-        statusEl.classList.remove("clickable");
-        statusEl.removeAttribute("title");
-        hintEl.textContent = "cf-mail2telegram \xB7 online";
+        statusEl.title = "Re-run /init (webhook + commands)";
+        hintEl.textContent = "cf-mail2telegram \xB7 online \xB7 tap to re-init";
       } else if (nextMode === "unbound") {
-        statusEl.classList.add("clickable");
         statusEl.title = "Bind Telegram webhook";
         hintEl.textContent = "cf-mail2telegram \xB7 unbound \xB7 " + pageHost;
       } else {
-        statusEl.classList.add("clickable");
         statusEl.title = "Re-bind with this host";
         hintEl.textContent = (boundHost || "?") + " \u2192 " + pageHost;
       }
@@ -3762,7 +3760,7 @@ var status_default = `<!DOCTYPE html>
     async function refreshStatus() {
       pageHost = normalizeHost(location.host);
       try {
-        const res = await fetch("/api/status", { cache: "no-store" });
+        const res = await fetch("/api/status", { cache: "no-store", credentials: "same-origin" });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
           showToast(data.error || ("\u72B6\u6001\u5931\u8D25 " + res.status));
@@ -3775,9 +3773,7 @@ var status_default = `<!DOCTYPE html>
         applyState(resolveMode(boundHost, pageHost));
         if (new URLSearchParams(location.search).get("runInit") === "1") {
           history.replaceState({}, "", "/");
-          if (mode !== "running") {
-            void runInit(true);
-          }
+          void runInit(true);
         }
       } catch {
         showToast("\u72B6\u6001\u52A0\u8F7D\u5931\u8D25");
@@ -3786,7 +3782,6 @@ var status_default = `<!DOCTYPE html>
     }
 
     async function runInit(skipConfirm) {
-      if (mode === "running") return;
       if (!skipConfirm) {
         if (mode === "unbound") {
           if (!confirm("\u7528\u5F53\u524D\u57DF\u540D\u7ED1\u5B9A Telegram webhook\uFF1F\\n" + pageHost)) return;
@@ -3795,6 +3790,12 @@ var status_default = `<!DOCTYPE html>
             "\u5C06\u7ED1\u5B9A\u4ECE\u65E7\u57DF\u540D\u5207\u6362\u5230\u5F53\u524D\u57DF\u540D\uFF1F\\n"
             + (boundHost || "?") + " \u2192 " + pageHost + "\\n"
             + "Webhook / \u9884\u89C8 / \u5C0F\u7A0B\u5E8F\u5C06\u6539\u7528\u65B0\u57DF\u540D\u3002"
+          )) return;
+        } else {
+          if (!confirm(
+            "\u91CD\u65B0\u521D\u59CB\u5316\uFF1F\\n"
+            + "\u5C06\u5237\u65B0 Telegram webhook \u4E0E Bot \u547D\u4EE4\u3002\\n"
+            + pageHost
           )) return;
         }
       }
@@ -3843,7 +3844,6 @@ var status_default = `<!DOCTYPE html>
 
     statusEl.addEventListener("click", async (e) => {
       e.stopPropagation();
-      if (mode === "running") return;
       const now = Date.now();
       if (initBusy || now - lastInitAt < DEBOUNCE_MS) {
         showToast("\u8BF7\u7A0D\u5019\u2026");
@@ -14945,7 +14945,10 @@ h1{margin:0;font-size:1.25rem;font-weight:650;color:#111827;letter-spacing:-.01e
 input{width:100%;border-radius:8px;border:1px solid #d1d5db;background:#fff;
 color:#111827;padding:.65rem .75rem;font-size:.9rem;outline:none}
 input:focus{border-color:#9ca3af;box-shadow:0 0 0 3px rgba(156,163,175,.25)}
-label.rem{display:flex;align-items:center;gap:.5rem;font-size:.8rem;color:#4b5563;cursor:pointer;user-select:none}
+input[type=checkbox]{width:auto;padding:0;margin:0;flex-shrink:0;accent-color:#374151;
+box-shadow:none;border:none}
+label.rem{display:flex;align-items:center;gap:.5rem;font-size:.8rem;color:#4b5563;
+cursor:pointer;user-select:none;white-space:nowrap;width:fit-content}
 .err{margin:0;font-size:.875rem;color:#b91c1c}
 button{width:100%;border:none;border-radius:8px;padding:.7rem 1rem;font-size:.95rem;font-weight:600;
 color:#fff;background:#374151;cursor:pointer}
