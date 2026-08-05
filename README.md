@@ -16,6 +16,8 @@ cf-mail2telegram
     <a href="#english">English</a> · <a href="#中文">中文</a>
 </p>
 
+![preview](./doc/preview.jpg)
+
 ---
 
 # English
