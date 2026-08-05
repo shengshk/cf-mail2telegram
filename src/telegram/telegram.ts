@@ -22,8 +22,8 @@ function modeLabel(lang: ReturnType<typeof resolveUiLang>, mode: PreviewMode): s
 function fill(template: string, vars: Record<string, string | number>): string {
     return template.replace(/\{(\w+)\}/g, (_, k: string) => String(vars[k] ?? ''));
 }
-const CMD_DELETE_WAIT_MS = 60_000;
-const CMD_DELETE_ATTEMPTS = 3;
+/** Must finish inside ctx.waitUntil (HTTP Workers: ~30s after response). */
+const CMD_DELETE_WAIT_MS = 25_000;
 
 function logTelegram(event: string, data?: Record<string, unknown>): void {
     console.log(`[telegram] ${event}${data ? ` ${JSON.stringify(data)}` : ''}`);
@@ -66,61 +66,28 @@ async function sleepMs(ms: number): Promise<void> {
     await new Promise(resolve => setTimeout(resolve, ms));
 }
 
-/** Ephemeral TG messages (commands / config / errors): wait 60s, retry every 60s ×3, then give up. Mail cards are never scheduled. */
-async function deleteMessageWithRetry(
+/** Ephemeral TG messages (commands / config / errors): wait 25s then delete once. Mail cards are never scheduled. */
+async function deleteEphemeralMessage(
     token: string,
     chatId: number,
     messageId: number,
-    env?: Environment,
 ): Promise<void> {
+    await sleepMs(CMD_DELETE_WAIT_MS);
     const api = createTelegramBotAPI(token);
-    const deadlineKey = `EPHEMERAL_DEL:${chatId}:${messageId}`;
-    const waitUntilDeadline = async () => {
-        for (;;) {
-            let deadline = Date.now() + CMD_DELETE_WAIT_MS;
-            if (env?.DB) {
-                const raw = await env.DB.get(deadlineKey);
-                const n = raw ? Number(raw) : NaN;
-                if (Number.isFinite(n) && n > 0) {
-                    deadline = n;
-                }
-            }
-            const wait = Math.max(0, deadline - Date.now());
-            if (wait <= 0) {
-                return;
-            }
-            await sleepMs(Math.min(wait, CMD_DELETE_WAIT_MS));
-            if (Date.now() >= deadline) {
-                return;
-            }
+    try {
+        const response = await api.deleteMessage({
+            chat_id: chatId,
+            message_id: messageId,
+        });
+        if (response.ok) {
+            logTelegram('ephemeral.delete.ok', { chatId, messageId });
+            return;
         }
-    };
-    await waitUntilDeadline();
-    for (let attempt = 1; attempt <= CMD_DELETE_ATTEMPTS; attempt++) {
-        try {
-            const response = await api.deleteMessage({
-                chat_id: chatId,
-                message_id: messageId,
-            });
-            if (response.ok) {
-                logTelegram('ephemeral.delete.ok', { chatId, messageId, attempt });
-                if (env?.DB) {
-                    try {
-                        await env.DB.delete(deadlineKey);
-                    } catch { /* ignore */ }
-                }
-                return;
-            }
-            await logTelegramResponse('deleteMessage', response);
-            logTelegram('ephemeral.delete.fail', { chatId, messageId, attempt, status: response.status });
-        } catch (e) {
-            logTelegramError('ephemeral.delete.error', e, { chatId, messageId, attempt });
-        }
-        if (attempt < CMD_DELETE_ATTEMPTS) {
-            await sleepMs(CMD_DELETE_WAIT_MS);
-        }
+        await logTelegramResponse('deleteMessage', response);
+        logTelegram('ephemeral.delete.fail', { chatId, messageId, status: response.status });
+    } catch (e) {
+        logTelegramError('ephemeral.delete.error', e, { chatId, messageId });
     }
-    logTelegram('ephemeral.delete.give_up', { chatId, messageId });
 }
 
 function scheduleDeleteMessage(
@@ -128,24 +95,11 @@ function scheduleDeleteMessage(
     token: string,
     chatId: number,
     messageId: number | undefined | null,
-    env?: Environment,
 ): void {
     if (messageId == null || !Number.isFinite(messageId)) {
         return;
     }
-    const deadline = Date.now() + CMD_DELETE_WAIT_MS;
-    const task = (async () => {
-        if (env?.DB) {
-            try {
-                await env.DB.put(`EPHEMERAL_DEL:${chatId}:${messageId}`, String(deadline), {
-                    expirationTtl: Math.ceil((CMD_DELETE_WAIT_MS * (CMD_DELETE_ATTEMPTS + 1)) / 1000) + 60,
-                });
-            } catch (e) {
-                logTelegramError('ephemeral.deadline.put', e, { chatId, messageId });
-            }
-        }
-        await deleteMessageWithRetry(token, chatId, messageId, env);
-    })();
+    const task = deleteEphemeralMessage(token, chatId, messageId);
     if (ctx?.waitUntil) {
         ctx.waitUntil(task);
     } else {
@@ -168,9 +122,8 @@ async function scheduleDeleteSent(
     token: string,
     chatId: number,
     response: Response,
-    env?: Environment,
 ): Promise<void> {
-    scheduleDeleteMessage(ctx, token, chatId, await sentMessageId(response), env);
+    scheduleDeleteMessage(ctx, token, chatId, await sentMessageId(response));
 }
 
 function handlePreviewModeCommand(env: Environment, ctx?: ExecutionContext): TelegramMessageHandler {
@@ -196,8 +149,8 @@ function handlePreviewModeCommand(env: Environment, ctx?: ExecutionContext): Tel
             },
             disable_web_page_preview: true,
         } as Telegram.SendMessageParams);
-        scheduleDeleteMessage(ctx, token, msg.chat.id, msg.message_id, env);
-        await scheduleDeleteSent(ctx, token, msg.chat.id, response, env);
+        scheduleDeleteMessage(ctx, token, msg.chat.id, msg.message_id);
+        await scheduleDeleteSent(ctx, token, msg.chat.id, response);
         return response;
     };
 }
@@ -233,8 +186,8 @@ function handleCfmailCommand(env: Environment, ctx?: ExecutionContext): Telegram
         }
 
         const response = await createTelegramBotAPI(token).sendMessage(params);
-        scheduleDeleteMessage(ctx, token, msg.chat.id, msg.message_id, env);
-        await scheduleDeleteSent(ctx, token, msg.chat.id, response, env);
+        scheduleDeleteMessage(ctx, token, msg.chat.id, msg.message_id);
+        await scheduleDeleteSent(ctx, token, msg.chat.id, response);
         return response;
     };
 }
@@ -252,12 +205,12 @@ function handleTestCommand(env: Environment, ctx?: ExecutionContext): TelegramMe
                 text,
                 reply_parameters: { message_id: msg.message_id },
             });
-            await scheduleDeleteSent(ctx, token, chatId, response, env);
+            await scheduleDeleteSent(ctx, token, chatId, response);
             return response;
         };
 
         const finish = async (response: Response) => {
-            scheduleDeleteMessage(ctx, token, chatId, msg.message_id, env);
+            scheduleDeleteMessage(ctx, token, chatId, msg.message_id);
             return response;
         };
 
@@ -279,7 +232,7 @@ function handleTestCommand(env: Environment, ctx?: ExecutionContext): TelegramMe
             logTelegram('test.run', { chatId, fromId });
             await runFakeMailUiTest(env);
             // Keep mail card; only delete user /test
-            scheduleDeleteMessage(ctx, token, chatId, msg.message_id, env);
+            scheduleDeleteMessage(ctx, token, chatId, msg.message_id);
             return new Response('ok');
         } catch (e) {
             logTelegramError('test.error', e, { chatId, fromId });
@@ -301,7 +254,7 @@ async function handleReplyEmailCommand(
     const dao = new Dao(DB);
     const api = createTelegramBotAPI(token);
     const chatId = message.chat.id;
-    scheduleDeleteMessage(ctx, token, chatId, message.message_id, env);
+    scheduleDeleteMessage(ctx, token, chatId, message.message_id);
     const reply = async (text: string) => {
         const response = await api.sendMessage({
             chat_id: chatId,
@@ -310,7 +263,7 @@ async function handleReplyEmailCommand(
             },
             text,
         });
-        await scheduleDeleteSent(ctx, token, chatId, response, env);
+        await scheduleDeleteSent(ctx, token, chatId, response);
     };
     if (!RESEND_API_KEY) {
         logTelegram('reply_email.disabled', { chatId, messageId: message.message_id });
@@ -498,19 +451,19 @@ async function telegramCallbackHandler(
             if (arg === 'mini') {
                 if (current === 'miniapp') {
                     await answer(fill(t(lang, 'previewModeAlready'), { mode: modeLabel(lang, 'miniapp') }));
-                    scheduleDeleteMessage(ctx, token, chatId, messageId, env);
+                    scheduleDeleteMessage(ctx, token, chatId, messageId);
                     return;
                 }
                 await savePreviewMode(env, chatKey, 'miniapp');
                 await edit(fill(t(lang, 'previewModeSetOk'), { mode: modeLabel(lang, 'miniapp') }));
                 await answer();
-                scheduleDeleteMessage(ctx, token, chatId, messageId, env);
+                scheduleDeleteMessage(ctx, token, chatId, messageId);
                 return;
             }
             if (arg === 'webwarn') {
                 if (current === 'web') {
                     await answer(fill(t(lang, 'previewModeAlready'), { mode: modeLabel(lang, 'web') }));
-                    scheduleDeleteMessage(ctx, token, chatId, messageId, env);
+                    scheduleDeleteMessage(ctx, token, chatId, messageId);
                     return;
                 }
                 await edit(t(lang, isWebAuthEnabled(env) ? 'previewModeWarnAuth' : 'previewModeWarnOpen'), {
@@ -521,24 +474,24 @@ async function telegramCallbackHandler(
                 });
                 await answer();
                 // Bump 60s so Yes/No stays readable; final set/cancel bumps again
-                scheduleDeleteMessage(ctx, token, chatId, messageId, env);
+                scheduleDeleteMessage(ctx, token, chatId, messageId);
                 return;
             }
             if (arg === 'web') {
                 await savePreviewMode(env, chatKey, 'web');
                 await edit(fill(t(lang, 'previewModeSetOk'), { mode: modeLabel(lang, 'web') }));
                 await answer();
-                scheduleDeleteMessage(ctx, token, chatId, messageId, env);
+                scheduleDeleteMessage(ctx, token, chatId, messageId);
                 return;
             }
             if (arg === 'cancel') {
                 await edit(t(lang, 'previewModeCancel'));
                 await answer();
-                scheduleDeleteMessage(ctx, token, chatId, messageId, env);
+                scheduleDeleteMessage(ctx, token, chatId, messageId);
                 return;
             }
             await answer();
-            scheduleDeleteMessage(ctx, token, chatId, messageId, env);
+            scheduleDeleteMessage(ctx, token, chatId, messageId);
         } catch (e) {
             logTelegramError('callback.previewmode.error', e, { data, chatId, messageId });
             const response = await api.answerCallbackQuery({
@@ -547,7 +500,7 @@ async function telegramCallbackHandler(
                 show_alert: true,
             });
             await logTelegramResponse('answerCallbackQuery', response);
-            scheduleDeleteMessage(ctx, token, chatId, messageId, env);
+            scheduleDeleteMessage(ctx, token, chatId, messageId);
         }
         return;
     }
