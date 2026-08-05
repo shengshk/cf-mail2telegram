@@ -34,7 +34,7 @@ function mockMessage(partial: {
 
 function envWith(mails?: string, ttl?: string): Environment {
     return {
-        FORWARD_MAILS: mails,
+        FORWARD_MAIL: mails,
         MAILS_TTL: ttl,
         DB: {} as Environment['DB'],
     };
@@ -51,8 +51,8 @@ export async function runForwardTests(): Promise<void> {
     assert(normalizeEmailAddress('User+Bak@gmail.com') === 'user@gmail.com', 'gmail plus');
     assert(emailsMatch('shengshk+bak@gmail.com', 'shengshk@gmail.com'), 'plus match');
 
-    assert(getForwardTarget(envWith('x@y.com,Backup,forwarded'))?.email === 'x@y.com', 'get FORWARD_MAILS');
-    assert(getForwardTarget(envWith()) === undefined, 'no FORWARD_MAILS');
+    assert(getForwardTarget(envWith('x@y.com,Backup,forwarded'))?.email === 'x@y.com', 'get FORWARD_MAIL');
+    assert(getForwardTarget(envWith()) === undefined, 'no FORWARD_MAIL');
 
     assert(
         isExternallyForwarded(mockMessage({

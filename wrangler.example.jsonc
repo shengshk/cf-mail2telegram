@@ -18,7 +18,7 @@
 		//   TELEGRAM_BOT=token,chat_id
 		//   GEMINI_API_KEY=AIza...
 		// Optional (single backup + preview retention):
-		//   FORWARD_MAILS=you+bak@gmail.com,Backup,noforwarded
+		//   FORWARD_MAIL=you+bak@gmail.com,Backup,noforwarded
 		//   MAILS_TTL=1d,10
 		//   GMAIL_U=0
 		// Public host: open https://<worker-host>/init once (saved to KV). No DOMAIN var.

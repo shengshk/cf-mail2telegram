@@ -26,7 +26,7 @@ Vars:
 
   UI_LANG            en (default) | zh | tw
 
-  FORWARD_MAILS      Single backup:
+  FORWARD_MAIL      Single backup:
                      email[,GmailFolder][,noforwarded|forwarded]
                      e.g. you+bak@gmail.com,Backup,noforwarded
                      Default policy: noforwarded
@@ -46,7 +46,7 @@ Public host is saved when you open /init (KV key PUBLIC_HOST).
 
 
 Mailbox:
-  backed up     → FORWARD_MAILS
+  backed up     → FORWARD_MAIL
   not backed up → original header To webmail (if Gmail/Outlook)
 
 
@@ -81,7 +81,7 @@ JSON/toast should show host. Re-run /init after changing UI_LANG or switching pr
   [ ] TELEGRAM_BOT
   [ ] UI_LANG if you want zh or tw
   [ ] GEMINI_API_KEY for AI OTP
-  [ ] FORWARD_MAILS verified in Email Routing destinations
+  [ ] FORWARD_MAIL verified in Email Routing destinations
   [ ] MAILS_TTL e.g. 1d,10
   [ ] Email Routing → this Worker
   [ ] Visited /init

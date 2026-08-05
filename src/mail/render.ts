@@ -59,7 +59,7 @@ export async function renderEmailListMode(
 
     const hasBody = !!(mail.html || mail.text);
     const previewAppUrl = hasBody && host
-        ? `https://${host}/tma/email/${mail.id}`
+        ? `https://${host}/tma?mode=preview&id=${encodeURIComponent(mail.id)}`
         : undefined;
     const webUrl = hasBody && host
         ? `https://${host}/email/${mail.id}`

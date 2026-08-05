@@ -152,9 +152,9 @@ export function isExternallyForwarded(message: EmailMessage): boolean {
     return true;
 }
 
-/** Single backup target from FORWARD_MAILS only. */
+/** Single backup target from FORWARD_MAIL only. */
 export function getForwardTarget(env: Environment): ForwardTarget | undefined {
-    return parseForwardMailsValue(env.FORWARD_MAILS || '');
+    return parseForwardMailsValue(env.FORWARD_MAIL || '');
 }
 
 /** @deprecated alias */
@@ -164,7 +164,7 @@ export function primaryForwardTarget(env: Environment): ForwardTarget | undefine
 
 /**
  * Whether Email Routing `message.forward` should run for this inbound mail.
- * Hard rule: never backup when From / related recipients match FORWARD_MAILS (Gmail +tag aware).
+ * Hard rule: never backup when From / related recipients match FORWARD_MAIL (Gmail +tag aware).
  * Soft rule: with policy `noforwarded`, skip externally forwarded mail.
  */
 export function shouldBackupInboundMail(message: EmailMessage, env: Environment): boolean {

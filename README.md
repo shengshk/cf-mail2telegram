@@ -74,8 +74,8 @@ pnpm pub  # wrangler deploy --keep-vars
 
 1. Follow Cloudflare’s guide for [Email Routing](https://blog.cloudflare.com/introducing-email-routing/).
 2. In **Email Routing → Routing Rules**, set the Catch-all action to **Send to a Worker** (this Worker).
-3. If Catch-all goes only to the Worker, use `FORWARD_MAILS` for a single mailbox backup.
-4. The address in `FORWARD_MAILS` must be verified under **Email Routing → Destination addresses**.
+3. If Catch-all goes only to the Worker, use `FORWARD_MAIL` for a single mailbox backup.
+4. The address in `FORWARD_MAIL` must be verified under **Email Routing → Destination addresses**.
 5. Default policy `noforwarded`: only backup mail that was addressed to your CF domain; mail auto-forwarded in from another mailbox is not backed up (still notified on Telegram). Use `,forwarded` to also backup those. Matching the backup address itself (Gmail `+tag` aware) never backs up — loop guard.
 
 ### 3. Bind Telegram Webhook (required once after deploy)
@@ -155,7 +155,7 @@ But Telegram / Preview / Mini App follow **only one** saved host (`PUBLIC_HOST` 
 | `UI_LANG` | UI language: `en` (default), `zh` (Simplified), or `tw` (Traditional). Affects Telegram labels/buttons, preview chrome, Mini App, and bot command descriptions. Re-open `/init` after changing. |
 | `GEMINI_API_KEY` | Google AI Studio key (`AIza…`). Worker egress may hit region limits; on failure the Worker falls back to local regex. |
 | `GEMINI_MODEL` | Optional. Default `gemini-2.5-flash-lite`. |
-| `FORWARD_MAILS` | Single backup: `email` \| `email,Folder` \| `email,Folder,noforwarded\|forwarded` \| `email,forwarded`. Example: `you+bak@gmail.com,Backup,noforwarded`. Default policy `noforwarded`: backup only mail addressed to the CF domain; skip auto-forwards from other mailboxes (Telegram notify still runs). `forwarded`: also backup those. Never backup when From / related To headers match this address (Gmail `+` normalized). Must be a verified Email Routing destination. |
+| `FORWARD_MAIL` | Single backup: `email` \| `email,Folder` \| `email,Folder,noforwarded\|forwarded` \| `email,forwarded`. Example: `you+bak@gmail.com,Backup,noforwarded`. Default policy `noforwarded`: backup only mail addressed to the CF domain; skip auto-forwards from other mailboxes (Telegram notify still runs). `forwarded`: also backup those. Never backup when From / related To headers match this address (Gmail `+` normalized). Must be a verified Email Routing destination. |
 | `MAILS_TTL` | Preview retention: `duration,maxCount`. Example: `1d,10`. Duration: `30m` / `1h` / `1d` / seconds. Default if unset: `1d,100`. Oldest previews are deleted when over maxCount. |
 | `DB` | **Required** KV binding. Variable name must be exactly `DB`. |
 | `TIMEZONE` | Optional. Default `Asia/Shanghai`. |
@@ -171,7 +171,7 @@ But Telegram / Preview / Mini App follow **only one** saved host (`PUBLIC_HOST` 
 
 | Condition | Behavior |
 |-----------|----------|
-| Mail was backed up to `FORWARD_MAILS` | Open that backup mailbox (Gmail: folder / optional thread) |
+| Mail was backed up to `FORWARD_MAIL` | Open that backup mailbox (Gmail: folder / optional thread) |
 | Not backed up, header has external original `To` | Open that original webmail (Gmail/Outlook home; no Backup folder) |
 | Otherwise | Hide Mailbox; Preview only |
 
@@ -187,7 +187,7 @@ Black/white lists are managed via Mini Apps (`/cfmail`). Mail **Preview** also o
 
 ## Usage
 
-Send `/test` in a private chat (must match `TELEGRAM_BOT` chat id). Rate limit: **one per 10 seconds**. Sends a fake mail through OTP extract + Telegram UI (Preview / Web / Mailbox). Does **not** call Email Routing backup.
+Send `/test` in a private chat (must match `TELEGRAM_BOT` chat id). Rate limit: **one per 10 seconds**. Fake mail uses fixed `from@test.mail` / `to@test.mail`, simulates **backed up** (Mailbox → `FORWARD_MAIL`), runs real OTP extract, and shows Preview / Web / Mailbox. Does **not** call Email Routing forward. No “test sent” ack message. User `/test` and `/cfmail` messages are deleted after **60s** (retry up to 3× every 60s on failure).
 
 Default Telegram message shape:
 
@@ -201,14 +201,14 @@ Time
 
 ### Email preview
 
-1. **Preview** — Telegram Mini App (`/tma/email/<id>`). Same light reading UI; content loads after TMA auth (your `TELEGRAM_BOT` chat id).
+1. **Preview** — Telegram Mini App (`/tma?mode=preview&id=`). Same light reading UI; content loads after TMA auth (your `TELEGRAM_BOT` chat id).
 2. **Web** — open the same preview page in a browser (`/email/<id>`). Kept for convenience; link is still guessable while cached.
 3. **Mailbox** — jump to webmail per [Mailbox button rules](#mailbox-button-rules).
 
 ### Security and cache
 
 1. After `MAILS_TTL` expires (or the cache is evicted by maxCount), preview links stop working — back up important mail.
-2. Large attachments may time out Workers; put a real mailbox in `FORWARD_MAILS`.
+2. Large attachments may time out Workers; put a real mailbox in `FORWARD_MAIL`.
 3. `GUARDIAN_MODE` can reduce duplicate notifications at the cost of more KV writes.
 
 ### Blacklist and whitelist
@@ -217,12 +217,12 @@ Lists live in KV and are edited in the Mini App. Exact string match first, then 
 
 ### Attachments
 
-This bot does not render attachments. Use `FORWARD_MAILS` to keep a real mailbox copy, or tools such as [testmail-viewer](https://github.com/TBXark/testmail-viewer).
+This bot does not render attachments. Use `FORWARD_MAIL` to keep a real mailbox copy, or tools such as [testmail-viewer](https://github.com/TBXark/testmail-viewer).
 
 ## Known limitations
 
 1. **Gemini region** — Worker egress IPs may get `User location is not supported`; local regex still runs.
-2. **No attachment UI** — rely on `FORWARD_MAILS` backup.
+2. **No attachment UI** — rely on `FORWARD_MAIL` backup.
 3. **Preview needs KV** — missing `DB` binding can break cache; Telegram send tries not to fail solely because of cache errors, but Preview may 404.
 
 ## License
@@ -279,8 +279,8 @@ pnpm pub  # wrangler deploy --keep-vars
 
 1. 按官方文档配置 [Cloudflare Email Routing](https://blog.cloudflare.com/zh-cn/introducing-email-routing-zh-cn/)。
 2. 在 `Email Routing - Routing Rules` 中，将 `Catch-all address` 的 action 改成 `Send to a Worker`（本 Worker），把剩余邮件都转发到该 Worker。
-3. Catch-all 只指向 Worker 后，就无法再把剩余邮件转发到自己邮箱；若需备份，在环境变量 `FORWARD_MAILS` 填入**一个**备份邮箱即可。
-4. `FORWARD_MAILS` 中的邮箱地址须在 `Cloudflare Dashboard - Email Routing - Destination addresses` 添加并完成认证后才能收到邮件。
+3. Catch-all 只指向 Worker 后，就无法再把剩余邮件转发到自己邮箱；若需备份，在环境变量 `FORWARD_MAIL` 填入**一个**备份邮箱即可。
+4. `FORWARD_MAIL` 中的邮箱地址须在 `Cloudflare Dashboard - Email Routing - Destination addresses` 添加并完成认证后才能收到邮件。
 5. 默认策略 `noforwarded`：只备份「真正发到域名邮箱」的邮件；从其它邮箱自动转发进来的不备份（仍推 Telegram）。需要备份转发信时写成 `,forwarded`。若发件人/相关收件头命中备份地址本身（Gmail `+` 别名会归一），则**永不备份**，用于防环。
 
 ### 3. 绑定 Telegram Webhook（部署后必须做一次）
@@ -360,7 +360,7 @@ pnpm pub  # wrangler deploy --keep-vars
 | `UI_LANG` | 界面语言：`en`（默认）、`zh`（简体）或 `tw`（繁体）。影响 TG 文案/按钮、预览页、小程序、Bot 命令描述。修改后请重新打开 `/init`。 |
 | `GEMINI_API_KEY` | Google AI Studio Key（`AIza…`）。出网可能受地区限制；失败时自动本地正则。 |
 | `GEMINI_MODEL` | 可选。默认 `gemini-2.5-flash-lite`。 |
-| `FORWARD_MAILS` | 单一备份：`邮箱` \| `邮箱,文件夹` \| `邮箱,文件夹,noforwarded\|forwarded` \| `邮箱,forwarded`。例：`you+bak@gmail.com,Backup,noforwarded`。默认 `noforwarded`：只备份真正发到域名邮箱的信；外站自动转发进域名的不备份（仍推 Telegram）。`forwarded`：转发进来的也备份。From / 相关 To 头命中该备份地址（Gmail `+` 归一）则永不备份。须为已验证的 Email Routing 目的地。 |
+| `FORWARD_MAIL` | 单一备份：`邮箱` \| `邮箱,文件夹` \| `邮箱,文件夹,noforwarded\|forwarded` \| `邮箱,forwarded`。例：`you+bak@gmail.com,Backup,noforwarded`。默认 `noforwarded`：只备份真正发到域名邮箱的信；外站自动转发进域名的不备份（仍推 Telegram）。`forwarded`：转发进来的也备份。From / 相关 To 头命中该备份地址（Gmail `+` 归一）则永不备份。须为已验证的 Email Routing 目的地。 |
 | `MAILS_TTL` | 预览保留：`时长,最大封数`。例：`1d,10`。时长：`30m` / `1h` / `1d` / 秒数。未设置时默认 `1d,100`。超过封数删除最旧预览。 |
 | `DB` | **必须**的 KV 绑定，变量名必须是 `DB`。 |
 | `TIMEZONE` | 可选。默认 `Asia/Shanghai`。 |
@@ -376,7 +376,7 @@ pnpm pub  # wrangler deploy --keep-vars
 
 | 条件 | 行为 |
 |------|------|
-| 已备份到 `FORWARD_MAILS` | 打开备份邮箱（Gmail：文件夹 / 可选线程） |
+| 已备份到 `FORWARD_MAIL` | 打开备份邮箱（Gmail：文件夹 / 可选线程） |
 | 未备份，且头里有外站原 `To` | 打开原网页邮箱（Gmail/Outlook 首页；不用 Backup 文件夹） |
 | 其它 | 不显示「邮箱」，仅「预览」 |
 
@@ -392,7 +392,7 @@ pnpm pub  # wrangler deploy --keep-vars
 
 ## 使用说明
 
-向 Bot 发送 `/test`（须为 `TELEGRAM_BOT` 中的 chat id）。频率限制：**10 秒一封**。假信走抽码 + TG UI（预览 / 网页 / 邮箱），**不会**真实备份。
+向 Bot 发送 `/test`（须为 `TELEGRAM_BOT` 中的 chat id）。频率限制：**10 秒一封**。假信固定 `from@test.mail` / `to@test.mail`，模拟**已备份**（「邮箱」→ `FORWARD_MAIL`），真走抽码，显示预览 / 网页 / 邮箱；**不会**真实 Email Routing 备份。不发「测试已发送」确认。用户 `/test`、`/cfmail` 在 **60 秒**后删除（失败则每隔 60 秒重试，最多 3 次）。
 
 默认消息结构如下：
 
@@ -408,14 +408,14 @@ pnpm pub  # wrangler deploy --keep-vars
 
 当邮件转发通知到 Telegram 时，展示验证码（如有）、发件人、收件人、时间，以及按钮：
 
-1. **预览**：Telegram 小程序（`/tma/email/<id>`）。样式与现网页预览相同；需 TMA 鉴权（匹配 `TELEGRAM_BOT` 的 chat id）后加载正文。
+1. **预览**：Telegram 小程序（`/tma?mode=preview&id=`）。样式与现网页预览相同；需 TMA 鉴权（匹配 `TELEGRAM_BOT` 的 chat id）后加载正文。
 2. **网页**：浏览器打开同一预览页（`/email/<id>`）。暂时保留；缓存期内链接仍可能被直接打开。
 3. **邮箱**：按 [「邮箱」按钮规则](#邮箱按钮规则) 跳转网页邮箱。
 
 ### 安全与邮件缓存
 
 1. `MAILS_TTL`：超过保留时间或超过最大封数被挤掉后，预览链接无法打开。可按需调整。
-2. 由于 Workers 限制，邮件（特别是附件较大时）可能导致函数超时和多次重试，从而可能收到重复通知。建议在 `FORWARD_MAILS` 中配置备份邮箱，以防邮件丢失。
+2. 由于 Workers 限制，邮件（特别是附件较大时）可能导致函数超时和多次重试，从而可能收到重复通知。建议在 `FORWARD_MAIL` 中配置备份邮箱，以防邮件丢失。
 3. 开启 `GUARDIAN_MODE` 可减少重复消息干扰，提高 Worker 成功率，但会消耗较多 KV 写入次数。建议在必要时开启。
 
 ### 黑名单与白名单
@@ -424,12 +424,12 @@ pnpm pub  # wrangler deploy --keep-vars
 
 ### 邮件附件
 
-此 Bot **不支持展示附件**。若需附件，用 `FORWARD_MAILS` 备份到真实邮箱查看，或配合 [testmail-viewer](https://github.com/TBXark/testmail-viewer)。
+此 Bot **不支持展示附件**。若需附件，用 `FORWARD_MAIL` 备份到真实邮箱查看，或配合 [testmail-viewer](https://github.com/TBXark/testmail-viewer)。
 
 ## 已知限制
 
 1. **Gemini 地区**：Worker 出网 IP 可能被 Google 拒绝（`User location is not supported`），会回退本地正则。
-2. **无附件展示**：大附件靠 `FORWARD_MAILS` 备份到真实邮箱查看。
+2. **无附件展示**：大附件靠 `FORWARD_MAIL` 备份到真实邮箱查看。
 3. **预览依赖 KV**：未绑定 `DB` 会导致缓存失败；发 TG 已尽量不因缓存失败中断，但预览链接可能 404。
 
 ## 许可证

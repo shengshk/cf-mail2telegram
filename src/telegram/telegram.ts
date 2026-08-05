@@ -5,13 +5,15 @@ import { Dao } from '../db';
 import { requireTelegram } from '../env';
 import { renderEmailDebugMode, renderEmailListMode, renderEmailPreviewMode, renderEmailSummaryMode, replyToEmail } from '../mail';
 import { checkTestCommandRate, isAllowedTestUser, runFakeMailUiTest } from '../mail/test-mail';
-// Summary / 旧 Preview 回调仅兼容历史消息；新消息已改为 URL「预览」
 import { resolveUiLang, t } from '../i18n';
 import { loadPublicHost } from '../public-host';
 import { createTelegramBotAPI } from './api';
 
 type TelegramMessageHandler = (message: Telegram.Message) => Promise<Response>;
 type CommandHandlerGroup = Record<string, TelegramMessageHandler>;
+
+const CMD_DELETE_WAIT_MS = 60_000;
+const CMD_DELETE_ATTEMPTS = 3;
 
 function logTelegram(event: string, data?: Record<string, unknown>): void {
     console.log(`[telegram] ${event}${data ? ` ${JSON.stringify(data)}` : ''}`);
@@ -45,7 +47,60 @@ async function logTelegramResponse(method: string, response: Response): Promise<
     logTelegram('api.response', data);
 }
 
-function handleCfmailCommand(env: Environment): TelegramMessageHandler {
+async function sleepMs(ms: number): Promise<void> {
+    const sched = (globalThis as { scheduler?: { wait: (n: number) => Promise<void> } }).scheduler;
+    if (sched?.wait) {
+        await sched.wait(ms);
+        return;
+    }
+    await new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/** 首次等 60s，失败再隔 60s，最多 3 次，失败放弃 */
+async function deleteUserCommandWithRetry(
+    token: string,
+    chatId: number,
+    messageId: number,
+): Promise<void> {
+    const api = createTelegramBotAPI(token);
+    await sleepMs(CMD_DELETE_WAIT_MS);
+    for (let attempt = 1; attempt <= CMD_DELETE_ATTEMPTS; attempt++) {
+        try {
+            const response = await api.deleteMessage({
+                chat_id: chatId,
+                message_id: messageId,
+            });
+            if (response.ok) {
+                logTelegram('cmd.delete.ok', { chatId, messageId, attempt });
+                return;
+            }
+            await logTelegramResponse('deleteMessage', response);
+            logTelegram('cmd.delete.fail', { chatId, messageId, attempt, status: response.status });
+        } catch (e) {
+            logTelegramError('cmd.delete.error', e, { chatId, messageId, attempt });
+        }
+        if (attempt < CMD_DELETE_ATTEMPTS) {
+            await sleepMs(CMD_DELETE_WAIT_MS);
+        }
+    }
+    logTelegram('cmd.delete.give_up', { chatId, messageId });
+}
+
+function scheduleDeleteUserCommand(
+    ctx: ExecutionContext | undefined,
+    token: string,
+    chatId: number,
+    messageId: number,
+): void {
+    const task = deleteUserCommandWithRetry(token, chatId, messageId);
+    if (ctx?.waitUntil) {
+        ctx.waitUntil(task);
+    } else {
+        void task;
+    }
+}
+
+function handleCfmailCommand(env: Environment, ctx?: ExecutionContext): TelegramMessageHandler {
     return async (msg: Telegram.Message): Promise<Response> => {
         const { token } = requireTelegram(env);
         const lang = resolveUiLang(env);
@@ -83,11 +138,13 @@ function handleCfmailCommand(env: Environment): TelegramMessageHandler {
             };
         }
 
-        return await createTelegramBotAPI(token).sendMessage(params);
+        const response = await createTelegramBotAPI(token).sendMessage(params);
+        scheduleDeleteUserCommand(ctx, token, msg.chat.id, msg.message_id);
+        return response;
     };
 }
 
-function handleTestCommand(env: Environment): TelegramMessageHandler {
+function handleTestCommand(env: Environment, ctx?: ExecutionContext): TelegramMessageHandler {
     return async (msg: Telegram.Message): Promise<Response> => {
         const { token } = requireTelegram(env);
         const api = createTelegramBotAPI(token);
@@ -100,27 +157,34 @@ function handleTestCommand(env: Environment): TelegramMessageHandler {
             reply_parameters: { message_id: msg.message_id },
         });
 
+        const finish = async (response: Response) => {
+            scheduleDeleteUserCommand(ctx, token, chatId, msg.message_id);
+            return response;
+        };
+
         if (!isAllowedTestUser(env, chatId, fromId)) {
             logTelegram('test.denied', { chatId, fromId });
-            return await reply(t(lang, 'testDenied'));
+            return finish(await reply(t(lang, 'testDenied')));
         }
         if (!env.DB) {
-            return await reply('KV binding DB is required');
+            return finish(await reply('KV binding DB is required'));
         }
         const rateUser = `${fromId ?? chatId}`;
         const rate = await checkTestCommandRate(env.DB, rateUser);
         if (!rate.ok) {
             logTelegram('test.rate_limited', { chatId, fromId, retryAfterSec: rate.retryAfterSec });
-            return await reply(t(lang, 'testRateLimit').replace('{n}', `${rate.retryAfterSec}`));
+            return finish(await reply(t(lang, 'testRateLimit').replace('{n}', `${rate.retryAfterSec}`)));
         }
 
         try {
             logTelegram('test.run', { chatId, fromId });
             await runFakeMailUiTest(env);
-            return await reply(t(lang, 'testDone'));
+            // 不发「测试邮件已发送」确认；仅删除用户 /test
+            scheduleDeleteUserCommand(ctx, token, chatId, msg.message_id);
+            return new Response('ok');
         } catch (e) {
             logTelegramError('test.error', e, { chatId, fromId });
-            return await reply((e as Error).message || t(lang, 'testDenied'));
+            return finish(await reply((e as Error).message || t(lang, 'testDenied')));
         }
     };
 }
@@ -180,7 +244,11 @@ async function handleReplyEmailCommand(message: Telegram.Message, env: Environme
     }
 }
 
-async function telegramCommandHandler(message: Telegram.Message, env: Environment): Promise<void> {
+async function telegramCommandHandler(
+    message: Telegram.Message,
+    env: Environment,
+    ctx?: ExecutionContext,
+): Promise<void> {
     logTelegram('message.received', {
         chatId: message?.chat?.id,
         messageId: message?.message_id,
@@ -198,10 +266,9 @@ async function telegramCommandHandler(message: Telegram.Message, env: Environmen
         return;
     }
     command = command.substring(1);
-    // Telegram may send "cfmail@BotName"
     command = command.split('@')[0] || command;
-    const cfmail = handleCfmailCommand(env);
-    const test = handleTestCommand(env);
+    const cfmail = handleCfmailCommand(env, ctx);
+    const test = handleTestCommand(env, ctx);
     const handlers: CommandHandlerGroup = {
         cfmail,
         start: cfmail,
@@ -308,7 +375,11 @@ async function telegramCallbackHandler(callback: Telegram.CallbackQuery, env: En
     logTelegram('callback.unknown_action', { data, act, arg, chatId, messageId });
 }
 
-export async function telegramWebhookHandler(req: Request, env: Environment): Promise<void> {
+export async function telegramWebhookHandler(
+    req: Request,
+    env: Environment,
+    ctx?: ExecutionContext,
+): Promise<void> {
     const body = await req.json() as Telegram.Update;
     logTelegram('webhook.update', {
         updateId: body?.update_id,
@@ -318,7 +389,7 @@ export async function telegramWebhookHandler(req: Request, env: Environment): Pr
         keys: body ? Object.keys(body) : [],
     });
     if (body?.message) {
-        await telegramCommandHandler(body?.message, env);
+        await telegramCommandHandler(body?.message, env, ctx);
         return;
     }
     if (body?.callback_query) {

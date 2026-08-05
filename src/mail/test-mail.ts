@@ -15,7 +15,8 @@ const SUBJECTS = [
     '账户安全提醒',
 ];
 
-const DOMAINS = ['example.com', 'mail.test', 'notify.demo', 'service.local'];
+const TEST_FROM = 'from@test.mail';
+const TEST_TO = 'to@test.mail';
 
 const TEST_RATE_PREFIX = 'TEST_CMD_RATE:';
 const TEST_RATE_MS = 10_000;
@@ -26,14 +27,6 @@ function randInt(max: number): number {
 
 function pick<T>(arr: T[]): T {
     return arr[randInt(arr.length)]!;
-}
-
-function randomLocal(): string {
-    return `u${randInt(1e6).toString(36)}${randInt(1e4).toString(36)}`;
-}
-
-function randomEmail(): string {
-    return `${randomLocal()}@${pick(DOMAINS)}`;
 }
 
 function randomOtp(): string {
@@ -74,27 +67,30 @@ export async function checkTestCommandRate(
     return { ok: true };
 }
 
-/** Fake mail → real OTP extract (Gemini/local) → preview cache → Telegram UI buttons. No CF forward. */
+/**
+ * Fake mail for TG UI: fixed from/to, simulate backedUp → Mailbox uses FORWARD_MAIL.
+ * Real Gemini/local OTP; no CF Email Routing forward.
+ */
 export async function runFakeMailUiTest(env: Environment): Promise<{ mailId: string; code: string }> {
     if (!env.DB) {
         throw new Error('KV binding DB is required');
     }
     const code = randomOtp();
-    const from = randomEmail();
-    const to = randomEmail();
+    const from = TEST_FROM;
+    const to = TEST_TO;
     const subject = `TEST: ${pick(SUBJECTS)} ${randInt(9999)}`;
     const text = [
-        `这是一封 UI 测试邮件（假信，不会备份到真实邮箱）。`,
+        `这是一封 UI 测试邮件（假信，不会真实备份）。`,
         ``,
         `您的验证码是 ${code}，请在 5 分钟内使用。`,
         ``,
-        `From-sim: ${from}`,
-        `To-sim: ${to}`,
+        `From: ${from}`,
+        `To: ${to}`,
     ].join('\n');
     const html = `<div style="font-family:system-ui,sans-serif;line-height:1.5">
-<p>这是一封 <b>UI 测试邮件</b>（假信，不会备份到真实邮箱）。</p>
+<p>这是一封 <b>UI 测试邮件</b>（假信，不会真实备份）。</p>
 <p>您的验证码是 <b style="font-size:1.25rem">${code}</b>，请在 5 分钟内使用。</p>
-<p style="color:#6b7280;font-size:12px">From-sim: ${from}<br>To-sim: ${to}</p>
+<p style="color:#6b7280;font-size:12px">From: ${from}<br>To: ${to}</p>
 </div>`;
 
     const mail: EmailCache = {
@@ -106,7 +102,7 @@ export async function runFakeMailUiTest(env: Environment): Promise<{ mailId: str
         date: formatMailDate(undefined, env.TIMEZONE || 'Asia/Shanghai'),
         text,
         html,
-        backedUp: false,
+        backedUp: true,
     };
 
     const extractText = [mail.subject, mail.text].filter(Boolean).join('\n');

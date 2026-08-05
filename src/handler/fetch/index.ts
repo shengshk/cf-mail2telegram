@@ -70,7 +70,7 @@ function errorHandler(error: Error): Response {
     }), { status: 500 });
 }
 
-function createRouter(env: Environment): RouterType {
+function createRouter(env: Environment, ctx?: ExecutionContext): RouterType {
     const router = Router({
         catch: errorHandler,
         finally: [json],
@@ -115,9 +115,19 @@ function createRouter(env: Environment): RouterType {
         };
     });
 
-    /// Telegram Mini Apps
-
-    router.get('/tma', async (): Promise<Response> => {
+    /// Telegram Mini Apps（预览与名单共用 /tma，避免客户端丢掉子路径）
+    router.get('/tma', async (req: IRequest): Promise<Response> => {
+        const mode = String(req.query.mode || '');
+        const previewId = String(req.query.id || '').trim();
+        if (mode === 'preview' && previewId) {
+            const html = renderPreviewMiniAppShell(previewId, env);
+            return new Response(html, {
+                headers: {
+                    'content-type': 'text/html; charset=utf-8',
+                    'Referrer-Policy': 'no-referrer',
+                },
+            });
+        }
         const lang = resolveUiLang(env);
         const payload = JSON.stringify(tmaI18nPayload(lang)).replace(/</g, '\\u003c');
         const html = tmaHTML
@@ -130,7 +140,7 @@ function createRouter(env: Environment): RouterType {
         });
     });
 
-    /// Mini App email preview shell (auth via /api/email/:id)
+    /// Alias（旧链接）；优先用 /tma?mode=preview&id=
     router.get('/tma/email/:id', async (req: IRequest): Promise<Response> => {
         const id = req.params.id;
         const html = renderPreviewMiniAppShell(id, env);
@@ -197,7 +207,7 @@ function createRouter(env: Environment): RouterType {
             })}`);
         }
         try {
-            await telegramWebhookHandler(req, env);
+            await telegramWebhookHandler(req, env, ctx);
             if (debug) {
                 console.log('[telegram] webhook.done');
             }
@@ -258,8 +268,12 @@ function createRouter(env: Environment): RouterType {
     return router;
 }
 
-export async function fetchHandler(request: Request, env: Environment): Promise<Response> {
-    const router = createRouter(env);
+export async function fetchHandler(
+    request: Request,
+    env: Environment,
+    ctx?: ExecutionContext,
+): Promise<Response> {
+    const router = createRouter(env, ctx);
     return router.fetch(request).catch((e) => {
         return new Response(JSON.stringify({
             error: e.message,

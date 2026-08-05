@@ -63,7 +63,7 @@ function providerHomeUrl(address: string, env: Environment): string | undefined 
 
 /**
  * 「邮箱」按钮：
- * - 已备份 → FORWARD_MAILS（Gmail 可用 folder / thrid）
+ * - 已备份 → FORWARD_MAIL（Gmail 可用 folder / thrid）
  * - 未备份 → 尽量跳邮件头原 To 对应网页邮箱（不带 Backup 文件夹）
  * - 都无法打开 → 不显示
  */

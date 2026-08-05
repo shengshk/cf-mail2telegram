@@ -15,7 +15,7 @@ export interface EmailCache {
     gmThrid?: string;
     html?: string;
     text?: string;
-    /** Whether Email Routing backup to FORWARD_MAILS ran for this mail */
+    /** Whether Email Routing backup to FORWARD_MAIL ran for this mail */
     backedUp?: boolean;
     /** Header To (external) for Mailbox when not backed up */
     originalTo?: string;
@@ -27,7 +27,7 @@ export type BlockPolicy = 'reject' | 'forward' | 'telegram';
 
 /**
  * Required: TELEGRAM_BOT, KV binding DB
- * Recommended: GEMINI_API_KEY, FORWARD_MAILS, MAILS_TTL
+ * Recommended: GEMINI_API_KEY, FORWARD_MAIL, MAILS_TTL
  * Optional: UI_LANG (en|zh|tw, default en)
  * Public hostname is saved when you open /init (KV PUBLIC_HOST).
  */
@@ -47,7 +47,7 @@ export interface Environment {
      * `email` | `email,Folder` | `email,Folder,noforwarded|forwarded` | `email,forwarded`
      * Default policy: noforwarded.
      */
-    FORWARD_MAILS?: string;
+    FORWARD_MAIL?: string;
 
     /**
      * Preview retention: `duration,maxCount` e.g. `1d,10` / `24h,50` / `86400,20`
