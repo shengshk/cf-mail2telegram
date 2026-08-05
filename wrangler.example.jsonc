@@ -17,10 +17,10 @@
 		// Secrets (dashboard / wrangler secret):
 		//   TELEGRAM_BOT=token,chat_id
 		//   GEMINI_API_KEY=AIza...
-		// Optional (single backup + preview retention):
+		// Optional (single backup):
 		//   FORWARD_MAIL=you+bak@gmail.com,Backup,noforwarded
-		//   MAILS_TTL=1d,10
 		//   GMAIL_U=0
+		// Preview: hard max 100 bodies; web link token 1d. /previewmode switches Mini App ↔ Web.
 		// Public host: open https://<worker-host>/init once (saved to KV). No DOMAIN var.
 	}
 }

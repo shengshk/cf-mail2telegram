@@ -38,8 +38,15 @@ Source of truth is `src/`.
 ### 0. Configure Telegram
 
 1. Create a bot with `@BotFather > /newbot`, then copy the token.
-2. After deploy, open `/init` once using your Worker’s full public URL (see **Bind Telegram Webhook** below — either `workers.dev` with two name levels, or your own domain).
-3. For Telegram Mini Apps, set a privacy policy via `@BotFather > /mybots > Edit Bot > Edit Privacy Policy` (default TMA policy: `https://telegram.org/privacy-tpa`).
+2. After deploy, open `/init` once using your Worker’s full public URL (see **Bind Telegram Webhook** below — either `workers.dev` with two name levels, or your own domain). Use **this** Worker’s host (e.g. `https://mail2telegram.<account>.workers.dev/init`), not another Worker’s `webhook.*` host.
+3. **Required for Preview / list Mini Apps** — in `@BotFather`:
+
+| Setting | Path | Value |
+|---------|------|--------|
+| **Privacy Policy URL** | `/mybots` → your bot → **Edit Bot** → **Edit Privacy Policy** | `https://telegram.org/privacy-tpa` (or your own policy URL) |
+| **Mini App URL** | `/mybots` → your bot → **Bot Settings** → **Configure Mini App** → **Enable Mini App** | `https://<PUBLIC_HOST>/tma` — same host as `/init`, must return HTTP 200 in a browser |
+
+If Mini App URL points at the wrong Worker (or `/tma` 404s), Telegram shows the consent dialog and **Start does nothing**. After changing the public host, update Mini App URL and open `/init` again.
 
 ### 1. Deploy Workers
 
@@ -156,7 +163,6 @@ But Telegram / Preview / Mini App follow **only one** saved host (`PUBLIC_HOST` 
 | `GEMINI_API_KEY` | Google AI Studio key (`AIza…`). Worker egress may hit region limits; on failure the Worker falls back to local regex. |
 | `GEMINI_MODEL` | Optional. Default `gemini-2.5-flash-lite`. |
 | `FORWARD_MAIL` | Single backup: `email` \| `email,Folder` \| `email,Folder,noforwarded\|forwarded` \| `email,forwarded`. Example: `you+bak@gmail.com,Backup,noforwarded`. Default policy `noforwarded`: backup only mail addressed to the CF domain; skip auto-forwards from other mailboxes (Telegram notify still runs). `forwarded`: also backup those. Never backup when From / related To headers match this address (Gmail `+` normalized). Must be a verified Email Routing destination. |
-| `MAILS_TTL` | Preview retention: `duration,maxCount`. Example: `1d,10`. Duration: `30m` / `1h` / `1d` / seconds. Default if unset: `1d,100`. Oldest previews are deleted when over maxCount. |
 | `DB` | **Required** KV binding. Variable name must be exactly `DB`. |
 | `TIMEZONE` | Optional. Default `Asia/Shanghai`. |
 | `GMAIL_U` | Optional. Gmail multi-account index, default `0`. |
@@ -177,9 +183,11 @@ But Telegram / Preview / Mini App follow **only one** saved host (`PUBLIC_HOST` 
 
 ## Telegram Mini Apps
 
-Black/white lists are managed via Mini Apps (`/cfmail`). Mail **Preview** also opens as a Mini App (authenticated). **Web** still opens `/email/<id>` in a browser without TMA auth.
+Black/white lists are managed via Mini Apps (`/cfmail`). Mail **Preview** defaults to Mini App (authenticated). Switch to unauthenticated **Web** with `/previewmode` (warning required).
 
-> After changing `UI_LANG` or the public host, open `/init` again so bot commands stay in sync.
+BotFather must have both **Privacy Policy URL** and **Mini App URL** set (see [Configure Telegram](#0-configure-telegram)). Mini App URL = `https://<PUBLIC_HOST>/tma`.
+
+> After changing `UI_LANG` or the public host, open `/init` again so bot commands stay in sync, and update Mini App URL if the host changed.
 
 | Block list | White list | List test |
 |:-----------|:-----------|:----------|
@@ -187,7 +195,9 @@ Black/white lists are managed via Mini Apps (`/cfmail`). Mail **Preview** also o
 
 ## Usage
 
-Send `/test` in a private chat (must match `TELEGRAM_BOT` chat id). Rate limit: **one per 10 seconds**. Fake mail uses fixed `from@test.mail` / `to@test.mail`, simulates **backed up** (Mailbox → `FORWARD_MAIL`), runs real OTP extract, and shows Preview / Web / Mailbox. Does **not** call Email Routing forward. No “test sent” ack message. User `/test` and `/cfmail` messages are deleted after **60s** (retry up to 3× every 60s on failure).
+Send `/test` in a private chat (must match `TELEGRAM_BOT` chat id). Rate limit: **one per 10 seconds**. Fake mail uses fixed `from@test.mail` / `to@test.mail`, simulates **backed up** (Mailbox → `FORWARD_MAIL`), runs real OTP extract, and shows Preview / Mailbox. Does **not** call Email Routing forward. No “test sent” ack message. User `/test`, `/cfmail`, and `/previewmode` messages are deleted after **60s** (retry up to 3× every 60s on failure).
+
+`/previewmode` — switch the single **Preview** button between Mini App (default) and Web. Switching to Web shows a risk warning (Yes/No). Only **new** mail messages pick up the change.
 
 Default Telegram message shape:
 
@@ -196,22 +206,24 @@ OTP: 123456          ← AI: bold; local regex: italic
 From: …
 To: …
 Time
-[Preview] [Web] [Mailbox]
+[Preview] [Mailbox]
 ```
 
 ### Email preview
 
-1. **Preview** — Mini App via `https://t.me/<bot>?startapp=<mailId>` (Main Mini App URL must be `https://<host>/tma`). TMA auth required. Do not use `web_app` query URLs — clients drop them and show the list UI.
-2. **Web** — open the same preview page in a browser (`/email/<id>`). Kept for convenience; link is still guessable while cached.
-3. **Mailbox** — jump to webmail per [Mailbox button rules](#mailbox-button-rules).
+1. **Preview** (one button) — mode from `/previewmode`:
+   - **Mini App** (default): `https://t.me/<bot>?startapp=<mailId>` (Main Mini App URL must be `https://<host>/tma`). TMA auth.
+   - **Web**: `/email/<id>?t=<token>` — unauthenticated; token link expires after **1 day** (live countdown in the page bar). Mail body stays in KV until the **100**-mail cache limit drops it; Mini App can still open it while cached.
+2. **Mailbox** — jump to webmail per [Mailbox button rules](#mailbox-button-rules).
 
-BotFather: enable **Main Mini App** → `https://<PUBLIC_HOST>/tma`. Re-open `/init` after deploy so the bot username is cached for Preview links.
+BotFather: **Mini App URL** = `https://<PUBLIC_HOST>/tma`, **Privacy Policy URL** = `https://telegram.org/privacy-tpa` (see [Configure Telegram](#0-configure-telegram)). Re-open `/init` after deploy so the bot username is cached for Preview links.
 
 ### Security and cache
 
-1. After `MAILS_TTL` expires (or the cache is evicted by maxCount), preview links stop working — back up important mail.
-2. Large attachments may time out Workers; put a real mailbox in `FORWARD_MAIL`.
-3. `GUARDIAN_MODE` can reduce duplicate notifications at the cost of more KV writes.
+1. Mail bodies: hard limit **100** newest in KV (oldest deleted). No Dashboard TTL var.
+2. Web Preview links: hard **1 day** token expiry (data may remain). Prefer Mini App.
+3. Large attachments may time out Workers; put a real mailbox in `FORWARD_MAIL`.
+4. `GUARDIAN_MODE` can reduce duplicate notifications at the cost of more KV writes.
 
 ### Blacklist and whitelist
 
@@ -236,7 +248,7 @@ Released under the MIT license. See [LICENSE](LICENSE).
 # 中文
 
 本项目是一个基于 Cloudflare Email Routing Worker 的 Telegram 邮件通知机器人：把任意前缀收件地址收到的邮件转成 Telegram 消息。  
-用 **Gemini** 提取验证码，失败时回退本地正则。按钮仅 **预览** + **邮箱**。界面：`UI_LANG=en`（默认）/ `zh` / `tw`。
+用 **Gemini** 提取验证码，失败时回退本地正则。按钮 **预览** + **邮箱**（`/previewmode` 可把预览切到网页）。界面：`UI_LANG=en`（默认）/ `zh` / `tw`。
 
 配置与逻辑以 `src/` 为准。
 
@@ -245,8 +257,15 @@ Released under the MIT license. See [LICENSE](LICENSE).
 ### 0. 配置 Telegram
 
 1. 使用 `@BotFather > /newbot` 创建 Bot，并复制 Token。
-2. 部署完成后，用 Worker 的**完整公网地址**打开一次 `/init`（见下方 **绑定 Telegram Webhook**：方式 A 为 `workers.dev` 两级名称，方式 B 为你自己的域名，两种都有逐步说明）。
-3. 若使用 Telegram 小程序，请在 `@BotFather > /mybots > （选择一个） > 编辑机器人 > 编辑隐私政策` 设置隐私政策（可使用默认：`https://telegram.org/privacy-tpa`）。
+2. 部署完成后，用 Worker 的**完整公网地址**打开一次 `/init`（见下方 **绑定 Telegram Webhook**：方式 A 为 `workers.dev` 两级名称，方式 B 为你自己的域名）。必须是**本 Worker** 的主机（例如 `https://mail2telegram.<账号>.workers.dev/init`），不要填成别的 Worker 的 `webhook.*`。
+3. **预览 / 名单小程序必配** — 在 `@BotFather`：
+
+| 配置项 | 路径 | 填写值 |
+|--------|------|--------|
+| **隐私政策 URL** | `/mybots` → 选中 Bot → **编辑机器人** → **编辑隐私政策** | `https://telegram.org/privacy-tpa`（或你自己的隐私政策地址） |
+| **Mini App URL** | `/mybots` → 选中 Bot → **Bot Settings** → **Configure Mini App** → **Enable Mini App** | `https://<PUBLIC_HOST>/tma` — 与 `/init` 同一主机，浏览器打开须为 HTTP 200 |
+
+若 Mini App URL 指错 Worker（或 `/tma` 返回 404），会出现同意弹窗且点「启动」无反应。更换公网主机后，请同步改 Mini App URL，并重新打开 `/init`。
 
 ### 1. 部署 Workers
 
@@ -363,7 +382,6 @@ pnpm pub  # wrangler deploy --keep-vars
 | `GEMINI_API_KEY` | Google AI Studio Key（`AIza…`）。出网可能受地区限制；失败时自动本地正则。 |
 | `GEMINI_MODEL` | 可选。默认 `gemini-2.5-flash-lite`。 |
 | `FORWARD_MAIL` | 单一备份：`邮箱` \| `邮箱,文件夹` \| `邮箱,文件夹,noforwarded\|forwarded` \| `邮箱,forwarded`。例：`you+bak@gmail.com,Backup,noforwarded`。默认 `noforwarded`：只备份真正发到域名邮箱的信；外站自动转发进域名的不备份（仍推 Telegram）。`forwarded`：转发进来的也备份。From / 相关 To 头命中该备份地址（Gmail `+` 归一）则永不备份。须为已验证的 Email Routing 目的地。 |
-| `MAILS_TTL` | 预览保留：`时长,最大封数`。例：`1d,10`。时长：`30m` / `1h` / `1d` / 秒数。未设置时默认 `1d,100`。超过封数删除最旧预览。 |
 | `DB` | **必须**的 KV 绑定，变量名必须是 `DB`。 |
 | `TIMEZONE` | 可选。默认 `Asia/Shanghai`。 |
 | `GMAIL_U` | 可选。Gmail 多账号序号，默认 `0`。 |
@@ -384,9 +402,11 @@ pnpm pub  # wrangler deploy --keep-vars
 
 ## Telegram 小程序
 
-黑白名单通过小程序管理（`/cfmail`）。邮件 **预览** 也走小程序（需鉴权）。**网页** 仍打开 `/email/<id>`，暂不鉴权。
+黑白名单通过小程序管理（`/cfmail`）。邮件 **预览** 默认走小程序（需鉴权）。用 `/previewmode` 可切到未鉴权 **网页**（需确认风险）。
 
-> 修改 `UI_LANG` 或公网主机后，请重新打开 `/init` 以同步 Bot 命令。
+BotFather 必须同时配置 **隐私政策 URL** 与 **Mini App URL**（见 [配置 Telegram](#0-配置-telegram)）。Mini App URL = `https://<PUBLIC_HOST>/tma`。
+
+> 修改 `UI_LANG` 或公网主机后，请重新打开 `/init` 以同步 Bot 命令；若主机变了，同步更新 Mini App URL。
 
 | 黑名单 | 白名单 | 名单测试 |
 |:-------|:-------|:---------|
@@ -394,7 +414,9 @@ pnpm pub  # wrangler deploy --keep-vars
 
 ## 使用说明
 
-向 Bot 发送 `/test`（须为 `TELEGRAM_BOT` 中的 chat id）。频率限制：**10 秒一封**。假信固定 `from@test.mail` / `to@test.mail`，模拟**已备份**（「邮箱」→ `FORWARD_MAIL`），真走抽码，显示预览 / 网页 / 邮箱；**不会**真实 Email Routing 备份。不发「测试已发送」确认。用户 `/test`、`/cfmail` 在 **60 秒**后删除（失败则每隔 60 秒重试，最多 3 次）。
+向 Bot 发送 `/test`（须为 `TELEGRAM_BOT` 中的 chat id）。频率限制：**10 秒一封**。假信固定 `from@test.mail` / `to@test.mail`，模拟**已备份**（「邮箱」→ `FORWARD_MAIL`），真走抽码，显示预览 / 邮箱；**不会**真实 Email Routing 备份。不发「测试已发送」确认。用户 `/test`、`/cfmail`、`/previewmode` 在 **60 秒**后删除（失败则每隔 60 秒重试，最多 3 次）。
+
+`/previewmode` — 切换唯一的「预览」按钮：小程序（默认）或网页。切到网页会弹出风险确认（是/否）。**仅影响之后的新邮件**。
 
 默认消息结构如下：
 
@@ -403,24 +425,24 @@ pnpm pub  # wrangler deploy --keep-vars
 发件人：…
 收件人：…
 时间
-[预览] [网页] [邮箱]
+[预览] [邮箱]
 ```
 
 ### 邮件预览
 
-当邮件转发通知到 Telegram 时，展示验证码（如有）、发件人、收件人、时间，以及按钮：
+1. **预览**（单个按钮）— 由 `/previewmode` 决定：
+   - **小程序**（默认）：`https://t.me/<bot>?startapp=<mailId>`（主小程序须为 `https://<host>/tma`），TMA 鉴权。
+   - **网页**：`/email/<id>?t=<token>`，未鉴权；token 链接 **1 天**失效（页顶倒计时）。正文在 KV 中最多保留 **100** 封；缓存期内仍可用小程序打开。
+2. **邮箱**：按 [「邮箱」按钮规则](#邮箱按钮规则) 跳转网页邮箱。
 
-1. **预览**：通过 `https://t.me/<bot>?startapp=<mailId>` 打开主小程序（BotFather 主小程序须为 `https://<host>/tma`）。需 TMA 鉴权。不要用带 query 的 `web_app` 链接——客户端会丢掉参数并打开名单页。
-2. **网页**：浏览器打开同一预览页（`/email/<id>`）。暂时保留；缓存期内链接仍可能被直接打开。
-3. **邮箱**：按 [「邮箱」按钮规则](#邮箱按钮规则) 跳转网页邮箱。
-
-BotFather 需开启 **Main Mini App** → `https://<PUBLIC_HOST>/tma`。部署后重新打开一次 `/init`，以缓存 bot username 供预览链接使用。
+BotFather：**Mini App URL** = `https://<PUBLIC_HOST>/tma`，**隐私政策 URL** = `https://telegram.org/privacy-tpa`（见 [配置 Telegram](#0-配置-telegram)）。部署后重新打开一次 `/init`，以缓存 bot username 供预览链接使用。
 
 ### 安全与邮件缓存
 
-1. `MAILS_TTL`：超过保留时间或超过最大封数被挤掉后，预览链接无法打开。可按需调整。
-2. 由于 Workers 限制，邮件（特别是附件较大时）可能导致函数超时和多次重试，从而可能收到重复通知。建议在 `FORWARD_MAIL` 中配置备份邮箱，以防邮件丢失。
-3. 开启 `GUARDIAN_MODE` 可减少重复消息干扰，提高 Worker 成功率，但会消耗较多 KV 写入次数。建议在必要时开启。
+1. 邮件正文：硬编码最多 **100** 封（超限删最旧）；无 Dashboard TTL 变量。
+2. 网页预览链接：硬编码 **1 天** token 过期（正文可能仍在）。优先使用小程序。
+3. 由于 Workers 限制，附件较大时可能导致超时与重试。建议配置 `FORWARD_MAIL`。
+4. 开启 `GUARDIAN_MODE` 可减少重复消息，但会增加 KV 写入。
 
 ### 黑名单与白名单
 

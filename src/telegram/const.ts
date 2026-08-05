@@ -11,5 +11,9 @@ export function telegramCommands(lang: UiLang) {
             command: 'test',
             description: t(lang, 'cmdTest'),
         },
+        {
+            command: 'previewmode',
+            description: t(lang, 'cmdPreviewMode'),
+        },
     ];
 }

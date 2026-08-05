@@ -9,8 +9,8 @@ import {
     pickOriginalMailboxAddress,
     shouldBackupInboundMail,
 } from './forward';
-import { parseDurationToSeconds, parseMailsTtl } from './ttl';
 import { mailboxButtonUrl } from './mailbox';
+import { isWebLinkValid, MAIL_CACHE_MAX, WEB_LINK_TTL_MS, attachWebPreviewMeta } from './cache-policy';
 import type { EmailCache } from '../types';
 
 function assert(cond: unknown, msg: string): void {
@@ -32,10 +32,9 @@ function mockMessage(partial: {
     } as unknown as EmailMessage;
 }
 
-function envWith(mails?: string, ttl?: string): Environment {
+function envWith(mails?: string): Environment {
     return {
         FORWARD_MAIL: mails,
-        MAILS_TTL: ttl,
         DB: {} as Environment['DB'],
     };
 }
@@ -81,15 +80,21 @@ export async function runForwardTests(): Promise<void> {
         'noforwarded allows direct',
     );
 
-    // ttl
-    assert(parseDurationToSeconds('1d') === 86400, '1d');
-    assert(parseDurationToSeconds('24h') === 86400, '24h');
-    assert(parseDurationToSeconds('30m') === 1800, '30m');
-    assert(parseDurationToSeconds('90') === 90, 'seconds');
-    assert(parseMailsTtl('1d,10').ttlSeconds === 86400, 'ttl part');
-    assert(parseMailsTtl('1d,10').maxCount === 10, 'count part');
-    assert(parseMailsTtl('').maxCount === 100, 'default count');
-    assert(parseMailsTtl('1h').ttlSeconds === 3600, 'time only keeps default count');
+    // cache / web link
+    assert(MAIL_CACHE_MAX === 100, 'cache max');
+    assert(WEB_LINK_TTL_MS === 86400000, 'web link 1d');
+    const linkMail: EmailCache = {
+        id: 'w1',
+        messageId: 'w1',
+        from: 'a@b.com',
+        to: 'c@d.com',
+        subject: 'x',
+    };
+    attachWebPreviewMeta(linkMail, 1_000_000);
+    assert(!!linkMail.webToken && linkMail.webExpiresAt === 1_000_000 + WEB_LINK_TTL_MS, 'attach web meta');
+    assert(isWebLinkValid(linkMail, linkMail.webToken, 1_000_000 + 1000), 'web valid');
+    assert(!isWebLinkValid(linkMail, 'bad', 1_000_000 + 1000), 'web bad token');
+    assert(!isWebLinkValid(linkMail, linkMail.webToken, linkMail.webExpiresAt), 'web expired');
 
     // mailbox button
     const backupMail: EmailCache = {

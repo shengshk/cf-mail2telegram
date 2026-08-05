@@ -103,16 +103,14 @@ export class Dao {
     }
 
     /**
-     * Persist preview cache, append to index, delete oldest when over maxCount.
-     * Index key itself has no TTL (small); entries expire via their own TTL too.
+     * Persist preview cache (no time TTL), append to index, delete oldest when over maxCount.
      */
     async saveMailCacheWithLimit(
         id: string,
         cache: EmailCache,
-        ttlSeconds: number,
         maxCount: number,
     ): Promise<void> {
-        await this.saveMailCache(id, cache, ttlSeconds);
+        await this.saveMailCache(id, cache);
         let index = await this.loadMailCacheIndex();
         index = index.filter(x => x !== id);
         index.push(id);
@@ -159,6 +157,19 @@ export class Dao {
 
     async saveBotUsername(username: string): Promise<void> {
         await this.db.put('BOT_USERNAME', username.trim().replace(/^@/, ''));
+    }
+
+    async loadPreviewMode(chatId: string): Promise<string | null> {
+        try {
+            return await this.db.get(`PREVIEW_MODE:${chatId}`);
+        } catch (e) {
+            console.error(e);
+            return null;
+        }
+    }
+
+    async savePreviewMode(chatId: string, mode: string): Promise<void> {
+        await this.db.put(`PREVIEW_MODE:${chatId}`, mode);
     }
 }
 

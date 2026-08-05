@@ -2843,11 +2843,10 @@ var Dao = class {
     await this.db.put(MAIL_CACHE_INDEX_KEY, JSON.stringify(ids));
   }
   /**
-   * Persist preview cache, append to index, delete oldest when over maxCount.
-   * Index key itself has no TTL (small); entries expire via their own TTL too.
+   * Persist preview cache (no time TTL), append to index, delete oldest when over maxCount.
    */
-  async saveMailCacheWithLimit(id, cache, ttlSeconds, maxCount) {
-    await this.saveMailCache(id, cache, ttlSeconds);
+  async saveMailCacheWithLimit(id, cache, maxCount) {
+    await this.saveMailCache(id, cache);
     let index = await this.loadMailCacheIndex();
     index = index.filter((x) => x !== id);
     index.push(id);
@@ -2888,6 +2887,17 @@ var Dao = class {
   }
   async saveBotUsername(username) {
     await this.db.put("BOT_USERNAME", username.trim().replace(/^@/, ""));
+  }
+  async loadPreviewMode(chatId) {
+    try {
+      return await this.db.get(`PREVIEW_MODE:${chatId}`);
+    } catch (e) {
+      console.error(e);
+      return null;
+    }
+  }
+  async savePreviewMode(chatId, mode) {
+    await this.db.put(`PREVIEW_MODE:${chatId}`, mode);
   }
 };
 function loadArrayFromRaw(raw) {
@@ -2961,6 +2971,7 @@ var en = {
   addressManager: "Address Manager",
   cmdCfmail: "Show Chat ID, Worker URL, and list managers",
   cmdTest: "Send a fake mail through TG UI (OTP extract, rate-limited)",
+  cmdPreviewMode: "Switch Preview button: Mini App or Web",
   testDenied: "Not allowed.",
   testRateLimit: "Too fast. Try again in {n}s.",
   testDone: "Test mail sent (fake; no backup).",
@@ -2987,7 +2998,25 @@ var en = {
   tmaTo: "To",
   tmaSubject: "Subject",
   tmaText: "Text",
-  tmaSend: "Send"
+  tmaSend: "Send",
+  webLinkExpired: "This unauthenticated web link has expired or is invalid. If the mail is still cached, open Preview from the Telegram Mini App.",
+  linkRemainLabel: "Link expires in",
+  linkExpiredLabel: "Link expired",
+  durationDay: "d",
+  durationHour: "h",
+  durationMinute: "m",
+  durationSecond: "s",
+  previewModeCurrent: "Current Preview mode: {mode}",
+  previewModeMini: "Mini App",
+  previewModeWeb: "Web",
+  previewModeSwitchMini: "Use Mini App",
+  previewModeSwitchWeb: "Use Web",
+  previewModeWarn: "Switch Preview to Web?\nUnauthenticated links can be forwarded and opened without Telegram login.\nWeb links expire after about 1 day (mail body may still be available via Mini App within the cache limit).\nContinue?",
+  previewModeYes: "Yes",
+  previewModeNo: "No",
+  previewModeSetOk: "Preview mode set to: {mode}\nOnly new mail messages are affected.",
+  previewModeCancel: "Cancelled.",
+  previewModeAlready: "Already using: {mode}"
 };
 var zh = {
   otp: "\u9A8C\u8BC1\u7801\uFF1A",
@@ -3016,6 +3045,7 @@ var zh = {
   addressManager: "\u5730\u5740\u7BA1\u7406",
   cmdCfmail: "\u663E\u793A Chat ID\u3001Worker \u5730\u5740\u4E0E\u540D\u5355\u7BA1\u7406",
   cmdTest: "\u53D1\u9001\u5047\u4FE1\u8D70 TG UI\uFF08\u542B\u62BD\u7801\uFF0C\u6709\u9891\u7387\u9650\u5236\uFF09",
+  cmdPreviewMode: "\u5207\u6362\u9884\u89C8\u65B9\u5F0F\uFF1A\u5C0F\u7A0B\u5E8F / \u7F51\u9875",
   testDenied: "\u65E0\u6743\u9650\u3002",
   testRateLimit: "\u64CD\u4F5C\u8FC7\u5FEB\uFF0C\u8BF7 {n} \u79D2\u540E\u518D\u8BD5\u3002",
   testDone: "\u6D4B\u8BD5\u90AE\u4EF6\u5DF2\u53D1\u9001\uFF08\u5047\u4FE1\uFF0C\u4E0D\u4F1A\u5907\u4EFD\uFF09\u3002",
@@ -3042,7 +3072,25 @@ var zh = {
   tmaTo: "\u6536\u4EF6\u4EBA",
   tmaSubject: "\u4E3B\u9898",
   tmaText: "\u6B63\u6587",
-  tmaSend: "\u53D1\u9001"
+  tmaSend: "\u53D1\u9001",
+  webLinkExpired: "\u672A\u9274\u6743\u7F51\u9875\u94FE\u63A5\u5DF2\u5931\u6548\u6216\u65E0\u6548\u3002\u82E5\u90AE\u4EF6\u4ECD\u5728\u7F13\u5B58\u4E2D\uFF0C\u8BF7\u7528 Telegram \u5C0F\u7A0B\u5E8F\u300C\u9884\u89C8\u300D\u6253\u5F00\u3002",
+  linkRemainLabel: "\u94FE\u63A5\u5269\u4F59\u6709\u6548\u65F6\u95F4",
+  linkExpiredLabel: "\u94FE\u63A5\u5DF2\u5931\u6548",
+  durationDay: "\u5929",
+  durationHour: "\u5C0F\u65F6",
+  durationMinute: "\u5206\u949F",
+  durationSecond: "\u79D2",
+  previewModeCurrent: "\u5F53\u524D\u9884\u89C8\u65B9\u5F0F\uFF1A{mode}",
+  previewModeMini: "\u5C0F\u7A0B\u5E8F",
+  previewModeWeb: "\u7F51\u9875",
+  previewModeSwitchMini: "\u4F7F\u7528\u5C0F\u7A0B\u5E8F",
+  previewModeSwitchWeb: "\u4F7F\u7528\u7F51\u9875",
+  previewModeWarn: "\u5207\u6362\u9884\u89C8\u65B9\u5F0F\u4E3A\u7F51\u9875\u5F62\u5F0F\uFF1F\n\u5B58\u5728\u5B89\u5168\u98CE\u9669\uFF1A\u94FE\u63A5\u53EF\u8F6C\u53D1\uFF0C\u65E0\u9700 Telegram \u767B\u5F55\u5373\u53EF\u6253\u5F00\u3002\n\u672A\u9274\u6743\u94FE\u63A5\u7EA6 1 \u5929\u540E\u5931\u6548\uFF08\u6B63\u6587\u5728\u7F13\u5B58\u4E0A\u9650\u5185\u4ECD\u53EF\u901A\u8FC7\u5C0F\u7A0B\u5E8F\u67E5\u770B\uFF09\u3002\n\u662F\u5426\u7EE7\u7EED\uFF1F",
+  previewModeYes: "\u662F",
+  previewModeNo: "\u5426",
+  previewModeSetOk: "\u9884\u89C8\u65B9\u5F0F\u5DF2\u8BBE\u4E3A\uFF1A{mode}\n\u4EC5\u5F71\u54CD\u4E4B\u540E\u7684\u65B0\u90AE\u4EF6\u3002",
+  previewModeCancel: "\u5DF2\u53D6\u6D88\u3002",
+  previewModeAlready: "\u5DF2\u7ECF\u662F\uFF1A{mode}"
 };
 var tw = {
   otp: "\u9A57\u8B49\u78BC\uFF1A",
@@ -3071,6 +3119,7 @@ var tw = {
   addressManager: "\u5730\u5740\u7BA1\u7406",
   cmdCfmail: "\u986F\u793A Chat ID\u3001Worker \u5730\u5740\u8207\u540D\u55AE\u7BA1\u7406",
   cmdTest: "\u50B3\u9001\u5047\u4FE1\u8D70 TG UI\uFF08\u542B\u62BD\u78BC\uFF0C\u6709\u983B\u7387\u9650\u5236\uFF09",
+  cmdPreviewMode: "\u5207\u63DB\u9810\u89BD\u65B9\u5F0F\uFF1A\u5C0F\u7A0B\u5F0F / \u7DB2\u9801",
   testDenied: "\u7121\u6B0A\u9650\u3002",
   testRateLimit: "\u64CD\u4F5C\u904E\u5FEB\uFF0C\u8ACB {n} \u79D2\u5F8C\u518D\u8A66\u3002",
   testDone: "\u6E2C\u8A66\u90F5\u4EF6\u5DF2\u50B3\u9001\uFF08\u5047\u4FE1\uFF0C\u4E0D\u6703\u5099\u4EFD\uFF09\u3002",
@@ -3097,7 +3146,25 @@ var tw = {
   tmaTo: "\u6536\u4EF6\u8005",
   tmaSubject: "\u4E3B\u65E8",
   tmaText: "\u6B63\u6587",
-  tmaSend: "\u50B3\u9001"
+  tmaSend: "\u50B3\u9001",
+  webLinkExpired: "\u672A\u9451\u6B0A\u7DB2\u9801\u9023\u7D50\u5DF2\u5931\u6548\u6216\u7121\u6548\u3002\u82E5\u90F5\u4EF6\u4ECD\u5728\u5FEB\u53D6\u4E2D\uFF0C\u8ACB\u7528 Telegram \u5C0F\u7A0B\u5F0F\u300C\u9810\u89BD\u300D\u958B\u555F\u3002",
+  linkRemainLabel: "\u9023\u7D50\u5269\u9918\u6709\u6548\u6642\u9593",
+  linkExpiredLabel: "\u9023\u7D50\u5DF2\u5931\u6548",
+  durationDay: "\u5929",
+  durationHour: "\u5C0F\u6642",
+  durationMinute: "\u5206\u9418",
+  durationSecond: "\u79D2",
+  previewModeCurrent: "\u76EE\u524D\u9810\u89BD\u65B9\u5F0F\uFF1A{mode}",
+  previewModeMini: "\u5C0F\u7A0B\u5F0F",
+  previewModeWeb: "\u7DB2\u9801",
+  previewModeSwitchMini: "\u4F7F\u7528\u5C0F\u7A0B\u5F0F",
+  previewModeSwitchWeb: "\u4F7F\u7528\u7DB2\u9801",
+  previewModeWarn: "\u5207\u63DB\u9810\u89BD\u65B9\u5F0F\u70BA\u7DB2\u9801\u5F62\u5F0F\uFF1F\n\u5B58\u5728\u5B89\u5168\u98A8\u96AA\uFF1A\u9023\u7D50\u53EF\u8F49\u767C\uFF0C\u7121\u9700 Telegram \u767B\u5165\u5373\u53EF\u958B\u555F\u3002\n\u672A\u9451\u6B0A\u9023\u7D50\u7D04 1 \u5929\u5F8C\u5931\u6548\uFF08\u6B63\u6587\u5728\u5FEB\u53D6\u4E0A\u9650\u5167\u4ECD\u53EF\u900F\u904E\u5C0F\u7A0B\u5F0F\u67E5\u770B\uFF09\u3002\n\u662F\u5426\u7E7C\u7E8C\uFF1F",
+  previewModeYes: "\u662F",
+  previewModeNo: "\u5426",
+  previewModeSetOk: "\u9810\u89BD\u65B9\u5F0F\u5DF2\u8A2D\u70BA\uFF1A{mode}\n\u50C5\u5F71\u97FF\u4E4B\u5F8C\u7684\u65B0\u90F5\u4EF6\u3002",
+  previewModeCancel: "\u5DF2\u53D6\u6D88\u3002",
+  previewModeAlready: "\u5DF2\u7D93\u662F\uFF1A{mode}"
 };
 var catalog = { en, zh, tw };
 function resolveUiLang(env) {
@@ -3142,7 +3209,14 @@ function tmaI18nPayload(lang) {
     to: t2(lang, "tmaTo"),
     subject: t2(lang, "tmaSubject"),
     text: t2(lang, "tmaText"),
-    send: t2(lang, "tmaSend")
+    send: t2(lang, "tmaSend"),
+    previewTitle: t2(lang, "previewTitle"),
+    previewFrom: t2(lang, "previewFrom"),
+    previewTo: t2(lang, "previewTo"),
+    previewLoading: t2(lang, "previewLoading"),
+    previewExpired: t2(lang, "previewExpired"),
+    previewDenied: t2(lang, "previewDenied"),
+    previewAuthRequired: t2(lang, "previewAuthRequired")
   };
 }
 
@@ -3185,20 +3259,58 @@ function buildPreviewBodyHtml(mail) {
   }
   return `<pre style="white-space:pre-wrap;margin:0">${escapeHtml(mail.text || "")}</pre>`;
 }
-function renderPreviewPage(mail, bodyHtml, env) {
+function renderPreviewPage(mail, bodyHtml, env, webBar) {
   const lang = resolveUiLang(env || {});
   const subject = escapeHtml(mail.subject || t2(lang, "noSubjectShort"));
   const sender = escapeHtml(mail.from || "");
   const recipient = escapeHtml(mail.to || "");
   const when = escapeHtml(mail.date || "");
+  const title = escapeHtml(t2(lang, "previewTitle"));
   const canvas = bodyHtml.trim() ? bodyHtml : `<pre style="white-space:pre-wrap;margin:0">${escapeHtml(mail.text || "")}</pre>`;
+  const countdownLabels = JSON.stringify({
+    title: t2(lang, "previewTitle"),
+    remain: t2(lang, "linkRemainLabel"),
+    expired: t2(lang, "linkExpiredLabel"),
+    day: t2(lang, "durationDay"),
+    hour: t2(lang, "durationHour"),
+    minute: t2(lang, "durationMinute"),
+    second: t2(lang, "durationSecond")
+  }).replace(/</g, "\\u003c");
+  const expiresAt = webBar?.linkExpiresAt ?? 0;
+  const countdownScript = webBar ? `<script>(function(){
+  var el=document.getElementById('preview-bar-text');
+  var L=${countdownLabels};
+  var exp=${expiresAt};
+  function fmt(ms){
+    if(ms<=0) return L.title+' \xB7 '+L.expired;
+    var s=Math.floor(ms/1000);
+    var d=Math.floor(s/86400); s%=86400;
+    var h=Math.floor(s/3600); s%=3600;
+    var m=Math.floor(s/60); s%=60;
+    var parts=[];
+    if(d) parts.push(d+L.day);
+    if(h||d) parts.push(h+L.hour);
+    if(m||h||d) parts.push(m+L.minute);
+    parts.push(s+L.second);
+    return L.title+' \xB7 '+L.remain+' '+parts.join('');
+  }
+  function tick(){
+    if(!el) return;
+    var left=exp-Date.now();
+    el.textContent=fmt(left);
+    if(left<=0) return;
+    setTimeout(tick,1000);
+  }
+  tick();
+})();<\/script>` : "";
+  const barText = webBar ? `<span id="preview-bar-text">${title}</span>` : `<span>${title}</span>`;
   return `<!doctype html><html lang="${htmlLang(lang)}"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="referrer" content="no-referrer">
 <title>${subject}</title><style>${PREVIEW_CSS}</style></head>
 <body>
 <div class="preview">
-  <div class="preview-bar"><span>${escapeHtml(t2(lang, "previewTitle"))}</span></div>
+  <div class="preview-bar">${barText}</div>
   <div class="preview-sheet">
     <div class="preview-meta">
       <h1>${subject}</h1>
@@ -3207,6 +3319,7 @@ function renderPreviewPage(mail, bodyHtml, env) {
     <div class="mail-canvas">${canvas}</div>
   </div>
 </div>
+${countdownScript}
 </body></html>`;
 }
 function renderPreviewMiniAppShell(mailId, env) {
@@ -3266,6 +3379,31 @@ function renderPreviewMiniAppShell(mailId, env) {
 })();
 <\/script>
 </body></html>`;
+}
+
+// src/mail/cache-policy.ts
+var MAIL_CACHE_MAX = 100;
+var WEB_LINK_TTL_MS = 24 * 60 * 60 * 1e3;
+var TELEGRAM_ID_MAP_TTL_SECONDS = 90 * 24 * 60 * 60;
+function attachWebPreviewMeta(mail, now = Date.now()) {
+  mail.webToken = crypto.randomUUID().replace(/-/g, "");
+  mail.webExpiresAt = now + WEB_LINK_TTL_MS;
+}
+function isWebLinkValid(mail, token2, now = Date.now()) {
+  const t3 = (token2 || "").trim();
+  if (!t3 || !mail.webToken || t3 !== mail.webToken) {
+    return false;
+  }
+  if (!mail.webExpiresAt || now >= mail.webExpiresAt) {
+    return false;
+  }
+  return true;
+}
+function webPreviewUrl(host, mail) {
+  if (!host || !mail.id || !mail.webToken) {
+    return void 0;
+  }
+  return `https://${host}/email/${encodeURIComponent(mail.id)}?t=${encodeURIComponent(mail.webToken)}`;
 }
 
 // src/public-host.ts
@@ -4130,6 +4268,10 @@ function telegramCommands(lang) {
     {
       command: "test",
       description: t2(lang, "cmdTest")
+    },
+    {
+      command: "previewmode",
+      description: t2(lang, "cmdPreviewMode")
     }
   ];
 }
@@ -4665,13 +4807,10 @@ function mailboxButtonUrl(mail, env) {
   }
   return providerHomeUrl(original, env);
 }
-function buildKeyboard(previewAppUrl, webUrl, mailboxUrl, lang) {
+function buildKeyboard(previewUrl, mailboxUrl, lang) {
   const row = [];
-  if (previewAppUrl) {
-    row.push({ text: t2(lang, "previewBtn"), url: previewAppUrl });
-  }
-  if (webUrl) {
-    row.push({ text: t2(lang, "webBtn"), url: webUrl });
+  if (previewUrl) {
+    row.push({ text: t2(lang, "previewBtn"), url: previewUrl });
   }
   if (mailboxUrl) {
     row.push({ text: t2(lang, "mailboxBtn"), url: mailboxUrl });
@@ -14462,6 +14601,25 @@ async function parseEmail(message, maxSize, maxSizePolicy, useEmlHeaders = false
   return cache;
 }
 
+// src/mail/preview-mode.ts
+function parsePreviewMode(raw) {
+  return raw === "web" ? "web" : "miniapp";
+}
+async function loadPreviewMode(env, chatId) {
+  if (!env.DB || !chatId) {
+    return "miniapp";
+  }
+  const dao = new Dao(env.DB);
+  return parsePreviewMode(await dao.loadPreviewMode(chatId));
+}
+async function savePreviewMode(env, chatId, mode) {
+  if (!env.DB || !chatId) {
+    return;
+  }
+  const dao = new Dao(env.DB);
+  await dao.savePreviewMode(chatId, mode);
+}
+
 // src/mail/render.ts
 function escapeHtml3(s2) {
   return s2.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -14469,7 +14627,18 @@ function escapeHtml3(s2) {
 function isDebug(env) {
   return (env.DEBUG || "").toLowerCase() === "true";
 }
-async function renderEmailListMode(mail, env, extract) {
+async function resolvePreviewUrl(mail, env, mode, host) {
+  const hasBody = !!(mail.html || mail.text);
+  if (!hasBody) {
+    return void 0;
+  }
+  if (mode === "web") {
+    return host ? webPreviewUrl(host, mail) : void 0;
+  }
+  const botUsername = await loadBotUsername(env);
+  return botUsername ? miniAppStartLink(botUsername, mail.id) : void 0;
+}
+async function renderEmailListMode(mail, env, extract, opts) {
   const lang = resolveUiLang(env);
   const host = await loadPublicHost(env);
   const lines = [];
@@ -14494,12 +14663,10 @@ async function renderEmailListMode(mail, env, extract) {
   if (mail.date) {
     lines.push(escapeHtml3(mail.date));
   }
-  const hasBody = !!(mail.html || mail.text);
-  const botUsername = hasBody ? await loadBotUsername(env) : void 0;
-  const previewAppUrl = hasBody && botUsername ? miniAppStartLink(botUsername, mail.id) : void 0;
-  const webUrl = hasBody && host ? `https://${host}/email/${mail.id}` : void 0;
+  const mode = opts?.chatId ? await loadPreviewMode(env, opts.chatId) : "miniapp";
+  const previewUrl = await resolvePreviewUrl(mail, env, mode, host);
   const mailboxUrl = mailboxButtonUrl(mail, env);
-  const reply_markup = buildKeyboard(previewAppUrl, webUrl, mailboxUrl, lang);
+  const reply_markup = buildKeyboard(previewUrl, mailboxUrl, lang);
   return {
     text: lines.join("\n"),
     parse_mode: "HTML",
@@ -14564,59 +14731,6 @@ async function sendEmail(token2, from, to, subject, text) {
       text
     })
   });
-}
-
-// src/mail/ttl.ts
-var DURATION_RE = /^(\d+)\s*([smhd])?$/i;
-function parseDurationToSeconds(raw) {
-  const s2 = raw.trim();
-  if (!s2) {
-    return void 0;
-  }
-  const m = DURATION_RE.exec(s2);
-  if (!m) {
-    return void 0;
-  }
-  const n = Number.parseInt(m[1], 10);
-  if (!Number.isFinite(n) || n < 0) {
-    return void 0;
-  }
-  const unit = (m[2] || "s").toLowerCase();
-  switch (unit) {
-    case "s":
-      return n;
-    case "m":
-      return n * 60;
-    case "h":
-      return n * 3600;
-    case "d":
-      return n * 86400;
-    default:
-      return void 0;
-  }
-}
-function parseMailsTtl(raw) {
-  const fallback = { ttlSeconds: 86400, maxCount: 100 };
-  const trimmed = (raw || "").trim();
-  if (!trimmed) {
-    return fallback;
-  }
-  const parts = trimmed.split(",").map((p2) => p2.trim()).filter(Boolean);
-  const ttlSeconds = parseDurationToSeconds(parts[0] || "") ?? fallback.ttlSeconds;
-  let maxCount = fallback.maxCount;
-  if (parts[1] !== void 0) {
-    const n = Number.parseInt(parts[1], 10);
-    if (Number.isFinite(n) && n > 0) {
-      maxCount = n;
-    }
-  }
-  return {
-    ttlSeconds: Math.max(60, ttlSeconds),
-    maxCount
-  };
-}
-function resolveMailsTtl(env) {
-  return parseMailsTtl(env.MAILS_TTL);
 }
 
 // src/mail/test-mail.ts
@@ -14701,26 +14815,26 @@ async function runFakeMailUiTest(env) {
     html,
     backedUp: true
   };
+  attachWebPreviewMeta(mail);
   const extractText = [mail.subject, mail.text].filter(Boolean).join("\n");
   const short = extractText.length <= 3e3 ? extractText : `${extractText.slice(0, 3e3)}...`;
   const extract = await extractVerificationCode(short, env);
-  const { ttlSeconds, maxCount } = resolveMailsTtl(env);
   const dao = new Dao(env.DB);
-  await dao.saveMailCacheWithLimit(mail.id, mail, ttlSeconds, maxCount);
+  await dao.saveMailCacheWithLimit(mail.id, mail, MAIL_CACHE_MAX);
   const { token: token2, chatId } = requireTelegram(env);
-  const req = await renderEmailListMode(mail, env, extract);
   const api = createTelegramBotAPI(token2);
   for (const id of chatId.split(",")) {
     const cid = id.trim();
     if (!cid) {
       continue;
     }
+    const req = await renderEmailListMode(mail, env, extract, { chatId: cid });
     const msg = await api.sendMessageWithReturns({
       chat_id: cid,
       ...req
     });
     try {
-      await dao.saveTelegramIDToMailID(`${msg.result.message_id}`, mail.id, ttlSeconds);
+      await dao.saveTelegramIDToMailID(`${msg.result.message_id}`, mail.id, TELEGRAM_ID_MAP_TTL_SECONDS);
     } catch (e) {
       console.error("[test] saveTelegramIDToMailID failed", e);
     }
@@ -14729,6 +14843,12 @@ async function runFakeMailUiTest(env) {
 }
 
 // src/telegram/telegram.ts
+function modeLabel(lang, mode) {
+  return mode === "web" ? t2(lang, "previewModeWeb") : t2(lang, "previewModeMini");
+}
+function fill(template, vars) {
+  return template.replace(/\{(\w+)\}/g, (_, k) => String(vars[k] ?? ""));
+}
 var CMD_DELETE_WAIT_MS = 6e4;
 var CMD_DELETE_ATTEMPTS = 3;
 function logTelegram(event, data) {
@@ -14797,6 +14917,33 @@ function scheduleDeleteUserCommand(ctx, token2, chatId, messageId) {
   } else {
     void task;
   }
+}
+function handlePreviewModeCommand(env, ctx) {
+  return async (msg) => {
+    const { token: token2 } = requireTelegram(env);
+    const lang = resolveUiLang(env);
+    const chatKey = `${msg.chat.id}`;
+    const mode = await loadPreviewMode(env, chatKey);
+    const text = [
+      fill(t2(lang, "previewModeCurrent"), { mode: modeLabel(lang, mode) }),
+      t2(lang, "previewModeSetOk").split("\n")[1] || ""
+    ].filter(Boolean).join("\n");
+    const response = await createTelegramBotAPI(token2).sendMessage({
+      chat_id: msg.chat.id,
+      text,
+      reply_markup: {
+        inline_keyboard: [
+          [
+            { text: t2(lang, "previewModeSwitchMini"), callback_data: "pm:mini" },
+            { text: t2(lang, "previewModeSwitchWeb"), callback_data: "pm:webwarn" }
+          ]
+        ]
+      },
+      disable_web_page_preview: true
+    });
+    scheduleDeleteUserCommand(ctx, token2, msg.chat.id, msg.message_id);
+    return response;
+  };
 }
 function handleCfmailCommand(env, ctx) {
   return async (msg) => {
@@ -14974,10 +15121,12 @@ async function telegramCommandHandler(message, env, ctx) {
   command = command.split("@")[0] || command;
   const cfmail = handleCfmailCommand(env, ctx);
   const test = handleTestCommand(env, ctx);
+  const previewmode = handlePreviewModeCommand(env, ctx);
   const handlers = {
     cfmail,
     start: cfmail,
-    test
+    test,
+    previewmode
   };
   if (handlers[command]) {
     logTelegram("command.handle", { command, chatId: message.chat.id, messageId: message.message_id });
@@ -15055,6 +15204,76 @@ async function telegramCallbackHandler(callback, env) {
   };
   const [act, arg] = data.split(/:(.*)/);
   logTelegram("callback.parsed", { data, act, arg, chatId, messageId });
+  if (act === "pm") {
+    const lang = resolveUiLang(env);
+    const chatKey = `${chatId}`;
+    const answer = async (text) => {
+      const response = await api.answerCallbackQuery({
+        callback_query_id: callbackId,
+        text,
+        show_alert: false
+      });
+      await logTelegramResponse("answerCallbackQuery", response);
+    };
+    const edit = async (text, keyboard) => {
+      const response = await api.editMessageText({
+        chat_id: chatId,
+        message_id: messageId,
+        text,
+        reply_markup: keyboard,
+        disable_web_page_preview: true
+      });
+      await logTelegramResponse("editMessageText", response);
+    };
+    try {
+      const current = await loadPreviewMode(env, chatKey);
+      if (arg === "mini") {
+        if (current === "miniapp") {
+          await answer(fill(t2(lang, "previewModeAlready"), { mode: modeLabel(lang, "miniapp") }));
+          return;
+        }
+        await savePreviewMode(env, chatKey, "miniapp");
+        await edit(fill(t2(lang, "previewModeSetOk"), { mode: modeLabel(lang, "miniapp") }));
+        await answer();
+        return;
+      }
+      if (arg === "webwarn") {
+        if (current === "web") {
+          await answer(fill(t2(lang, "previewModeAlready"), { mode: modeLabel(lang, "web") }));
+          return;
+        }
+        await edit(t2(lang, "previewModeWarn"), {
+          inline_keyboard: [[
+            { text: t2(lang, "previewModeYes"), callback_data: "pm:web" },
+            { text: t2(lang, "previewModeNo"), callback_data: "pm:cancel" }
+          ]]
+        });
+        await answer();
+        return;
+      }
+      if (arg === "web") {
+        await savePreviewMode(env, chatKey, "web");
+        await edit(fill(t2(lang, "previewModeSetOk"), { mode: modeLabel(lang, "web") }));
+        await answer();
+        return;
+      }
+      if (arg === "cancel") {
+        await edit(t2(lang, "previewModeCancel"));
+        await answer();
+        return;
+      }
+      await answer();
+    } catch (e) {
+      logTelegramError("callback.previewmode.error", e, { data, chatId, messageId });
+      const response = await api.answerCallbackQuery({
+        callback_query_id: callbackId,
+        text: e.message,
+        show_alert: true
+      });
+      await logTelegramResponse("answerCallbackQuery", response);
+    }
+    return;
+  }
   if (handlers[act]) {
     try {
       await handlers[act](arg);
@@ -15295,11 +15514,18 @@ function createRouter(env, ctx) {
   router.get("/email/:id", async (req) => {
     const id = req.params.id;
     const mode = String(req.query.mode || "page");
+    const token2 = String(req.query.t || "");
     const value = await dao.loadMailCache(id);
+    const lang = resolveUiLang(env);
     if (!value) {
-      const lang = resolveUiLang(env);
       return new Response(t2(lang, "previewExpired"), {
         status: 404,
+        headers: { "content-type": "text/plain; charset=utf-8" }
+      });
+    }
+    if (!isWebLinkValid(value, token2)) {
+      return new Response(t2(lang, "webLinkExpired"), {
+        status: 403,
         headers: { "content-type": "text/plain; charset=utf-8" }
       });
     }
@@ -15317,7 +15543,9 @@ function createRouter(env, ctx) {
       });
     }
     const body = value.html ? sanitizeHtmlForPreview(value.html) : "";
-    const page = renderPreviewPage(value, body, env);
+    const page = renderPreviewPage(value, body, env, {
+      linkExpiresAt: value.webExpiresAt || 0
+    });
     return new Response(page, {
       headers: {
         "content-type": "text/html; charset=utf-8",
@@ -15342,7 +15570,6 @@ async function fetchHandler(request, env, ctx) {
 // src/handler/mail/index.ts
 async function sendMailToTelegram(mail, env, extract) {
   const { token: token2, chatId } = requireTelegram(env);
-  const req = await renderEmailListMode(mail, env, extract);
   const api = createTelegramBotAPI(token2);
   const messageID = [];
   for (const id of chatId.split(",")) {
@@ -15350,6 +15577,7 @@ async function sendMailToTelegram(mail, env, extract) {
     if (!cid) {
       continue;
     }
+    const req = await renderEmailListMode(mail, env, extract, { chatId: cid });
     const msg = await api.sendMessageWithReturns({
       chat_id: cid,
       ...req
@@ -15403,7 +15631,6 @@ async function emailHandler(message, env) {
   try {
     const blockTelegram = isBlock && blockPolicy.includes("telegram");
     if (!status.telegram && !blockTelegram) {
-      const { ttlSeconds, maxCount } = resolveMailsTtl(env);
       const maxSize = Number.parseInt(MAX_EMAIL_SIZE || "", 10) || 512 * 1024;
       const maxSizePolicy = MAX_EMAIL_SIZE_POLICY || "truncate";
       const mail = await parseEmail(message, maxSize, maxSizePolicy, false, TIMEZONE || "Asia/Shanghai");
@@ -15412,18 +15639,19 @@ async function emailHandler(message, env) {
       if (originalTo) {
         mail.originalTo = originalTo;
       }
+      attachWebPreviewMeta(mail);
       const extractText = [mail.subject, mail.text].filter(Boolean).join("\n");
       const short = extractText.length <= 3e3 ? extractText : `${extractText.slice(0, 3e3)}...`;
       const extract = await extractVerificationCode(short, env);
       try {
-        await dao.saveMailCacheWithLimit(mail.id, mail, ttlSeconds, maxCount);
+        await dao.saveMailCacheWithLimit(mail.id, mail, MAIL_CACHE_MAX);
       } catch (e) {
         console.error("[mail] saveMailCache failed", e);
       }
       const msgIDs = await sendMailToTelegram(mail, env, extract);
       for (const msgID of msgIDs) {
         try {
-          await dao.saveTelegramIDToMailID(`${msgID}`, mail.id, ttlSeconds);
+          await dao.saveTelegramIDToMailID(`${msgID}`, mail.id, TELEGRAM_ID_MAP_TTL_SECONDS);
         } catch (e) {
           console.error("[mail] saveTelegramIDToMailID failed", e);
         }

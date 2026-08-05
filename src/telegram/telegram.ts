@@ -6,6 +6,7 @@ import { requireTelegram } from '../env';
 import { resolveUiLang, t } from '../i18n';
 import { renderEmailDebugMode, renderEmailListMode, renderEmailPreviewMode, renderEmailSummaryMode, replyToEmail } from '../mail';
 import { checkTestCommandRate, isAllowedTestUser, runFakeMailUiTest } from '../mail/test-mail';
+import { loadPreviewMode, savePreviewMode, type PreviewMode } from '../mail/preview-mode';
 import { loadPublicHost } from '../public-host';
 import { createTelegramBotAPI } from './api';
 import { listModeStartParam, loadBotUsername, miniAppStartLink } from './bot-username';
@@ -13,6 +14,13 @@ import { listModeStartParam, loadBotUsername, miniAppStartLink } from './bot-use
 type TelegramMessageHandler = (message: Telegram.Message) => Promise<Response>;
 type CommandHandlerGroup = Record<string, TelegramMessageHandler>;
 
+function modeLabel(lang: ReturnType<typeof resolveUiLang>, mode: PreviewMode): string {
+    return mode === 'web' ? t(lang, 'previewModeWeb') : t(lang, 'previewModeMini');
+}
+
+function fill(template: string, vars: Record<string, string | number>): string {
+    return template.replace(/\{(\w+)\}/g, (_, k: string) => String(vars[k] ?? ''));
+}
 const CMD_DELETE_WAIT_MS = 60_000;
 const CMD_DELETE_ATTEMPTS = 3;
 
@@ -99,6 +107,34 @@ function scheduleDeleteUserCommand(
     } else {
         void task;
     }
+}
+
+function handlePreviewModeCommand(env: Environment, ctx?: ExecutionContext): TelegramMessageHandler {
+    return async (msg: Telegram.Message): Promise<Response> => {
+        const { token } = requireTelegram(env);
+        const lang = resolveUiLang(env);
+        const chatKey = `${msg.chat.id}`;
+        const mode = await loadPreviewMode(env, chatKey);
+        const text = [
+            fill(t(lang, 'previewModeCurrent'), { mode: modeLabel(lang, mode) }),
+            t(lang, 'previewModeSetOk').split('\n')[1] || '',
+        ].filter(Boolean).join('\n');
+        const response = await createTelegramBotAPI(token).sendMessage({
+            chat_id: msg.chat.id,
+            text,
+            reply_markup: {
+                inline_keyboard: [
+                    [
+                        { text: t(lang, 'previewModeSwitchMini'), callback_data: 'pm:mini' },
+                        { text: t(lang, 'previewModeSwitchWeb'), callback_data: 'pm:webwarn' },
+                    ],
+                ],
+            },
+            disable_web_page_preview: true,
+        } as Telegram.SendMessageParams);
+        scheduleDeleteUserCommand(ctx, token, msg.chat.id, msg.message_id);
+        return response;
+    };
 }
 
 function handleCfmailCommand(env: Environment, ctx?: ExecutionContext): TelegramMessageHandler {
@@ -292,10 +328,12 @@ async function telegramCommandHandler(
     command = command.split('@')[0] || command;
     const cfmail = handleCfmailCommand(env, ctx);
     const test = handleTestCommand(env, ctx);
+    const previewmode = handlePreviewModeCommand(env, ctx);
     const handlers: CommandHandlerGroup = {
         cfmail,
         start: cfmail,
         test,
+        previewmode,
     };
 
     if (handlers[command]) {
@@ -381,6 +419,79 @@ async function telegramCallbackHandler(callback: Telegram.CallbackQuery, env: En
 
     const [act, arg] = data.split(/:(.*)/) as [string, string];
     logTelegram('callback.parsed', { data, act, arg, chatId, messageId });
+
+    if (act === 'pm') {
+        const lang = resolveUiLang(env);
+        const chatKey = `${chatId}`;
+        const answer = async (text?: string) => {
+            const response = await api.answerCallbackQuery({
+                callback_query_id: callbackId,
+                text,
+                show_alert: false,
+            });
+            await logTelegramResponse('answerCallbackQuery', response);
+        };
+        const edit = async (text: string, keyboard?: Telegram.InlineKeyboardMarkup) => {
+            const response = await api.editMessageText({
+                chat_id: chatId,
+                message_id: messageId,
+                text,
+                reply_markup: keyboard,
+                disable_web_page_preview: true,
+            } as Telegram.EditMessageTextParams);
+            await logTelegramResponse('editMessageText', response);
+        };
+
+        try {
+            const current = await loadPreviewMode(env, chatKey);
+            if (arg === 'mini') {
+                if (current === 'miniapp') {
+                    await answer(fill(t(lang, 'previewModeAlready'), { mode: modeLabel(lang, 'miniapp') }));
+                    return;
+                }
+                await savePreviewMode(env, chatKey, 'miniapp');
+                await edit(fill(t(lang, 'previewModeSetOk'), { mode: modeLabel(lang, 'miniapp') }));
+                await answer();
+                return;
+            }
+            if (arg === 'webwarn') {
+                if (current === 'web') {
+                    await answer(fill(t(lang, 'previewModeAlready'), { mode: modeLabel(lang, 'web') }));
+                    return;
+                }
+                await edit(t(lang, 'previewModeWarn'), {
+                    inline_keyboard: [[
+                        { text: t(lang, 'previewModeYes'), callback_data: 'pm:web' },
+                        { text: t(lang, 'previewModeNo'), callback_data: 'pm:cancel' },
+                    ]],
+                });
+                await answer();
+                return;
+            }
+            if (arg === 'web') {
+                await savePreviewMode(env, chatKey, 'web');
+                await edit(fill(t(lang, 'previewModeSetOk'), { mode: modeLabel(lang, 'web') }));
+                await answer();
+                return;
+            }
+            if (arg === 'cancel') {
+                await edit(t(lang, 'previewModeCancel'));
+                await answer();
+                return;
+            }
+            await answer();
+        } catch (e) {
+            logTelegramError('callback.previewmode.error', e, { data, chatId, messageId });
+            const response = await api.answerCallbackQuery({
+                callback_query_id: callbackId,
+                text: (e as Error).message,
+                show_alert: true,
+            });
+            await logTelegramResponse('answerCallbackQuery', response);
+        }
+        return;
+    }
+
     if (handlers[act]) {
         try {
             await handlers[act](arg);

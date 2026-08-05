@@ -4,8 +4,10 @@ import type { ExtractResult } from './extract';
 import { resolveUiLang, t } from '../i18n';
 import { loadPublicHost } from '../public-host';
 import { loadBotUsername, miniAppStartLink } from '../telegram/bot-username';
+import { webPreviewUrl } from './cache-policy';
 import { truncateDisplay } from './extract';
 import { buildKeyboard, mailboxButtonUrl } from './mailbox';
+import { loadPreviewMode, type PreviewMode } from './preview-mode';
 
 export interface EmailDetailParams {
     text: string;
@@ -27,11 +29,29 @@ function isDebug(env: Environment): boolean {
     return (env.DEBUG || '').toLowerCase() === 'true';
 }
 
+async function resolvePreviewUrl(
+    mail: EmailCache,
+    env: Environment,
+    mode: PreviewMode,
+    host: string | undefined,
+): Promise<string | undefined> {
+    const hasBody = !!(mail.html || mail.text);
+    if (!hasBody) {
+        return undefined;
+    }
+    if (mode === 'web') {
+        return host ? webPreviewUrl(host, mail) : undefined;
+    }
+    const botUsername = await loadBotUsername(env);
+    return botUsername ? miniAppStartLink(botUsername, mail.id) : undefined;
+}
+
 /** OTP AI bold / local italic; DEBUG shows fallback reason */
 export async function renderEmailListMode(
     mail: EmailCache,
     env: Environment,
     extract?: ExtractResult,
+    opts?: { chatId?: string },
 ): Promise<EmailDetailParams> {
     const lang = resolveUiLang(env);
     const host = await loadPublicHost(env);
@@ -58,16 +78,12 @@ export async function renderEmailListMode(
         lines.push(escapeHtml(mail.date));
     }
 
-    const hasBody = !!(mail.html || mail.text);
-    const botUsername = hasBody ? await loadBotUsername(env) : undefined;
-    const previewAppUrl = hasBody && botUsername
-        ? miniAppStartLink(botUsername, mail.id)
-        : undefined;
-    const webUrl = hasBody && host
-        ? `https://${host}/email/${mail.id}`
-        : undefined;
+    const mode = opts?.chatId
+        ? await loadPreviewMode(env, opts.chatId)
+        : 'miniapp';
+    const previewUrl = await resolvePreviewUrl(mail, env, mode, host);
     const mailboxUrl = mailboxButtonUrl(mail, env);
-    const reply_markup = buildKeyboard(previewAppUrl, webUrl, mailboxUrl, lang) as Telegram.InlineKeyboardMarkup | undefined;
+    const reply_markup = buildKeyboard(previewUrl, mailboxUrl, lang) as Telegram.InlineKeyboardMarkup | undefined;
 
     return {
         text: lines.join('\n'),

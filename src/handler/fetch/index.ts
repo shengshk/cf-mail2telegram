@@ -7,6 +7,7 @@ import { Dao } from '../../db';
 import { requireTelegram } from '../../env';
 import { htmlLang, resolveUiLang, t, tmaI18nPayload } from '../../i18n';
 import { buildPreviewBodyHtml, renderPreviewMiniAppShell, renderPreviewPage, sanitizeHtmlForPreview } from '../../mail/preview';
+import { isWebLinkValid } from '../../mail/cache-policy';
 import { publicHostFromRequest, savePublicHost } from '../../public-host';
 import statusHtml from '../../status.html';
 import { createTelegramBotAPI, telegramCommands, telegramWebhookHandler, tmaHTML } from '../../telegram';
@@ -237,16 +238,23 @@ function createRouter(env: Environment, ctx?: ExecutionContext): RouterType {
         return { success: true };
     });
 
-    /// Preview（默认浅灰白阅读壳 + 原 HTML；?mode=raw 吐原始片段）
+    /// Preview（网页未鉴权；须 ?t= token；倒计时仅网页）
 
     router.get('/email/:id', async (req: IRequest): Promise<Response> => {
         const id = req.params.id;
         const mode = String(req.query.mode || 'page');
+        const token = String(req.query.t || '');
         const value = await dao.loadMailCache(id);
+        const lang = resolveUiLang(env);
         if (!value) {
-            const lang = resolveUiLang(env);
             return new Response(t(lang, 'previewExpired'), {
                 status: 404,
+                headers: { 'content-type': 'text/plain; charset=utf-8' },
+            });
+        }
+        if (!isWebLinkValid(value, token)) {
+            return new Response(t(lang, 'webLinkExpired'), {
+                status: 403,
                 headers: { 'content-type': 'text/plain; charset=utf-8' },
             });
         }
@@ -268,7 +276,9 @@ function createRouter(env: Environment, ctx?: ExecutionContext): RouterType {
         const body = value.html
             ? sanitizeHtmlForPreview(value.html)
             : '';
-        const page = renderPreviewPage(value, body, env);
+        const page = renderPreviewPage(value, body, env, {
+            linkExpiresAt: value.webExpiresAt || 0,
+        });
         return new Response(page, {
             headers: {
                 'content-type': 'text/html; charset=utf-8',

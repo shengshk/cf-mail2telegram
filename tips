@@ -33,16 +33,16 @@ Vars:
                      Hard rule: never backup when From / To-related
                      headers match the backup address (Gmail +tag)
 
-  MAILS_TTL          Preview retention: duration,maxCount
-                     e.g. 1d,10   or  24h,50
-                     Default if unset: 1d,100
-                     Duration: 30m | 1h | 1d | seconds (≥60)
-
   DEBUG              true → show Gemini error on local OTP fallback
 
 
 No DOMAIN variable.
 Public host is saved when you open /init (KV key PUBLIC_HOST).
+
+Preview:
+  Default Mini App; /previewmode switches to Web (warns first).
+  Mail cache: hard max 100 bodies (no MAILS_TTL).
+  Web link: /email/<id>?t=<token>, hard 1d expiry + live countdown.
 
 
 Mailbox:
@@ -82,6 +82,7 @@ JSON/toast should show host. Re-run /init after changing UI_LANG or switching pr
   [ ] UI_LANG if you want zh or tw
   [ ] GEMINI_API_KEY for AI OTP
   [ ] FORWARD_MAIL verified in Email Routing destinations
-  [ ] MAILS_TTL e.g. 1d,10
+  [ ] BotFather Mini App URL + Privacy Policy URL
   [ ] Email Routing → this Worker
   [ ] Visited /init
+  [ ] Remove obsolete MAILS_TTL var from dashboard if present

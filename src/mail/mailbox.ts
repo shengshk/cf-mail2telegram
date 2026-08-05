@@ -105,21 +105,16 @@ export type InlineBtn
         | { text: string; web_app: { url: string } };
 
 /**
- * Buttons: Preview (Mini App via t.me?startapp=) · Web (browser) · Mailbox
- * Preview must be `url` (deep link), not `web_app` — clients drop web_app query/path.
+ * Buttons: Preview (one of Mini App / Web) · Mailbox
  */
 export function buildKeyboard(
-    previewAppUrl: string | undefined,
-    webUrl: string | undefined,
+    previewUrl: string | undefined,
     mailboxUrl: string | undefined,
     lang: UiLang,
 ): { inline_keyboard: InlineBtn[][] } | undefined {
     const row: InlineBtn[] = [];
-    if (previewAppUrl) {
-        row.push({ text: t(lang, 'previewBtn'), url: previewAppUrl });
-    }
-    if (webUrl) {
-        row.push({ text: t(lang, 'webBtn'), url: webUrl });
+    if (previewUrl) {
+        row.push({ text: t(lang, 'previewBtn'), url: previewUrl });
     }
     if (mailboxUrl) {
         row.push({ text: t(lang, 'mailboxBtn'), url: mailboxUrl });

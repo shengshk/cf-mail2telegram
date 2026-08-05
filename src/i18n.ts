@@ -27,6 +27,7 @@ export type I18nKey =
     | 'addressManager'
     | 'cmdCfmail'
     | 'cmdTest'
+    | 'cmdPreviewMode'
     | 'testDenied'
     | 'testRateLimit'
     | 'testDone'
@@ -53,7 +54,25 @@ export type I18nKey =
     | 'tmaTo'
     | 'tmaSubject'
     | 'tmaText'
-    | 'tmaSend';
+    | 'tmaSend'
+    | 'webLinkExpired'
+    | 'linkRemainLabel'
+    | 'linkExpiredLabel'
+    | 'durationDay'
+    | 'durationHour'
+    | 'durationMinute'
+    | 'durationSecond'
+    | 'previewModeCurrent'
+    | 'previewModeMini'
+    | 'previewModeWeb'
+    | 'previewModeSwitchMini'
+    | 'previewModeSwitchWeb'
+    | 'previewModeWarn'
+    | 'previewModeYes'
+    | 'previewModeNo'
+    | 'previewModeSetOk'
+    | 'previewModeCancel'
+    | 'previewModeAlready';
 
 const en: Record<I18nKey, string> = {
     otp: 'OTP:',
@@ -82,6 +101,7 @@ const en: Record<I18nKey, string> = {
     addressManager: 'Address Manager',
     cmdCfmail: 'Show Chat ID, Worker URL, and list managers',
     cmdTest: 'Send a fake mail through TG UI (OTP extract, rate-limited)',
+    cmdPreviewMode: 'Switch Preview button: Mini App or Web',
     testDenied: 'Not allowed.',
     testRateLimit: 'Too fast. Try again in {n}s.',
     testDone: 'Test mail sent (fake; no backup).',
@@ -109,6 +129,24 @@ const en: Record<I18nKey, string> = {
     tmaSubject: 'Subject',
     tmaText: 'Text',
     tmaSend: 'Send',
+    webLinkExpired: 'This unauthenticated web link has expired or is invalid. If the mail is still cached, open Preview from the Telegram Mini App.',
+    linkRemainLabel: 'Link expires in',
+    linkExpiredLabel: 'Link expired',
+    durationDay: 'd',
+    durationHour: 'h',
+    durationMinute: 'm',
+    durationSecond: 's',
+    previewModeCurrent: 'Current Preview mode: {mode}',
+    previewModeMini: 'Mini App',
+    previewModeWeb: 'Web',
+    previewModeSwitchMini: 'Use Mini App',
+    previewModeSwitchWeb: 'Use Web',
+    previewModeWarn: 'Switch Preview to Web?\nUnauthenticated links can be forwarded and opened without Telegram login.\nWeb links expire after about 1 day (mail body may still be available via Mini App within the cache limit).\nContinue?',
+    previewModeYes: 'Yes',
+    previewModeNo: 'No',
+    previewModeSetOk: 'Preview mode set to: {mode}\nOnly new mail messages are affected.',
+    previewModeCancel: 'Cancelled.',
+    previewModeAlready: 'Already using: {mode}',
 };
 
 const zh: Record<I18nKey, string> = {
@@ -138,6 +176,7 @@ const zh: Record<I18nKey, string> = {
     addressManager: '地址管理',
     cmdCfmail: '显示 Chat ID、Worker 地址与名单管理',
     cmdTest: '发送假信走 TG UI（含抽码，有频率限制）',
+    cmdPreviewMode: '切换预览方式：小程序 / 网页',
     testDenied: '无权限。',
     testRateLimit: '操作过快，请 {n} 秒后再试。',
     testDone: '测试邮件已发送（假信，不会备份）。',
@@ -165,6 +204,24 @@ const zh: Record<I18nKey, string> = {
     tmaSubject: '主题',
     tmaText: '正文',
     tmaSend: '发送',
+    webLinkExpired: '未鉴权网页链接已失效或无效。若邮件仍在缓存中，请用 Telegram 小程序「预览」打开。',
+    linkRemainLabel: '链接剩余有效时间',
+    linkExpiredLabel: '链接已失效',
+    durationDay: '天',
+    durationHour: '小时',
+    durationMinute: '分钟',
+    durationSecond: '秒',
+    previewModeCurrent: '当前预览方式：{mode}',
+    previewModeMini: '小程序',
+    previewModeWeb: '网页',
+    previewModeSwitchMini: '使用小程序',
+    previewModeSwitchWeb: '使用网页',
+    previewModeWarn: '切换预览方式为网页形式？\n存在安全风险：链接可转发，无需 Telegram 登录即可打开。\n未鉴权链接约 1 天后失效（正文在缓存上限内仍可通过小程序查看）。\n是否继续？',
+    previewModeYes: '是',
+    previewModeNo: '否',
+    previewModeSetOk: '预览方式已设为：{mode}\n仅影响之后的新邮件。',
+    previewModeCancel: '已取消。',
+    previewModeAlready: '已经是：{mode}',
 };
 
 const tw: Record<I18nKey, string> = {
@@ -194,6 +251,7 @@ const tw: Record<I18nKey, string> = {
     addressManager: '地址管理',
     cmdCfmail: '顯示 Chat ID、Worker 地址與名單管理',
     cmdTest: '傳送假信走 TG UI（含抽碼，有頻率限制）',
+    cmdPreviewMode: '切換預覽方式：小程式 / 網頁',
     testDenied: '無權限。',
     testRateLimit: '操作過快，請 {n} 秒後再試。',
     testDone: '測試郵件已傳送（假信，不會備份）。',
@@ -221,6 +279,24 @@ const tw: Record<I18nKey, string> = {
     tmaSubject: '主旨',
     tmaText: '正文',
     tmaSend: '傳送',
+    webLinkExpired: '未鑑權網頁連結已失效或無效。若郵件仍在快取中，請用 Telegram 小程式「預覽」開啟。',
+    linkRemainLabel: '連結剩餘有效時間',
+    linkExpiredLabel: '連結已失效',
+    durationDay: '天',
+    durationHour: '小時',
+    durationMinute: '分鐘',
+    durationSecond: '秒',
+    previewModeCurrent: '目前預覽方式：{mode}',
+    previewModeMini: '小程式',
+    previewModeWeb: '網頁',
+    previewModeSwitchMini: '使用小程式',
+    previewModeSwitchWeb: '使用網頁',
+    previewModeWarn: '切換預覽方式為網頁形式？\n存在安全風險：連結可轉發，無需 Telegram 登入即可開啟。\n未鑑權連結約 1 天後失效（正文在快取上限內仍可透過小程式查看）。\n是否繼續？',
+    previewModeYes: '是',
+    previewModeNo: '否',
+    previewModeSetOk: '預覽方式已設為：{mode}\n僅影響之後的新郵件。',
+    previewModeCancel: '已取消。',
+    previewModeAlready: '已經是：{mode}',
 };
 
 const catalog: Record<UiLang, Record<I18nKey, string>> = { en, zh, tw };

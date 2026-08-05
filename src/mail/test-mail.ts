@@ -2,10 +2,14 @@ import type { EmailCache, Environment } from '../types';
 import { Dao } from '../db';
 import { resolveTelegram, requireTelegram } from '../env';
 import { createTelegramBotAPI } from '../telegram/api';
+import {
+    attachWebPreviewMeta,
+    MAIL_CACHE_MAX,
+    TELEGRAM_ID_MAP_TTL_SECONDS,
+} from './cache-policy';
 import { extractVerificationCode } from './extract';
 import { formatMailDate } from './parse';
 import { renderEmailListMode } from './render';
-import { resolveMailsTtl } from './ttl';
 
 const SUBJECTS = [
     'Login verification',
@@ -104,29 +108,29 @@ export async function runFakeMailUiTest(env: Environment): Promise<{ mailId: str
         html,
         backedUp: true,
     };
+    attachWebPreviewMeta(mail);
 
     const extractText = [mail.subject, mail.text].filter(Boolean).join('\n');
     const short = extractText.length <= 3000 ? extractText : `${extractText.slice(0, 3000)}...`;
     const extract = await extractVerificationCode(short, env);
 
-    const { ttlSeconds, maxCount } = resolveMailsTtl(env);
     const dao = new Dao(env.DB);
-    await dao.saveMailCacheWithLimit(mail.id, mail, ttlSeconds, maxCount);
+    await dao.saveMailCacheWithLimit(mail.id, mail, MAIL_CACHE_MAX);
 
     const { token, chatId } = requireTelegram(env);
-    const req = await renderEmailListMode(mail, env, extract);
     const api = createTelegramBotAPI(token);
     for (const id of chatId.split(',')) {
         const cid = id.trim();
         if (!cid) {
             continue;
         }
+        const req = await renderEmailListMode(mail, env, extract, { chatId: cid });
         const msg = await api.sendMessageWithReturns({
             chat_id: cid,
             ...req,
         });
         try {
-            await dao.saveTelegramIDToMailID(`${msg.result.message_id}`, mail.id, ttlSeconds);
+            await dao.saveTelegramIDToMailID(`${msg.result.message_id}`, mail.id, TELEGRAM_ID_MAP_TTL_SECONDS);
         } catch (e) {
             console.error('[test] saveTelegramIDToMailID failed', e);
         }

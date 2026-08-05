@@ -55,15 +55,70 @@ export function buildPreviewBodyHtml(mail: EmailCache): string {
     return `<pre style="white-space:pre-wrap;margin:0">${escapeHtml(mail.text || '')}</pre>`;
 }
 
-export function renderPreviewPage(mail: EmailCache, bodyHtml: string, env?: Environment): string {
+export interface WebPreviewBarOptions {
+    /** Unix ms when unauthenticated link expires */
+    linkExpiresAt: number;
+}
+
+/** Web page with live countdown for unauthenticated link TTL */
+export function renderPreviewPage(
+    mail: EmailCache,
+    bodyHtml: string,
+    env?: Environment,
+    webBar?: WebPreviewBarOptions,
+): string {
     const lang = resolveUiLang(env || {});
     const subject = escapeHtml(mail.subject || t(lang, 'noSubjectShort'));
     const sender = escapeHtml(mail.from || '');
     const recipient = escapeHtml(mail.to || '');
     const when = escapeHtml(mail.date || '');
+    const title = escapeHtml(t(lang, 'previewTitle'));
     const canvas = bodyHtml.trim()
         ? bodyHtml
         : `<pre style="white-space:pre-wrap;margin:0">${escapeHtml(mail.text || '')}</pre>`;
+
+    const countdownLabels = JSON.stringify({
+        title: t(lang, 'previewTitle'),
+        remain: t(lang, 'linkRemainLabel'),
+        expired: t(lang, 'linkExpiredLabel'),
+        day: t(lang, 'durationDay'),
+        hour: t(lang, 'durationHour'),
+        minute: t(lang, 'durationMinute'),
+        second: t(lang, 'durationSecond'),
+    }).replace(/</g, '\\u003c');
+    const expiresAt = webBar?.linkExpiresAt ?? 0;
+    const countdownScript = webBar
+        ? `<script>(function(){
+  var el=document.getElementById('preview-bar-text');
+  var L=${countdownLabels};
+  var exp=${expiresAt};
+  function fmt(ms){
+    if(ms<=0) return L.title+' · '+L.expired;
+    var s=Math.floor(ms/1000);
+    var d=Math.floor(s/86400); s%=86400;
+    var h=Math.floor(s/3600); s%=3600;
+    var m=Math.floor(s/60); s%=60;
+    var parts=[];
+    if(d) parts.push(d+L.day);
+    if(h||d) parts.push(h+L.hour);
+    if(m||h||d) parts.push(m+L.minute);
+    parts.push(s+L.second);
+    return L.title+' · '+L.remain+' '+parts.join('');
+  }
+  function tick(){
+    if(!el) return;
+    var left=exp-Date.now();
+    el.textContent=fmt(left);
+    if(left<=0) return;
+    setTimeout(tick,1000);
+  }
+  tick();
+})();</script>`
+        : '';
+
+    const barText = webBar
+        ? `<span id="preview-bar-text">${title}</span>`
+        : `<span>${title}</span>`;
 
     return `<!doctype html><html lang="${htmlLang(lang)}"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -71,7 +126,7 @@ export function renderPreviewPage(mail: EmailCache, bodyHtml: string, env?: Envi
 <title>${subject}</title><style>${PREVIEW_CSS}</style></head>
 <body>
 <div class="preview">
-  <div class="preview-bar"><span>${escapeHtml(t(lang, 'previewTitle'))}</span></div>
+  <div class="preview-bar">${barText}</div>
   <div class="preview-sheet">
     <div class="preview-meta">
       <h1>${subject}</h1>
@@ -80,6 +135,7 @@ export function renderPreviewPage(mail: EmailCache, bodyHtml: string, env?: Envi
     <div class="mail-canvas">${canvas}</div>
   </div>
 </div>
+${countdownScript}
 </body></html>`;
 }
 
