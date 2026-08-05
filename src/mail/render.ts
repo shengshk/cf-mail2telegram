@@ -29,9 +29,9 @@ function isDebug(env: Environment): boolean {
     return (env.DEBUG || '').toLowerCase() === 'true';
 }
 
-/** Mini App preview via web_app path (avoids t.me?startapp confirm every tap). */
+/** Mini App preview via web_app path (same depth as /tma/list; avoids /tma/email/* being dropped by Telegram). */
 export function miniAppPreviewWebAppUrl(host: string, mailId: string): string {
-    return `https://${host}/tma/email/${encodeURIComponent(mailId)}`;
+    return `https://${host}/tma/${encodeURIComponent(mailId)}`;
 }
 
 async function resolvePreviewButton(

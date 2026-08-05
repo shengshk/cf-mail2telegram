@@ -224,7 +224,41 @@ function createRouter(env: Environment, ctx?: ExecutionContext): RouterType {
         };
     });
 
-    /// Telegram Mini Apps：默认打开最新邮件；名单仍用 /cfmail（start_param / ?mode=）
+    /// 邮件预览 Mini App（web_app → /tma/<mailId>，与 /tma/list 同级路径）
+    const renderMailPreviewMiniApp = (id: string): Response => {
+        const html = renderPreviewMiniAppShell(id, env);
+        return new Response(html, {
+            headers: {
+                'content-type': 'text/html; charset=utf-8',
+                'Referrer-Policy': 'no-referrer',
+            },
+        });
+    };
+
+    router.get('/tma/list', async (): Promise<Response> => renderTmaListApp(env));
+
+    router.get('/tma/list/:mode', async (req: IRequest): Promise<Response> => {
+        const raw = String(req.params.mode || '').trim().toLowerCase();
+        if (raw !== 'block' && raw !== 'white') {
+            throw new HTTPError(404, 'Not found');
+        }
+        return renderTmaListApp(env);
+    });
+
+    /// legacy path (old inline buttons)
+    router.get('/tma/email/:id', async (req: IRequest): Promise<Response> => {
+        return renderMailPreviewMiniApp(req.params.id);
+    });
+
+    router.get('/tma/:id', async (req: IRequest): Promise<Response> => {
+        const id = String(req.params.id || '').trim();
+        if (!isMailStartParam(id)) {
+            throw new HTTPError(404, 'Not found');
+        }
+        return renderMailPreviewMiniApp(id);
+    });
+
+    /// Telegram Mini Apps：默认打开最新邮件；名单走 /tma/list
     router.get('/tma', async (req: IRequest): Promise<Response> => {
         const startParam = String(
             req.query.tgWebAppStartParam || req.query.startapp || '',
@@ -241,43 +275,15 @@ function createRouter(env: Environment, ctx?: ExecutionContext): RouterType {
         const previewId = String(req.query.id || '').trim()
             || (isMailStartParam(startParam) ? startParam : '');
         if (previewId) {
-            const html = renderPreviewMiniAppShell(previewId, env);
-            return new Response(html, {
-                headers: {
-                    'content-type': 'text/html; charset=utf-8',
-                    'Referrer-Policy': 'no-referrer',
-                },
-            });
+            return renderMailPreviewMiniApp(previewId);
         }
 
         const index = await dao.loadMailCacheIndex();
         const latestId = index.length ? index[index.length - 1] : '';
-        const html = latestId
-            ? renderPreviewMiniAppShell(latestId, env)
-            : renderPreviewEmptyMiniApp(env);
-        return new Response(html, {
-            headers: {
-                'content-type': 'text/html; charset=utf-8',
-                'Referrer-Policy': 'no-referrer',
-            },
-        });
-    });
-
-    /// 收信地址管理（web_app → /tma/list；页内 Tab 切换黑/白名单）
-    router.get('/tma/list', async (): Promise<Response> => renderTmaListApp(env));
-
-    router.get('/tma/list/:mode', async (req: IRequest): Promise<Response> => {
-        const raw = String(req.params.mode || '').trim().toLowerCase();
-        if (raw !== 'block' && raw !== 'white') {
-            throw new HTTPError(404, 'Not found');
+        if (latestId) {
+            return renderMailPreviewMiniApp(latestId);
         }
-        return renderTmaListApp(env);
-    });
-
-    /// 邮件预览 Mini App（web_app 按钮直达；路径保留 id，避免 query 被客户端丢掉）
-    router.get('/tma/email/:id', async (req: IRequest): Promise<Response> => {
-        const id = req.params.id;
-        const html = renderPreviewMiniAppShell(id, env);
+        const html = renderPreviewEmptyMiniApp(env);
         return new Response(html, {
             headers: {
                 'content-type': 'text/html; charset=utf-8',

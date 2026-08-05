@@ -256,6 +256,13 @@
       return '';
     }
 
+    function emailIdFromPath() {
+      const direct = location.pathname.match(/\/tma\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/?$/i);
+      if (direct) return direct[1];
+      const legacy = location.pathname.match(/\/tma\/email\/([^/]+)\/?$/i);
+      return legacy ? decodeURIComponent(legacy[1]) : '';
+    }
+
     function isListPath() {
       return /\/tma\/list(\/(block|white))?\/?$/i.test(location.pathname);
     }
@@ -332,7 +339,8 @@
         const previewMail = ref(null);
         const previewError = ref('');
 
-        const initialFunc = isMailId(startParam)
+        const pathEmailId = emailIdFromPath();
+        const initialFunc = isMailId(startParam) || pathEmailId
           || (queryMode === 'preview' && urlParams.get('id'))
           ? 'preview'
           : (isListPath() || listMode || isListQuery ? 'list' : 'list');
@@ -340,7 +348,7 @@
         const mode = ref(listMode || (isListQuery ? queryMode : 'block'));
         const previewId = isMailId(startParam)
           ? startParam
-          : (urlParams.get('id') || '');
+          : (pathEmailId || urlParams.get('id') || '');
         const client = new Client('');
 
         const addresses = computed(() => mode.value === 'white' ? whiteList.value : blockList.value);

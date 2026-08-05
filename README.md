@@ -223,7 +223,7 @@ Time
 ### Email preview
 
 1. **Preview** (one button) — mode from `/previewmode`:
-   - **Mini App** (default): Telegram `web_app` button → `https://<host>/tma/email/<mailId>` (no `t.me?startapp` confirm each tap). Main Mini App URL must still be `https://<host>/tma`.
+   - **Mini App** (default): Telegram `web_app` button → `https://<host>/tma/<mailId>` (same path depth as `/tma/list`; legacy `/tma/email/<mailId>` still works). Main Mini App URL must still be `https://<host>/tma`.
    - **Web**: `/email/<id>` —
      - with `WEB_USER`: requires login page (no link TTL);
      - without `WEB_USER`: `/email/<id>?t=<token>`, unauthenticated token expires in **1 day** (live countdown).
@@ -465,7 +465,7 @@ BotFather 必须同时配置 **隐私政策 URL** 与 **Mini App URL**（见 [�
 ### 邮件预览
 
 1. **预览**（单个按钮）— 由 `/previewmode` 决定：
-   - **小程序**（默认）：Telegram `web_app` 按钮 → `https://<host>/tma/email/<mailId>`（避免每次 `t.me?startapp` 确认）。主小程序 URL 仍须为 `https://<host>/tma`。
+   - **小程序**（默认）：Telegram `web_app` 按钮 → `https://<host>/tma/<mailId>`（与 `/tma/list` 同级路径；旧 `/tma/email/<mailId>` 仍可用）。主小程序 URL 仍须为 `https://<host>/tma`。
    - **网页**：`/email/<id>` —
      - 已配置 `WEB_USER`：需登录页（链接不过期）；
      - 未配置：`/email/<id>?t=<token>`，未鉴权 token **1 天**失效（页顶倒计时）。
