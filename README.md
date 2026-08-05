@@ -44,7 +44,7 @@ OTP / verification-code recognition is referenced from [Heavrnl/Mail2Telegram](h
 | `TELEGRAM_TOKEN` + `TELEGRAM_ID` | Prefer `TELEGRAM_BOT=token,chat_id` (legacy vars still work) |
 | No built-in OTP AI | **Gemini** extracts OTP; local regex fallback |
 | OTP styling | AI match **bold**; local regex *italic* |
-| `FORWARD_LIST` + `FORWARD_DIR` | `FORWARD_MAIL` (+ `FORWARD_MAIL0/1/…`); folder as `email,Backup` |
+| `FORWARD_LIST` + `FORWARD_DIR` | `FORWARD_MAILS` only (single backup): `email[,Folder][,noforwarded\|forwarded]` |
 | English-only UI | `UI_LANG=en` (default) / `zh` / `tw` |
 
 Source of truth is `src/`. Do not treat root `worker.js` / stale `build/` as current logic.
@@ -90,8 +90,9 @@ pnpm pub  # wrangler deploy --keep-vars
 
 1. Follow Cloudflare’s guide for [Email Routing](https://blog.cloudflare.com/introducing-email-routing/).
 2. In **Email Routing → Routing Rules**, set the Catch-all action to **Send to a Worker** (this Worker).
-3. If Catch-all goes only to the Worker, use `FORWARD_MAIL` (and optional `FORWARD_MAIL0/1/…`) for mailbox backups.
-4. Addresses in `FORWARD_MAIL*` must be verified under **Email Routing → Destination addresses**.
+3. If Catch-all goes only to the Worker, use `FORWARD_MAILS` for a single mailbox backup.
+4. The address in `FORWARD_MAILS` must be verified under **Email Routing → Destination addresses**.
+5. Default policy `noforwarded`: only backup mail that was addressed to your CF domain; mail auto-forwarded in from another mailbox is not backed up (still notified on Telegram). Use `,forwarded` to also backup those. Matching the backup address itself (Gmail `+tag` aware) never backs up — loop guard.
 
 ### 3. Bind Telegram Webhook (required once after deploy)
 
@@ -171,8 +172,9 @@ But Telegram / Preview / Mini App follow **only one** saved host (`PUBLIC_HOST` 
 | `UI_LANG` | UI language: `en` (default), `zh` (Simplified), or `tw` (Traditional). Affects Telegram labels/buttons, preview chrome, Mini App, and bot command descriptions. Re-open `/init` after changing. |
 | `GEMINI_API_KEY` | Google AI Studio key (`AIza…`). Worker egress may hit region limits; on failure the Worker falls back to local regex. |
 | `GEMINI_MODEL` | Optional. Default `gemini-2.5-flash-lite`. |
-| `FORWARD_MAIL` | Primary backup. `you@gmail.com` or `you@gmail.com,Backup` (Gmail label/folder after the comma). Must be a verified Email Routing destination. Drives the Mailbox button. |
-| `FORWARD_MAIL0` / `1` / `2` / … | Extra backup addresses (any digit suffix). Usually just an email. All listed addresses receive forwards. |
+| `FORWARD_MAILS` | **Single** backup only. `you@gmail.com` or `you@gmail.com,Backup` or `you+bak@gmail.com,Backup,noforwarded`. Third field: `noforwarded` (default) = skip auto-forwards from other mailboxes; `forwarded` = backup those too. Must be a verified Email Routing destination. Drives the Mailbox button. Hard rule: never backup when From / related To headers match this address (Gmail `+` normalized). |
+| ~~`FORWARD_MAIL` / `FORWARD_MAIL0`…~~ | Legacy. `FORWARD_MAIL` still parsed like `FORWARD_MAILS` if unset; numbered extras ignored. |
+| ~~`FORWARD_LIST` / `FORWARD_DIR`~~ | Legacy. First list address only if no `FORWARD_MAILS` / `FORWARD_MAIL`. |
 | `DB` | **Required** KV binding. Variable name must be exactly `DB`. |
 | `MAIL_TTL` | Cache TTL in seconds (default one day). Expired mail previews stop working. |
 | `TIMEZONE` | Optional. Default `Asia/Shanghai`. |
@@ -183,7 +185,6 @@ But Telegram / Preview / Mini App follow **only one** saved host (`PUBLIC_HOST` 
 | `MAX_EMAIL_SIZE_POLICY` | `unhandled` / `truncate` / `continue`. Default `truncate`. |
 | `RESEND_API_KEY` | Optional. Reply-to-email via [Resend](https://resend.com/docs/introduction). |
 | `DEBUG` | Optional. `true` shows Gemini error reasons in Telegram on local fallback, and enables verbose webhook logs. |
-| ~~`FORWARD_LIST` / `FORWARD_DIR`~~ | Legacy. Still read if no `FORWARD_MAIL*` is set. |
 | ~~`WHITE_LIST` / `BLOCK_LIST`~~ | Env lists are being phased out; prefer the built-in Mini App editors. |
 
 ## Mailbox button rules
@@ -191,11 +192,11 @@ But Telegram / Preview / Mini App follow **only one** saved host (`PUBLIC_HOST` 
 | Condition | Behavior |
 |-----------|----------|
 | Message has `X-GM-THRID` | Prefer deep link into that Gmail thread (often missing via Email Routing) |
-| Primary `FORWARD_MAIL` is Gmail + folder part set | Open that label/folder |
+| `FORWARD_MAILS` is Gmail + folder part set | Open that label/folder |
 | Gmail without folder | Gmail home |
 | Outlook / Hotmail / Live | Outlook web home (folder ignored) |
 | Other domains | `https://mail.<domain>` |
-| No `FORWARD_MAIL*` (and no legacy list) | Hide Mailbox; Preview only |
+| No `FORWARD_MAILS` (and no legacy) | Hide Mailbox; Preview only |
 
 `rfc822msgid` search links are **removed** in this fork.
 
@@ -233,7 +234,7 @@ Summary / Text / HTML buttons from upstream are not used in this fork.
 ### Security and cache
 
 1. After `MAIL_TTL`, preview links stop working — back up important mail.
-2. Large attachments may time out Workers; put a real mailbox in `FORWARD_MAIL`.
+2. Large attachments may time out Workers; put a real mailbox in `FORWARD_MAILS`.
 3. `GUARDIAN_MODE` can reduce duplicate notifications at the cost of more KV writes.
 
 ### Blacklist and whitelist
@@ -242,12 +243,12 @@ Env lists and KV lists are merged. Exact string match first, then regex. Prefer 
 
 ### Attachments
 
-This bot does not render attachments. Use `FORWARD_MAIL*` to keep a real mailbox copy, or tools such as [testmail-viewer](https://github.com/TBXark/testmail-viewer).
+This bot does not render attachments. Use `FORWARD_MAILS` to keep a real mailbox copy, or tools such as [testmail-viewer](https://github.com/TBXark/testmail-viewer).
 
 ## Known limitations
 
 1. **Gemini region** — Worker egress IPs may get `User location is not supported`; local regex still runs.
-2. **No attachment UI** — rely on `FORWARD_MAIL*` backups.
+2. **No attachment UI** — rely on `FORWARD_MAILS` backup.
 3. **Preview needs KV** — missing `DB` binding can break cache; Telegram send tries not to fail solely because of cache errors, but Preview may 404.
 
 ## License
@@ -271,7 +272,7 @@ Released under the MIT license, same as upstream. See [LICENSE](LICENSE).
 | `TELEGRAM_TOKEN` + `TELEGRAM_ID` | 推荐 `TELEGRAM_BOT=token,chat_id`（仍兼容旧变量） |
 | 无内置验证码 AI | **Gemini** 抽码；失败回退本地正则 |
 | 验证码样式 | AI 结果 **加粗**；本地正则 *斜体* |
-| `FORWARD_LIST` + `FORWARD_DIR` | `FORWARD_MAIL`（及 `FORWARD_MAIL0/1/…`）；文件夹写成 `邮箱,Backup` |
+| `FORWARD_LIST` + `FORWARD_DIR` | 仅 `FORWARD_MAILS`（单一备份）：`邮箱[,文件夹][,noforwarded\|forwarded]` |
 | 仅英文界面 | `UI_LANG=en`（默认）/ `zh` / `tw` |
 
 配置与逻辑以 `src/` 为准；根目录旧 `worker.js` / 过期 `build/` 请勿当作现行实现。
@@ -317,8 +318,9 @@ pnpm pub  # wrangler deploy --keep-vars
 
 1. 按官方文档配置 [Cloudflare Email Routing](https://blog.cloudflare.com/zh-cn/introducing-email-routing-zh-cn/)。
 2. 在 `Email Routing - Routing Rules` 中，将 `Catch-all address` 的 action 改成 `Send to a Worker`（本 Worker），把剩余邮件都转发到该 Worker。
-3. Catch-all 只指向 Worker 后，就无法再把剩余邮件转发到自己邮箱；若需备份，在环境变量 `FORWARD_MAIL`（及可选的 `FORWARD_MAIL0/1/…`）填入备份邮箱即可。
-4. `FORWARD_MAIL*` 中的邮箱地址须在 `Cloudflare Dashboard - Email Routing - Destination addresses` 添加并完成认证后才能收到邮件。
+3. Catch-all 只指向 Worker 后，就无法再把剩余邮件转发到自己邮箱；若需备份，在环境变量 `FORWARD_MAILS` 填入**一个**备份邮箱即可。
+4. `FORWARD_MAILS` 中的邮箱地址须在 `Cloudflare Dashboard - Email Routing - Destination addresses` 添加并完成认证后才能收到邮件。
+5. 默认策略 `noforwarded`：只备份「真正发到域名邮箱」的邮件；从其它邮箱自动转发进来的不备份（仍推 Telegram）。需要备份转发信时写成 `,forwarded`。若发件人/相关收件头命中备份地址本身（Gmail `+` 别名会归一），则**永不备份**，用于防环。
 
 ### 3. 绑定 Telegram Webhook（部署后必须做一次）
 
@@ -399,8 +401,9 @@ pnpm pub  # wrangler deploy --keep-vars
 | `UI_LANG` | 界面语言：`en`（默认）、`zh`（简体）或 `tw`（繁体）。影响 TG 文案/按钮、预览页、小程序、Bot 命令描述。修改后请重新打开 `/init`。 |
 | `GEMINI_API_KEY` | Google AI Studio Key（`AIza…`）。出网可能受地区限制；失败时自动本地正则。 |
 | `GEMINI_MODEL` | 可选。默认 `gemini-2.5-flash-lite`。 |
-| `FORWARD_MAIL` | 主备份。`you@gmail.com` 或 `you@gmail.com,Backup`（逗号后为 Gmail 标签）。须已验证。决定「邮箱」按钮。 |
-| `FORWARD_MAIL0` / `1` / `2` / … | 额外备份（任意数字后缀），一般只写邮箱。所有地址都会收到转发。 |
+| `FORWARD_MAILS` | **仅一个**备份。`you@gmail.com` 或 `you@gmail.com,Backup` 或 `you+bak@gmail.com,Backup,noforwarded`。第三段：`noforwarded`（默认）= 跳过外站自动转发进域名的信；`forwarded` = 这类也备份。须已验证。决定「邮箱」按钮。写死规则：From / 相关 To 头命中该地址（Gmail `+` 归一）则永不备份。 |
+| ~~`FORWARD_MAIL` / `FORWARD_MAIL0`…~~ | 旧变量。未设 `FORWARD_MAILS` 时仍解析 `FORWARD_MAIL`；带数字后缀的多备份已忽略。 |
+| ~~`FORWARD_LIST` / `FORWARD_DIR`~~ | 旧变量。无 `FORWARD_MAILS` / `FORWARD_MAIL` 时只取列表第一个地址。 |
 | `DB` | **必须**的 KV 绑定，变量名必须是 `DB`。 |
 | `MAIL_TTL` | 邮件缓存秒数，默认一天。 |
 | `TIMEZONE` | 可选。默认 `Asia/Shanghai`。 |
@@ -411,7 +414,6 @@ pnpm pub  # wrangler deploy --keep-vars
 | `MAX_EMAIL_SIZE_POLICY` | `unhandled` / `truncate` / `continue`。默认 `truncate`。 |
 | `RESEND_API_KEY` | 可选。通过 [Resend](https://resend.com/docs/introduction) 回复邮件。 |
 | `DEBUG` | 可选。`true`：本地兜底时在 TG 显示 Gemini 错误原因。 |
-| ~~`FORWARD_LIST` / `FORWARD_DIR`~~ | 旧变量。未配置任何 `FORWARD_MAIL*` 时仍会读取。 |
 | ~~`WHITE_LIST` / `BLOCK_LIST`~~ | 环境变量名单将淘汰，建议用内置小程序维护。 |
 
 > 本 Fork **已移除**上游的 `WORKERS_AI_MODEL` / `OPENAI_*` / `SUMMARY_TARGET_LANG` 摘要能力；验证码请配置 `GEMINI_API_KEY`。
@@ -421,11 +423,11 @@ pnpm pub  # wrangler deploy --keep-vars
 | 条件 | 行为 |
 |------|------|
 | 邮件带 `X-GM-THRID` | 优先 Gmail 线程深链（Email Routing 通常没有） |
-| 主 `FORWARD_MAIL` 为 Gmail 且带了文件夹 | 打开该标签/文件夹 |
+| `FORWARD_MAILS` 为 Gmail 且带了文件夹 | 打开该标签/文件夹 |
 | Gmail 未配文件夹 | Gmail 首页 |
 | Outlook / Hotmail / Live | Outlook 网页首页（忽略文件夹） |
 | 其它域名 | `https://mail.<域名>` |
-| 未配置任何 `FORWARD_MAIL*`（且无旧变量） | 不显示「邮箱」，仅「预览」 |
+| 未配置 `FORWARD_MAILS`（及旧变量） | 不显示「邮箱」，仅「预览」 |
 
 本 Fork **已取消** `rfc822msgid` 搜索链接。
 
@@ -465,7 +467,7 @@ pnpm pub  # wrangler deploy --keep-vars
 ### 安全与邮件缓存
 
 1. `MAIL_TTL`：为了安全起见，当超过邮件缓存保存时间，按钮跳转的链接无法打开。你可以自行修改环境变量调整过期时间。
-2. 由于 Workers 限制，邮件（特别是附件较大时）可能导致函数超时和多次重试，从而可能收到重复通知。建议在 `FORWARD_MAIL` 中添加备份邮箱，以防邮件丢失。
+2. 由于 Workers 限制，邮件（特别是附件较大时）可能导致函数超时和多次重试，从而可能收到重复通知。建议在 `FORWARD_MAILS` 中配置备份邮箱，以防邮件丢失。
 3. 开启 `GUARDIAN_MODE` 可减少重复消息干扰，提高 Worker 成功率，但会消耗较多 KV 写入次数。建议在必要时开启。
 
 ### 黑名单与白名单
@@ -478,12 +480,12 @@ pnpm pub  # wrangler deploy --keep-vars
 
 ### 邮件附件
 
-此 Bot **不支持展示附件**。若需附件，可配合 [testmail-viewer](https://github.com/TBXark/testmail-viewer)，用 `FORWARD_MAIL*` 把邮件转到可下载附件的邮箱；或直接用真实备份邮箱查看。
+此 Bot **不支持展示附件**。若需附件，可配合 [testmail-viewer](https://github.com/TBXark/testmail-viewer)，用 `FORWARD_MAILS` 把邮件转到可下载附件的邮箱；或直接用真实备份邮箱查看。
 
 ## 已知限制
 
 1. **Gemini 地区**：Worker 出网 IP 可能被 Google 拒绝（`User location is not supported`），会回退本地正则。
-2. **无附件展示**：大附件靠 `FORWARD_MAIL*` 备份到真实邮箱查看。
+2. **无附件展示**：大附件靠 `FORWARD_MAILS` 备份到真实邮箱查看。
 3. **预览依赖 KV**：未绑定 `DB` 会导致缓存失败；发 TG 已尽量不因缓存失败中断，但预览链接可能 404。
 
 ## 许可证

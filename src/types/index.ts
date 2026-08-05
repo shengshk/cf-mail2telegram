@@ -23,8 +23,8 @@ export type BlockPolicy = 'reject' | 'forward' | 'telegram';
 
 /**
  * Required: TELEGRAM_BOT (or legacy TOKEN+ID), KV binding DB
- * Recommended: GEMINI_API_KEY, FORWARD_MAIL
- * Optional: UI_LANG (en|zh|tw, default en), FORWARD_MAIL0/1/2/…
+ * Recommended: GEMINI_API_KEY, FORWARD_MAILS
+ * Optional: UI_LANG (en|zh|tw, default en)
  * Public hostname is saved automatically when you open /init (stored in KV as PUBLIC_HOST).
  */
 export interface Environment {
@@ -39,13 +39,16 @@ export interface Environment {
     UI_LANG?: string;
 
     /**
-     * Primary backup: `user@gmail.com` or `user@gmail.com,Backup`
-     * Extra backups: FORWARD_MAIL0 / FORWARD_MAIL1 / … (any digits)
+     * Single backup only:
+     * `email` | `email,Folder` | `email,Folder,noforwarded|forwarded` | `email,forwarded`
+     * Default policy: noforwarded (skip mail auto-forwarded in from another mailbox).
      */
+    FORWARD_MAILS?: string;
+    /** @deprecated use FORWARD_MAILS */
     FORWARD_MAIL?: string;
-    /** @deprecated use FORWARD_MAIL / FORWARD_MAILn */
+    /** @deprecated use FORWARD_MAILS */
     FORWARD_LIST?: string;
-    /** @deprecated fold into FORWARD_MAIL as `email,Folder` */
+    /** @deprecated fold into FORWARD_MAILS as `email,Folder` */
     FORWARD_DIR?: string;
     BLOCK_LIST?: string;
     WHITE_LIST?: string;
@@ -63,7 +66,7 @@ export interface Environment {
     TIMEZONE?: string;
     /** Gmail multi-account index, default 0 */
     GMAIL_U?: string;
-    /** @deprecated use FORWARD_MAIL folder part */
+    /** @deprecated use FORWARD_MAILS folder part */
     GMAIL_LABEL?: string;
 
     GUARDIAN_MODE?: string;

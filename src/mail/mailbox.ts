@@ -25,7 +25,7 @@ function primaryFolder(env: Environment): string {
     return (primaryForwardTarget(env)?.folder || '').trim();
 }
 
-/** 有 thrid 时直达该线程（Gmail）；文件夹优先主 FORWARD_MAIL 的 folder，否则 INBOX */
+/** 有 thrid 时直达该线程（Gmail）；文件夹优先 FORWARD_MAILS 的 folder，否则 INBOX */
 function gmailThridUrl(thrid: string, env: Environment): string | undefined {
     const raw = thrid.trim();
     if (!/^\d+$/.test(raw)) {
@@ -73,9 +73,9 @@ function providerHomeUrl(address: string): string {
 /**
  * 「邮箱」按钮：
  * - 有 X-GM-THRID → 精准深链（优先）
- * - 主 FORWARD_MAIL 为 Gmail：folder → 标签页，否则 Gmail 首页
+ * - FORWARD_MAILS 为 Gmail：folder → 标签页，否则 Gmail 首页
  * - 非 Gmail：忽略 folder，跳对应首页
- * - 未配置任何 FORWARD_MAIL* → 不显示按钮（仅 folder 且无邮箱时仍按 Gmail 处理）
+ * - 未配置 FORWARD_MAILS（及旧变量）→ 不显示按钮（仅 folder 且无邮箱时仍按 Gmail 处理）
  */
 export function mailboxButtonUrl(mail: EmailCache, env: Environment): string | undefined {
     if (mail.gmThrid) {

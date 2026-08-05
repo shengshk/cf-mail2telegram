@@ -17,9 +17,9 @@
 		// Secrets (dashboard / wrangler secret):
 		//   TELEGRAM_BOT=token,chat_id
 		//   GEMINI_API_KEY=AIza...
-		// Optional:
-		//   FORWARD_MAIL=you+bak@gmail.com,Backup
-		//   FORWARD_MAIL0=other@outlook.com
+		// Optional (single backup only):
+		//   FORWARD_MAILS=you+bak@gmail.com,Backup,noforwarded
+		//   // email[,folder][,noforwarded|forwarded] — default policy: noforwarded
 		//   GMAIL_U=0
 		// Public host: open https://<worker-host>/init once (saved to KV). No DOMAIN var.
 	}

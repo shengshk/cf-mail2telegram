@@ -3,7 +3,7 @@ import type { ExtractResult } from '../../mail/extract';
 import type { BlockPolicy, EmailCache, Environment } from '../../types';
 import { Dao } from '../../db';
 import { requireTelegram } from '../../env';
-import { extractVerificationCode, forwardEmailAddresses, isMessageBlock, parseEmail, renderEmailListMode } from '../../mail';
+import { extractVerificationCode, getForwardTarget, isMessageBlock, parseEmail, renderEmailListMode, shouldBackupInboundMail } from '../../mail';
 import { createTelegramBotAPI } from '../../telegram';
 
 export async function sendMailToTelegram(mail: EmailCache, env: Environment, extract?: ExtractResult): Promise<number[]> {
@@ -54,15 +54,12 @@ export async function emailHandler(message: ForwardableEmailMessage, env: Enviro
 
     try {
         const blockForward = isBlock && blockPolicy.includes('forward');
-        const forwardList = blockForward ? [] : forwardEmailAddresses(env);
-        for (const add of forwardList) {
+        const backupTo = getForwardTarget(env)?.email;
+        if (!blockForward && backupTo && !status.forward.includes(backupTo) && shouldBackupInboundMail(message, env)) {
             try {
-                if (!add || status.forward.includes(add)) {
-                    continue;
-                }
-                await message.forward(add);
+                await message.forward(backupTo);
                 if (isGuardian) {
-                    status.forward.push(add);
+                    status.forward.push(backupTo);
                     await dao.saveMailStatus(id, status, statusTTL);
                 }
             } catch (e) {
