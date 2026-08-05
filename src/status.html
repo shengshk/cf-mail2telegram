@@ -165,6 +165,108 @@
       transform: translateX(-50%) translateY(0);
     }
 
+    .confirm-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 40;
+      display: grid;
+      place-items: center;
+      padding: 1.25rem;
+      background: rgba(5, 10, 8, 0.62);
+      backdrop-filter: blur(10px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .confirm-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .confirm-card {
+      width: min(92vw, 22rem);
+      padding: 1.35rem 1.25rem 1.15rem;
+      border-radius: 1rem;
+      border: 1px solid rgba(var(--glow-rgb), 0.28);
+      background:
+        linear-gradient(160deg, rgba(var(--glow-rgb), 0.12), transparent 42%),
+        rgba(14, 22, 18, 0.94);
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.04) inset,
+        0 18px 48px rgba(0, 0, 0, 0.45),
+        0 0 40px rgba(var(--glow-rgb), 0.12);
+      text-align: center;
+      transform: translateY(10px) scale(0.98);
+      transition: transform 0.22s ease;
+    }
+
+    .confirm-backdrop.open .confirm-card {
+      transform: none;
+    }
+
+    .confirm-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      color: var(--text);
+      margin-bottom: 0.55rem;
+    }
+
+    .confirm-body {
+      font-size: 0.78rem;
+      font-weight: 500;
+      line-height: 1.55;
+      color: var(--muted);
+      letter-spacing: 0.03em;
+      white-space: pre-line;
+      word-break: break-all;
+      margin-bottom: 1.15rem;
+    }
+
+    .confirm-actions {
+      display: flex;
+      gap: 0.65rem;
+      justify-content: center;
+    }
+
+    .confirm-actions button {
+      flex: 1;
+      max-width: 8.5rem;
+      border: 0;
+      border-radius: 999px;
+      padding: 0.55rem 0.9rem;
+      font: inherit;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease;
+    }
+
+    .confirm-actions button:active {
+      transform: scale(0.97);
+    }
+
+    .confirm-cancel {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--muted);
+    }
+
+    .confirm-cancel:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text);
+    }
+
+    .confirm-ok {
+      background: var(--glow);
+      color: #0b1210;
+    }
+
+    .confirm-ok:hover {
+      filter: brightness(1.08);
+    }
+
     @keyframes breathe {
       0%, 100% {
         transform: scale(0.92);
@@ -193,6 +295,16 @@
     <p class="hint" id="hint">cf-mail2telegram</p>
   </main>
   <div class="toast" id="toast"></div>
+  <div class="confirm-backdrop" id="confirmBackdrop" aria-hidden="true">
+    <div class="confirm-card" role="dialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmBody">
+      <div class="confirm-title" id="confirmTitle"></div>
+      <div class="confirm-body" id="confirmBody"></div>
+      <div class="confirm-actions">
+        <button type="button" class="confirm-cancel" id="confirmCancel">取消</button>
+        <button type="button" class="confirm-ok" id="confirmOk">确定</button>
+      </div>
+    </div>
+  </div>
   <script>
     const GITHUB = "https://github.com/shengshk/cf-mail2telegram";
     const DEBOUNCE_MS = 1500;
@@ -206,6 +318,11 @@
     const statusEl = document.getElementById("status");
     const hintEl = document.getElementById("hint");
     const toast = document.getElementById("toast");
+    const confirmBackdrop = document.getElementById("confirmBackdrop");
+    const confirmTitle = document.getElementById("confirmTitle");
+    const confirmBody = document.getElementById("confirmBody");
+    const confirmOk = document.getElementById("confirmOk");
+    const confirmCancel = document.getElementById("confirmCancel");
 
     let phraseIndex = 0;
     let phraseTimer = null;
@@ -217,6 +334,7 @@
     let toastTimer;
     let lastInitAt = 0;
     let initBusy = false;
+    let confirmResolver = null;
 
     function normalizeHost(raw) {
       let host = String(raw || "").trim();
@@ -233,6 +351,49 @@
       clearTimeout(toastTimer);
       toastTimer = setTimeout(() => toast.classList.remove("show"), 1800);
     }
+
+    function closeConfirm(ok) {
+      if (!confirmResolver) return;
+      confirmBackdrop.classList.remove("open");
+      confirmBackdrop.setAttribute("aria-hidden", "true");
+      const resolve = confirmResolver;
+      confirmResolver = null;
+      resolve(!!ok);
+    }
+
+    function askConfirm(title, body) {
+      return new Promise((resolve) => {
+        if (confirmResolver) closeConfirm(false);
+        confirmResolver = resolve;
+        confirmTitle.textContent = title;
+        confirmBody.textContent = body;
+        confirmBackdrop.classList.add("open");
+        confirmBackdrop.setAttribute("aria-hidden", "false");
+        confirmOk.focus();
+      });
+    }
+
+    confirmOk.addEventListener("click", (e) => {
+      e.stopPropagation();
+      closeConfirm(true);
+    });
+    confirmCancel.addEventListener("click", (e) => {
+      e.stopPropagation();
+      closeConfirm(false);
+    });
+    confirmBackdrop.addEventListener("click", (e) => {
+      if (e.target === confirmBackdrop) closeConfirm(false);
+    });
+    document.addEventListener("keydown", (e) => {
+      if (!confirmResolver) return;
+      if (e.key === "Escape") {
+        e.preventDefault();
+        closeConfirm(false);
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        closeConfirm(true);
+      }
+    });
 
     function resolveMode(saved, current) {
       if (!saved) return "unbound";
@@ -305,21 +466,21 @@
 
     async function runInit(skipConfirm) {
       if (!skipConfirm) {
+        let ok = false;
         if (mode === "unbound") {
-          if (!confirm("用当前域名绑定 Telegram webhook？\n" + pageHost)) return;
+          ok = await askConfirm("绑定当前域名？", pageHost + "\n将登记 Telegram webhook。");
         } else if (mode === "switchable") {
-          if (!confirm(
-            "将绑定从旧域名切换到当前域名？\n"
-            + (boundHost || "?") + " → " + pageHost + "\n"
-            + "Webhook / 预览 / 小程序将改用新域名。"
-          )) return;
+          ok = await askConfirm(
+            "切换绑定域名？",
+            (boundHost || "?") + " → " + pageHost + "\nWebhook / 预览 / 小程序将改用新域名。"
+          );
         } else {
-          if (!confirm(
-            "重新初始化？\n"
-            + "将刷新 Telegram webhook 与 Bot 命令。\n"
-            + pageHost
-          )) return;
+          ok = await askConfirm(
+            "重新初始化？",
+            "将刷新 Telegram webhook 与 Bot 命令。\n" + pageHost
+          );
         }
+        if (!ok) return;
       }
 
       if (webAuthEnabled && !authenticated) {

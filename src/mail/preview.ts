@@ -1,11 +1,11 @@
 import type { EmailCache, Environment } from '../types';
 import { resolveUiLang, htmlLang, t } from '../i18n';
 
-/** Browser tab favicon: gray envelope on light tile */
+/** Browser tab favicon: envelope only (currentColor → brand green) */
 const PREVIEW_FAVICON = 'data:image/svg+xml,' + encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">`
-    + `<rect width="64" height="64" rx="14" fill="#eef1f4"/>`
-    + `<path fill="#6b7280" d="M14 20h36c2.2 0 4 1.8 4 4v24c0 2.2-1.8 4-4 4H14c-2.2 0-4-1.8-4-4V24c0-2.2 1.8-4 4-4zm0 3.2 18 12.6 18-12.6V22L32 34.8 14 22v1.2z"/>`
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">`
+    + `<path d="M0 0h24v24H0z" fill="none"/>`
+    + `<path fill="#3ecf8e" d="M4 20q-.825 0-1.412-.587T2 18V6q0-.825.588-1.412T4 4h16q.825 0 1.413.588T22 6v12q0 .825-.587 1.413T20 20zm8.263-7.212q.137-.038.262-.113L19.6 8.25q.2-.125.3-.312t.1-.413q0-.5-.425-.75T18.7 6.8L12 11L5.3 6.8q-.45-.275-.875-.012T4 7.525q0 .25.1.438t.3.287l7.075 4.425q.125.075.263.113t.262.037t.263-.037"/>`
     + `</svg>`,
 );
 

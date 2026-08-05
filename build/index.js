@@ -3249,7 +3249,7 @@ function tmaI18nPayload(lang) {
 
 // src/mail/preview.ts
 var PREVIEW_FAVICON = "data:image/svg+xml," + encodeURIComponent(
-  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#eef1f4"/><path fill="#6b7280" d="M14 20h36c2.2 0 4 1.8 4 4v24c0 2.2-1.8 4-4 4H14c-2.2 0-4-1.8-4-4V24c0-2.2 1.8-4 4-4zm0 3.2 18 12.6 18-12.6V22L32 34.8 14 22v1.2z"/></svg>`
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><path fill="#3ecf8e" d="M4 20q-.825 0-1.412-.587T2 18V6q0-.825.588-1.412T4 4h16q.825 0 1.413.588T22 6v12q0 .825-.587 1.413T20 20zm8.263-7.212q.137-.038.262-.113L19.6 8.25q.2-.125.3-.312t.1-.413q0-.5-.425-.75T18.7 6.8L12 11L5.3 6.8q-.45-.275-.875-.012T4 7.525q0 .25.1.438t.3.287l7.075 4.425q.125.075.263.113t.262.037t.263-.037"/></svg>`
 );
 var PREVIEW_FAVICON_LINK = `<link rel="icon" href="${PREVIEW_FAVICON}" />`;
 var PREVIEW_CSS = `
@@ -3377,6 +3377,7 @@ function renderPreviewMiniAppShell(mailId, env) {
   return `<!doctype html><html lang="${htmlLang(lang)}"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="referrer" content="no-referrer">
+${PREVIEW_FAVICON_LINK}
 <title>${title}</title>
 <script src="https://telegram.org/js/telegram-web-app.js"><\/script>
 <style>${PREVIEW_CSS}
@@ -3648,6 +3649,108 @@ var status_default = `<!DOCTYPE html>
       transform: translateX(-50%) translateY(0);
     }
 
+    .confirm-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 40;
+      display: grid;
+      place-items: center;
+      padding: 1.25rem;
+      background: rgba(5, 10, 8, 0.62);
+      backdrop-filter: blur(10px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .confirm-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .confirm-card {
+      width: min(92vw, 22rem);
+      padding: 1.35rem 1.25rem 1.15rem;
+      border-radius: 1rem;
+      border: 1px solid rgba(var(--glow-rgb), 0.28);
+      background:
+        linear-gradient(160deg, rgba(var(--glow-rgb), 0.12), transparent 42%),
+        rgba(14, 22, 18, 0.94);
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.04) inset,
+        0 18px 48px rgba(0, 0, 0, 0.45),
+        0 0 40px rgba(var(--glow-rgb), 0.12);
+      text-align: center;
+      transform: translateY(10px) scale(0.98);
+      transition: transform 0.22s ease;
+    }
+
+    .confirm-backdrop.open .confirm-card {
+      transform: none;
+    }
+
+    .confirm-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      color: var(--text);
+      margin-bottom: 0.55rem;
+    }
+
+    .confirm-body {
+      font-size: 0.78rem;
+      font-weight: 500;
+      line-height: 1.55;
+      color: var(--muted);
+      letter-spacing: 0.03em;
+      white-space: pre-line;
+      word-break: break-all;
+      margin-bottom: 1.15rem;
+    }
+
+    .confirm-actions {
+      display: flex;
+      gap: 0.65rem;
+      justify-content: center;
+    }
+
+    .confirm-actions button {
+      flex: 1;
+      max-width: 8.5rem;
+      border: 0;
+      border-radius: 999px;
+      padding: 0.55rem 0.9rem;
+      font: inherit;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease;
+    }
+
+    .confirm-actions button:active {
+      transform: scale(0.97);
+    }
+
+    .confirm-cancel {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--muted);
+    }
+
+    .confirm-cancel:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text);
+    }
+
+    .confirm-ok {
+      background: var(--glow);
+      color: #0b1210;
+    }
+
+    .confirm-ok:hover {
+      filter: brightness(1.08);
+    }
+
     @keyframes breathe {
       0%, 100% {
         transform: scale(0.92);
@@ -3676,6 +3779,16 @@ var status_default = `<!DOCTYPE html>
     <p class="hint" id="hint">cf-mail2telegram</p>
   </main>
   <div class="toast" id="toast"></div>
+  <div class="confirm-backdrop" id="confirmBackdrop" aria-hidden="true">
+    <div class="confirm-card" role="dialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmBody">
+      <div class="confirm-title" id="confirmTitle"></div>
+      <div class="confirm-body" id="confirmBody"></div>
+      <div class="confirm-actions">
+        <button type="button" class="confirm-cancel" id="confirmCancel">\u53D6\u6D88</button>
+        <button type="button" class="confirm-ok" id="confirmOk">\u786E\u5B9A</button>
+      </div>
+    </div>
+  </div>
   <script>
     const GITHUB = "https://github.com/shengshk/cf-mail2telegram";
     const DEBOUNCE_MS = 1500;
@@ -3689,6 +3802,11 @@ var status_default = `<!DOCTYPE html>
     const statusEl = document.getElementById("status");
     const hintEl = document.getElementById("hint");
     const toast = document.getElementById("toast");
+    const confirmBackdrop = document.getElementById("confirmBackdrop");
+    const confirmTitle = document.getElementById("confirmTitle");
+    const confirmBody = document.getElementById("confirmBody");
+    const confirmOk = document.getElementById("confirmOk");
+    const confirmCancel = document.getElementById("confirmCancel");
 
     let phraseIndex = 0;
     let phraseTimer = null;
@@ -3700,6 +3818,7 @@ var status_default = `<!DOCTYPE html>
     let toastTimer;
     let lastInitAt = 0;
     let initBusy = false;
+    let confirmResolver = null;
 
     function normalizeHost(raw) {
       let host = String(raw || "").trim();
@@ -3716,6 +3835,49 @@ var status_default = `<!DOCTYPE html>
       clearTimeout(toastTimer);
       toastTimer = setTimeout(() => toast.classList.remove("show"), 1800);
     }
+
+    function closeConfirm(ok) {
+      if (!confirmResolver) return;
+      confirmBackdrop.classList.remove("open");
+      confirmBackdrop.setAttribute("aria-hidden", "true");
+      const resolve = confirmResolver;
+      confirmResolver = null;
+      resolve(!!ok);
+    }
+
+    function askConfirm(title, body) {
+      return new Promise((resolve) => {
+        if (confirmResolver) closeConfirm(false);
+        confirmResolver = resolve;
+        confirmTitle.textContent = title;
+        confirmBody.textContent = body;
+        confirmBackdrop.classList.add("open");
+        confirmBackdrop.setAttribute("aria-hidden", "false");
+        confirmOk.focus();
+      });
+    }
+
+    confirmOk.addEventListener("click", (e) => {
+      e.stopPropagation();
+      closeConfirm(true);
+    });
+    confirmCancel.addEventListener("click", (e) => {
+      e.stopPropagation();
+      closeConfirm(false);
+    });
+    confirmBackdrop.addEventListener("click", (e) => {
+      if (e.target === confirmBackdrop) closeConfirm(false);
+    });
+    document.addEventListener("keydown", (e) => {
+      if (!confirmResolver) return;
+      if (e.key === "Escape") {
+        e.preventDefault();
+        closeConfirm(false);
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        closeConfirm(true);
+      }
+    });
 
     function resolveMode(saved, current) {
       if (!saved) return "unbound";
@@ -3788,21 +3950,21 @@ var status_default = `<!DOCTYPE html>
 
     async function runInit(skipConfirm) {
       if (!skipConfirm) {
+        let ok = false;
         if (mode === "unbound") {
-          if (!confirm("\u7528\u5F53\u524D\u57DF\u540D\u7ED1\u5B9A Telegram webhook\uFF1F\\n" + pageHost)) return;
+          ok = await askConfirm("\u7ED1\u5B9A\u5F53\u524D\u57DF\u540D\uFF1F", pageHost + "\\n\u5C06\u767B\u8BB0 Telegram webhook\u3002");
         } else if (mode === "switchable") {
-          if (!confirm(
-            "\u5C06\u7ED1\u5B9A\u4ECE\u65E7\u57DF\u540D\u5207\u6362\u5230\u5F53\u524D\u57DF\u540D\uFF1F\\n"
-            + (boundHost || "?") + " \u2192 " + pageHost + "\\n"
-            + "Webhook / \u9884\u89C8 / \u5C0F\u7A0B\u5E8F\u5C06\u6539\u7528\u65B0\u57DF\u540D\u3002"
-          )) return;
+          ok = await askConfirm(
+            "\u5207\u6362\u7ED1\u5B9A\u57DF\u540D\uFF1F",
+            (boundHost || "?") + " \u2192 " + pageHost + "\\nWebhook / \u9884\u89C8 / \u5C0F\u7A0B\u5E8F\u5C06\u6539\u7528\u65B0\u57DF\u540D\u3002"
+          );
         } else {
-          if (!confirm(
-            "\u91CD\u65B0\u521D\u59CB\u5316\uFF1F\\n"
-            + "\u5C06\u5237\u65B0 Telegram webhook \u4E0E Bot \u547D\u4EE4\u3002\\n"
-            + pageHost
-          )) return;
+          ok = await askConfirm(
+            "\u91CD\u65B0\u521D\u59CB\u5316\uFF1F",
+            "\u5C06\u5237\u65B0 Telegram webhook \u4E0E Bot \u547D\u4EE4\u3002\\n" + pageHost
+          );
         }
+        if (!ok) return;
       }
 
       if (webAuthEnabled && !authenticated) {
