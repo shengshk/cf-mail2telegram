@@ -52,11 +52,13 @@ Mailbox:
   not backed up → original header To webmail (if Gmail/Outlook)
 
 
-Defaults (usually leave alone):
+Required:  TELEGRAM_BOT, DB (KV binding name must be DB)
+Recommended: GEMINI_API, FORWARD_MAIL, WEB_USER, UI_LANG
 
+Optional defaults (usually leave alone):
   GEMINI_MODEL       gemini-2.5-flash-lite
-  TIMEZONE           Asia/Shanghai
-  GMAIL_U            0
+  TIMEZONE           Asia/Shanghai   (mail Time line)
+  GMAIL_U            0               (Mailbox → Gmail /mail/u/N/ slot; not multi-inbox)
 
 
 3) Deploy

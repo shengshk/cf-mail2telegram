@@ -164,23 +164,36 @@ But Telegram / Preview / Mini App follow **only one** saved host (`PUBLIC_HOST` 
 
 **Workers → Settings → Variables / Bindings**
 
+### Required
+
 | Key | Description |
 |:----|:------------|
-| `TELEGRAM_BOT` | Required. `token,chat_id`. |
-| `WEB_USER` | Optional. `username,password` (split on first comma). When set: web login protects `/email` preview and `/init` (remember 30 days). When unset: `/init` is open; web preview uses 1-day token + countdown. |
+| `TELEGRAM_BOT` | `token,chat_id` — Bot token and the private chat id that receives mail. |
+| `DB` | KV namespace binding. The binding name must be exactly `DB`. |
+
+### Recommended
+
+| Key | Description |
+|:----|:------------|
+| `GEMINI_API` | Google AI Studio key (`AIza…`) for OTP extraction. Worker egress may hit region limits; on failure falls back to local regex. |
+| `FORWARD_MAIL` | Single backup destination (must be a verified Email Routing destination). Formats: `email` \| `email,Folder` \| `email,Folder,noforwarded\|forwarded` \| `email,forwarded`. Example: `you+bak@gmail.com,Backup,noforwarded`. Default policy `noforwarded`: backup only mail addressed to the CF domain; skip auto-forwards from other mailboxes (Telegram notify still runs). `forwarded`: also backup those. Never backup when From / related To headers match this address (Gmail `+` normalized). |
+| `WEB_USER` | `username,password` (split on first comma). When set: web login protects `/email` preview and `/init` (optional remember 30 days). When unset: `/init` is open; web preview uses a 1-day token + countdown. |
 | `UI_LANG` | UI language: `en` (default), `zh` (Simplified), or `tw` (Traditional). Affects Telegram labels/buttons, preview chrome, Mini App, and bot command descriptions. Re-open `/init` after changing. |
-| `GEMINI_API` | Google AI Studio key (`AIza…`). Worker egress may hit region limits; on failure the Worker falls back to local regex. |
-| `GEMINI_MODEL` | Optional. Default `gemini-2.5-flash-lite`. |
-| `FORWARD_MAIL` | Single backup: `email` \| `email,Folder` \| `email,Folder,noforwarded\|forwarded` \| `email,forwarded`. Example: `you+bak@gmail.com,Backup,noforwarded`. Default policy `noforwarded`: backup only mail addressed to the CF domain; skip auto-forwards from other mailboxes (Telegram notify still runs). `forwarded`: also backup those. Never backup when From / related To headers match this address (Gmail `+` normalized). Must be a verified Email Routing destination. |
-| `DB` | **Required** KV binding. Variable name must be exactly `DB`. |
-| `TIMEZONE` | Optional. Default `Asia/Shanghai`. |
-| `GMAIL_U` | Optional. Gmail multi-account index, default `0`. |
-| `BLOCK_POLICY` | `reject`, `forward`, `telegram` (comma-separated). Default `telegram`. |
-| `GUARDIAN_MODE` | Optional. `true` to enable. |
-| `MAX_EMAIL_SIZE` | Bytes; default `512*1024`. |
-| `MAX_EMAIL_SIZE_POLICY` | `unhandled` / `truncate` / `continue`. Default `truncate`. |
-| `RESEND_API_KEY` | Optional. Reply-to-email via [Resend](https://resend.com/docs/introduction). |
-| `DEBUG` | Optional. `true` shows Gemini error reasons in Telegram on local fallback, and enables verbose webhook logs. |
+
+### Optional
+
+| Key | Description |
+|:----|:------------|
+| `GEMINI_MODEL` | Gemini model id. Default `gemini-2.5-flash-lite`. |
+| `TIMEZONE` | Timezone for the mail **Time** line in Telegram. Default `Asia/Shanghai`. |
+| `GMAIL_U` | Browser Gmail account slot for the **Mailbox** button URL (`/mail/u/N/…`). Default `0` (first signed-in Google account). Not Worker multi-account receive — only change if the button opens the wrong Gmail profile. |
+| `BLOCK_POLICY` | What to do when a sender hits the block list: `reject`, `forward`, `telegram` (comma-separated). Default `telegram` (still notify). |
+| `GUARDIAN_MODE` | `true` to reduce duplicate Telegram notifications (extra KV writes). |
+| `MAX_EMAIL_SIZE` | Soft size limit in bytes before `MAX_EMAIL_SIZE_POLICY` applies. Default `512*1024` (512 KiB). |
+| `MAX_EMAIL_SIZE_POLICY` | When over size: `unhandled` / `truncate` / `continue`. Default `truncate`. |
+| `RESEND_API_KEY` | Enable reply-to-email via [Resend](https://resend.com/docs/introduction). |
+| `DEBUG` | `true`: show Gemini error reasons in Telegram on local fallback, and verbose webhook logs. |
+| `PROMPT_TEMPLATE` | Custom OTP extraction prompt template (advanced). |
 
 ## Mailbox button rules
 
@@ -393,25 +406,38 @@ pnpm pub  # wrangler deploy --keep-vars
 
 ## 配置
 
-位置：Workers 和 Pages - 你的 worker 名称 - 设置 - 变量 / 绑定
+位置：Workers 和 Pages → 你的 worker → 设置 → 变量 / 绑定
+
+### 必须配置
 
 | KEY | 描述 |
 |:----|:-----|
-| `TELEGRAM_BOT` | 必填。`token,chat_id`。 |
-| `WEB_USER` | 可选。`用户名,密码`（按第一个逗号拆分）。配置后：网页登录保护 `/email` 预览与 `/init`（可记住 30 天）。未配置：`/init` 放开；网页预览用 1 天 token + 倒计时。 |
+| `TELEGRAM_BOT` | `token,chat_id` — Bot token 与接收邮件的私聊 chat id。 |
+| `DB` | KV 命名空间绑定，绑定名必须是 `DB`。 |
+
+### 建议配置
+
+| KEY | 描述 |
+|:----|:-----|
+| `GEMINI_API` | Google AI Studio Key（`AIza…`），用于抽验证码。出网可能受地区限制；失败时自动本地正则兜底。 |
+| `FORWARD_MAIL` | 单一备份目的地（须为已验证的 Email Routing 目的地）。格式：`邮箱` \| `邮箱,文件夹` \| `邮箱,文件夹,noforwarded\|forwarded` \| `邮箱,forwarded`。例：`you+bak@gmail.com,Backup,noforwarded`。默认策略 `noforwarded`：只备份真正发到域名邮箱的信；外站自动转发进域名的不备份（仍推 Telegram）。`forwarded`：转发进来的也备份。From / 相关 To 头命中该备份地址（Gmail `+` 归一）则永不备份。 |
+| `WEB_USER` | `用户名,密码`（按第一个逗号拆分）。配置后：网页登录保护 `/email` 预览与 `/init`（可记住 30 天）。未配置：`/init` 放开；网页预览用 1 天 token + 倒计时。 |
 | `UI_LANG` | 界面语言：`en`（默认）、`zh`（简体）或 `tw`（繁体）。影响 TG 文案/按钮、预览页、小程序、Bot 命令描述。修改后请重新打开 `/init`。 |
-| `GEMINI_API` | Google AI Studio Key（`AIza…`）。出网可能受地区限制；失败时自动本地正则。 |
-| `GEMINI_MODEL` | 可选。默认 `gemini-2.5-flash-lite`。 |
-| `FORWARD_MAIL` | 单一备份：`邮箱` \| `邮箱,文件夹` \| `邮箱,文件夹,noforwarded\|forwarded` \| `邮箱,forwarded`。例：`you+bak@gmail.com,Backup,noforwarded`。默认 `noforwarded`：只备份真正发到域名邮箱的信；外站自动转发进域名的不备份（仍推 Telegram）。`forwarded`：转发进来的也备份。From / 相关 To 头命中该备份地址（Gmail `+` 归一）则永不备份。须为已验证的 Email Routing 目的地。 |
-| `DB` | **必须**的 KV 绑定，变量名必须是 `DB`。 |
-| `TIMEZONE` | 可选。默认 `Asia/Shanghai`。 |
-| `GMAIL_U` | 可选。Gmail 多账号序号，默认 `0`。 |
-| `BLOCK_POLICY` | `reject` / `forward` / `telegram`，逗号分隔。默认 `telegram`。 |
-| `GUARDIAN_MODE` | 可选。`true` 开启。 |
-| `MAX_EMAIL_SIZE` | 字节；默认 `512*1024`。 |
-| `MAX_EMAIL_SIZE_POLICY` | `unhandled` / `truncate` / `continue`。默认 `truncate`。 |
-| `RESEND_API_KEY` | 可选。通过 [Resend](https://resend.com/docs/introduction) 回复邮件。 |
-| `DEBUG` | 可选。`true`：本地兜底时在 TG 显示 Gemini 错误原因。 |
+
+### 可选配置
+
+| KEY | 描述 |
+|:----|:-----|
+| `GEMINI_MODEL` | Gemini 模型 id。默认 `gemini-2.5-flash-lite`。 |
+| `TIMEZONE` | Telegram 消息里**时间**行的时区。默认 `Asia/Shanghai`。 |
+| `GMAIL_U` | 「邮箱」按钮打开 Gmail 网页时用的浏览器账号槽位（`/mail/u/N/…`）。默认 `0`（当前浏览器里第一个已登录的 Google 账号）。不是 Worker 多账户收信——仅当按钮总进错 Gmail 账号时再改成 `1`/`2`。 |
+| `BLOCK_POLICY` | 命中黑名单时的行为：`reject` / `forward` / `telegram`（可逗号组合）。默认 `telegram`（仍推送通知）。 |
+| `GUARDIAN_MODE` | `true`：减少重复推送（会增加 KV 写入）。 |
+| `MAX_EMAIL_SIZE` | 触发大小策略前的软上限（字节）。默认 `512*1024`（512 KiB）。 |
+| `MAX_EMAIL_SIZE_POLICY` | 超限时：`unhandled` / `truncate` / `continue`。默认 `truncate`。 |
+| `RESEND_API_KEY` | 通过 [Resend](https://resend.com/docs/introduction) 启用回复邮件。 |
+| `DEBUG` | `true`：本地兜底时在 TG 显示 Gemini 错误原因，并打开更详细的 webhook 日志。 |
+| `PROMPT_TEMPLATE` | 自定义抽码 prompt 模板（进阶）。 |
 
 ## 「邮箱」按钮规则
 

@@ -14,13 +14,13 @@
 	],
 	"vars": {
 		"UI_LANG": "en"
-		// Secrets (dashboard / wrangler secret):
-		//   TELEGRAM_BOT=token,chat_id
+		// Required: TELEGRAM_BOT=token,chat_id  +  KV binding name DB
+		// Recommended secrets/vars:
 		//   GEMINI_API=AIza...
-		//   WEB_USER=username,password
-		// Optional (single backup):
 		//   FORWARD_MAIL=you+bak@gmail.com,Backup,noforwarded
-		//   GMAIL_U=0
+		//   WEB_USER=username,password
+		// Optional: GEMINI_MODEL, TIMEZONE, GMAIL_U (browser Gmail u/N slot), BLOCK_POLICY,
+		//   GUARDIAN_MODE, MAX_EMAIL_SIZE, MAX_EMAIL_SIZE_POLICY, RESEND_API_KEY, DEBUG
 		// Preview: hard max 100 bodies. Without WEB_USER: web link token 1d.
 		// With WEB_USER: login for /email + /init. /previewmode switches Mini App ↔ Web.
 		// Public host: open https://<worker-host>/ (status) or /init (saved to KV). No DOMAIN var.

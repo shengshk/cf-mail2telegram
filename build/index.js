@@ -3248,6 +3248,10 @@ function tmaI18nPayload(lang) {
 }
 
 // src/mail/preview.ts
+var PREVIEW_FAVICON = "data:image/svg+xml," + encodeURIComponent(
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#eef1f4"/><path fill="#6b7280" d="M14 20h36c2.2 0 4 1.8 4 4v24c0 2.2-1.8 4-4 4H14c-2.2 0-4-1.8-4-4V24c0-2.2 1.8-4 4-4zm0 3.2 18 12.6 18-12.6V22L32 34.8 14 22v1.2z"/></svg>`
+);
+var PREVIEW_FAVICON_LINK = `<link rel="icon" href="${PREVIEW_FAVICON}" />`;
 var PREVIEW_CSS = `
 *{box-sizing:border-box}
 body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
@@ -3336,6 +3340,7 @@ function renderPreviewPage(mail, bodyHtml, env, webBar) {
   return `<!doctype html><html lang="${htmlLang(lang)}"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="referrer" content="no-referrer">
+${PREVIEW_FAVICON_LINK}
 <title>${subject}</title><style>${PREVIEW_CSS}
 a.out{color:#4b5563;font-size:.8125rem;text-decoration:none}
 a.out:hover{color:#111827;text-decoration:underline}
