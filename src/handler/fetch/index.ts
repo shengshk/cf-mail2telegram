@@ -6,7 +6,7 @@ import { json, Router } from 'itty-router';
 import { Dao } from '../../db';
 import { requireTelegram } from '../../env';
 import { resolveUiLang, htmlLang, t, tmaI18nPayload } from '../../i18n';
-import { renderPreviewPage, sanitizeHtmlForPreview } from '../../mail/preview';
+import { buildPreviewBodyHtml, renderPreviewMiniAppShell, renderPreviewPage, sanitizeHtmlForPreview } from '../../mail/preview';
 import { publicHostFromRequest, savePublicHost } from '../../public-host';
 import { createTelegramBotAPI, telegramCommands, telegramWebhookHandler, tmaHTML } from '../../telegram';
 import statusHtml from '../../status.html';
@@ -128,6 +128,34 @@ function createRouter(env: Environment): RouterType {
                 'content-type': 'text/html; charset=utf-8',
             },
         });
+    });
+
+    /// Mini App email preview shell (auth via /api/email/:id)
+    router.get('/tma/email/:id', async (req: IRequest): Promise<Response> => {
+        const id = req.params.id;
+        const html = renderPreviewMiniAppShell(id, env);
+        return new Response(html, {
+            headers: {
+                'content-type': 'text/html; charset=utf-8',
+                'Referrer-Policy': 'no-referrer',
+            },
+        });
+    });
+
+    router.get('/api/email/:id', auth, async (req: IRequest): Promise<any> => {
+        const id = req.params.id;
+        const value = await dao.loadMailCache(id);
+        if (!value) {
+            throw new HTTPError(404, t(resolveUiLang(env), 'previewExpired'));
+        }
+        const lang = resolveUiLang(env);
+        return {
+            subject: value.subject || t(lang, 'noSubjectShort'),
+            from: value.from || '',
+            to: value.to || '',
+            date: value.date || '',
+            bodyHtml: buildPreviewBodyHtml(value),
+        };
     });
 
     router.post('/api/address/add', auth, async (req: IRequest): Promise<any> => {

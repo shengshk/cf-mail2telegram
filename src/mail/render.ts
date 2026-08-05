@@ -57,11 +57,15 @@ export async function renderEmailListMode(
         lines.push(escapeHtml(mail.date));
     }
 
-    const previewUrl = (mail.html || mail.text) && host
+    const hasBody = !!(mail.html || mail.text);
+    const previewAppUrl = hasBody && host
+        ? `https://${host}/tma/email/${mail.id}`
+        : undefined;
+    const webUrl = hasBody && host
         ? `https://${host}/email/${mail.id}`
         : undefined;
     const mailboxUrl = mailboxButtonUrl(mail, env);
-    const reply_markup = buildKeyboard(previewUrl, mailboxUrl, lang) as Telegram.InlineKeyboardMarkup | undefined;
+    const reply_markup = buildKeyboard(previewAppUrl, webUrl, mailboxUrl, lang) as Telegram.InlineKeyboardMarkup | undefined;
 
     return {
         text: lines.join('\n'),

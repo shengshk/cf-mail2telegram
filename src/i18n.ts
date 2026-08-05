@@ -9,6 +9,7 @@ export type I18nKey =
     | 'from'
     | 'to'
     | 'previewBtn'
+    | 'webBtn'
     | 'mailboxBtn'
     | 'back'
     | 'delete'
@@ -19,6 +20,9 @@ export type I18nKey =
     | 'previewTo'
     | 'noSubjectShort'
     | 'previewExpired'
+    | 'previewLoading'
+    | 'previewAuthRequired'
+    | 'previewDenied'
     | 'openManager'
     | 'addressManager'
     | 'cmdCfmail'
@@ -56,6 +60,7 @@ const en: Record<I18nKey, string> = {
     from: 'From:',
     to: 'To:',
     previewBtn: 'Preview',
+    webBtn: 'Web',
     mailboxBtn: 'Mailbox',
     back: 'Back',
     delete: 'Delete',
@@ -66,6 +71,9 @@ const en: Record<I18nKey, string> = {
     previewTo: 'To:',
     noSubjectShort: '(no subject)',
     previewExpired: 'Preview not found or expired',
+    previewLoading: 'Loading…',
+    previewAuthRequired: 'Open this preview from the Telegram Mini App button.',
+    previewDenied: 'Permission denied',
     openManager: 'Open Manager',
     addressManager: 'Address Manager',
     cmdCfmail: 'Show Chat ID, Worker URL, and list managers',
@@ -104,6 +112,7 @@ const zh: Record<I18nKey, string> = {
     from: '发件人：',
     to: '收件人：',
     previewBtn: '预览',
+    webBtn: '网页',
     mailboxBtn: '邮箱',
     back: '返回',
     delete: '删除',
@@ -114,6 +123,9 @@ const zh: Record<I18nKey, string> = {
     previewTo: '收件人：',
     noSubjectShort: '(无主题)',
     previewExpired: '预览不存在或已过期',
+    previewLoading: '加载中…',
+    previewAuthRequired: '请从 Telegram「预览」小程序按钮打开。',
+    previewDenied: '无权限',
     openManager: '打开管理',
     addressManager: '地址管理',
     cmdCfmail: '显示 Chat ID、Worker 地址与名单管理',
@@ -152,6 +164,7 @@ const tw: Record<I18nKey, string> = {
     from: '寄件者：',
     to: '收件者：',
     previewBtn: '預覽',
+    webBtn: '網頁',
     mailboxBtn: '信箱',
     back: '返回',
     delete: '刪除',
@@ -162,6 +175,9 @@ const tw: Record<I18nKey, string> = {
     previewTo: '收件者：',
     noSubjectShort: '(無主旨)',
     previewExpired: '預覽不存在或已過期',
+    previewLoading: '載入中…',
+    previewAuthRequired: '請從 Telegram「預覽」小程式按鈕開啟。',
+    previewDenied: '無權限',
     openManager: '開啟管理',
     addressManager: '地址管理',
     cmdCfmail: '顯示 Chat ID、Worker 地址與名單管理',

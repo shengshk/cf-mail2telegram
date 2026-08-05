@@ -100,14 +100,25 @@ export function mailboxButtonUrl(mail: EmailCache, env: Environment): string | u
     return providerHomeUrl(original, env);
 }
 
+export type InlineBtn =
+    | { text: string; url: string }
+    | { text: string; web_app: { url: string } };
+
+/**
+ * Buttons: Preview (Mini App) · Web (browser) · Mailbox
+ */
 export function buildKeyboard(
-    previewUrl: string | undefined,
+    previewAppUrl: string | undefined,
+    webUrl: string | undefined,
     mailboxUrl: string | undefined,
     lang: UiLang,
-): { inline_keyboard: Array<Array<{ text: string; url: string }>> } | undefined {
-    const row: Array<{ text: string; url: string }> = [];
-    if (previewUrl) {
-        row.push({ text: t(lang, 'previewBtn'), url: previewUrl });
+): { inline_keyboard: InlineBtn[][] } | undefined {
+    const row: InlineBtn[] = [];
+    if (previewAppUrl) {
+        row.push({ text: t(lang, 'previewBtn'), web_app: { url: previewAppUrl } });
+    }
+    if (webUrl) {
+        row.push({ text: t(lang, 'webBtn'), url: webUrl });
     }
     if (mailboxUrl) {
         row.push({ text: t(lang, 'mailboxBtn'), url: mailboxUrl });

@@ -177,7 +177,7 @@ But Telegram / Preview / Mini App follow **only one** saved host (`PUBLIC_HOST` 
 
 ## Telegram Mini Apps
 
-Black/white lists are managed via Mini Apps. Use `/cfmail` to see your Chat ID, Worker URL (from `/init`), and open Block / White / Test. Rules are stored in KV.
+Black/white lists are managed via Mini Apps (`/cfmail`). Mail **Preview** also opens as a Mini App (authenticated). **Web** still opens `/email/<id>` in a browser without TMA auth.
 
 > After changing `UI_LANG` or the public host, open `/init` again so bot commands stay in sync.
 
@@ -194,13 +194,14 @@ OTP: 123456          ← AI: bold; local regex: italic
 From: …
 To: …
 Time
-[Preview] [Mailbox]
+[Preview] [Web] [Mailbox]
 ```
 
 ### Email preview
 
-1. **Preview** — open cached HTML/text in the browser (`/email/<id>`). Requires KV `DB` and a successful `/init` (so the public host is saved).
-2. **Mailbox** — jump to webmail per [Mailbox button rules](#mailbox-button-rules).
+1. **Preview** — Telegram Mini App (`/tma/email/<id>`). Same light reading UI; content loads after TMA auth (your `TELEGRAM_BOT` chat id).
+2. **Web** — open the same preview page in a browser (`/email/<id>`). Kept for convenience; link is still guessable while cached.
+3. **Mailbox** — jump to webmail per [Mailbox button rules](#mailbox-button-rules).
 
 ### Security and cache
 
@@ -379,7 +380,7 @@ pnpm pub  # wrangler deploy --keep-vars
 
 ## Telegram 小程序
 
-黑白名单通过小程序管理。使用 `/cfmail` 查看 Chat ID、Worker 地址（来自 `/init`），并打开「黑名单 / 白名单 / 测试」三个按钮。规则保存在 KV。
+黑白名单通过小程序管理（`/cfmail`）。邮件 **预览** 也走小程序（需鉴权）。**网页** 仍打开 `/email/<id>`，暂不鉴权。
 
 > 修改 `UI_LANG` 或公网主机后，请重新打开 `/init` 以同步 Bot 命令。
 
@@ -396,15 +397,16 @@ pnpm pub  # wrangler deploy --keep-vars
 发件人：…
 收件人：…
 时间
-[预览] [邮箱]
+[预览] [网页] [邮箱]
 ```
 
 ### 邮件预览
 
 当邮件转发通知到 Telegram 时，展示验证码（如有）、发件人、收件人、时间，以及按钮：
 
-1. **预览**：浏览器打开缓存的 HTML/文本（`/email/<id>`）。需要 KV `DB`，并且已经成功打开过 `/init`（公网主机已写入 KV）。
-2. **邮箱**：按 [「邮箱」按钮规则](#邮箱按钮规则) 跳转网页邮箱。
+1. **预览**：Telegram 小程序（`/tma/email/<id>`）。样式与现网页预览相同；需 TMA 鉴权（匹配 `TELEGRAM_BOT` 的 chat id）后加载正文。
+2. **网页**：浏览器打开同一预览页（`/email/<id>`）。暂时保留；缓存期内链接仍可能被直接打开。
+3. **邮箱**：按 [「邮箱」按钮规则](#邮箱按钮规则) 跳转网页邮箱。
 
 ### 安全与邮件缓存
 
