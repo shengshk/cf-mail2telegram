@@ -243,7 +243,7 @@ Time
    Preview HTML auto-linkifies bare `http(s)://` URLs in the body.
 2. **Mailbox** — jump to webmail per [Mailbox button rules](#mailbox-button-rules).
 
-BotFather: **Mini App URL** = `https://<PUBLIC_HOST>/tma`, **Privacy Policy URL** = `https://telegram.org/privacy-tpa` (see [Configure Telegram](#0-configure-telegram)). Re-open `/init` after deploy (webhook + commands; also caches bot username for `/cfmail` deep links).
+BotFather: **Mini App URL** = `https://<PUBLIC_HOST>/tma`, **Privacy Policy URL** = `https://telegram.org/privacy-tpa` (see [Configure Telegram](#0-configure-telegram)). Re-open `/init` after deploy (webhook + commands). Main Mini App is optional (chat **Open**); `/cfmail` list buttons use `web_app` like Preview.
 
 ### Security and cache
 
@@ -489,7 +489,7 @@ BotFather 必须同时配置 **隐私政策 URL** 与 **Mini App URL**（见 [�
    预览正文会把裸 `http(s)://` 网址自动变成可点击链接。
 2. **邮箱**：按 [「邮箱」按钮规则](#邮箱按钮规则) 跳转网页邮箱。
 
-BotFather：**Mini App URL** = `https://<PUBLIC_HOST>/tma`，**隐私政策 URL** = `https://telegram.org/privacy-tpa`（见 [配置 Telegram](#0-配置-telegram)）。部署后重新打开一次 `/init`（webhook / 命令；并缓存 bot username 供 `/cfmail` 深链）。
+BotFather：**Mini App URL** = `https://<PUBLIC_HOST>/tma`，**隐私政策 URL** = `https://telegram.org/privacy-tpa`（见 [配置 Telegram](#0-配置-telegram)）。部署后重新打开一次 `/init`（webhook / 命令）。主小程序可选（聊天「打开」）；`/cfmail` 名单按钮与「预览」一样走 `web_app`。
 
 ### 安全与邮件缓存
 
