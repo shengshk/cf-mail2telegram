@@ -16,7 +16,7 @@
 		"UI_LANG": "en"
 		// Secrets (dashboard / wrangler secret):
 		//   TELEGRAM_BOT=token,chat_id
-		//   GEMINI_API_KEY=AIza...
+		//   GEMINI_API=AIza...
 		//   WEB_USER=username,password
 		// Optional (single backup):
 		//   FORWARD_MAIL=you+bak@gmail.com,Backup,noforwarded

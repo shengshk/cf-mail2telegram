@@ -31,7 +31,7 @@ export type BlockPolicy = 'reject' | 'forward' | 'telegram';
 
 /**
  * Required: TELEGRAM_BOT, KV binding DB
- * Recommended: GEMINI_API_KEY, FORWARD_MAIL
+ * Recommended: GEMINI_API, FORWARD_MAIL
  * Optional: UI_LANG (en|zh|tw, default en)
  * Public hostname is saved when you open /init (KV PUBLIC_HOST).
  */
@@ -67,7 +67,7 @@ export interface Environment {
     MAX_EMAIL_SIZE?: string;
     MAX_EMAIL_SIZE_POLICY?: MaxEmailSizePolicy;
 
-    GEMINI_API_KEY?: string;
+    GEMINI_API?: string;
     /** default gemini-2.5-flash-lite */
     GEMINI_MODEL?: string;
     PROMPT_TEMPLATE?: string;

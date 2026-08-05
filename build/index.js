@@ -4707,12 +4707,12 @@ function normalizeCode(raw) {
   return value;
 }
 async function extractCodeGemini(text, env) {
-  const apiKey = env.GEMINI_API_KEY;
+  const apiKey = env.GEMINI_API;
   if (!apiKey) {
-    throw new LlmNetworkError("GEMINI_API_KEY \u672A\u914D\u7F6E");
+    throw new LlmNetworkError("GEMINI_API \u672A\u914D\u7F6E");
   }
   if (apiKey.startsWith("sk-")) {
-    console.warn("[extract] GEMINI_API_KEY \u4EE5 sk- \u5F00\u5934\uFF0C\u5B98\u65B9 Gemini \u8BF7\u7528 AIza...");
+    console.warn("[extract] GEMINI_API \u4EE5 sk- \u5F00\u5934\uFF0C\u5B98\u65B9 Gemini \u8BF7\u7528 AIza...");
   }
   const model = env.GEMINI_MODEL || "gemini-2.5-flash-lite";
   const promptTemplate = env.PROMPT_TEMPLATE || DEFAULT_PROMPT;

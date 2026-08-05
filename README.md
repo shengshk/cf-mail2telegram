@@ -169,7 +169,7 @@ But Telegram / Preview / Mini App follow **only one** saved host (`PUBLIC_HOST` 
 | `TELEGRAM_BOT` | Required. `token,chat_id`. |
 | `WEB_USER` | Optional. `username,password` (split on first comma). When set: web login protects `/email` preview and `/init` (remember 30 days). When unset: `/init` is open; web preview uses 1-day token + countdown. |
 | `UI_LANG` | UI language: `en` (default), `zh` (Simplified), or `tw` (Traditional). Affects Telegram labels/buttons, preview chrome, Mini App, and bot command descriptions. Re-open `/init` after changing. |
-| `GEMINI_API_KEY` | Google AI Studio key (`AIza…`). Worker egress may hit region limits; on failure the Worker falls back to local regex. |
+| `GEMINI_API` | Google AI Studio key (`AIza…`). Worker egress may hit region limits; on failure the Worker falls back to local regex. |
 | `GEMINI_MODEL` | Optional. Default `gemini-2.5-flash-lite`. |
 | `FORWARD_MAIL` | Single backup: `email` \| `email,Folder` \| `email,Folder,noforwarded\|forwarded` \| `email,forwarded`. Example: `you+bak@gmail.com,Backup,noforwarded`. Default policy `noforwarded`: backup only mail addressed to the CF domain; skip auto-forwards from other mailboxes (Telegram notify still runs). `forwarded`: also backup those. Never backup when From / related To headers match this address (Gmail `+` normalized). Must be a verified Email Routing destination. |
 | `DB` | **Required** KV binding. Variable name must be exactly `DB`. |
@@ -400,7 +400,7 @@ pnpm pub  # wrangler deploy --keep-vars
 | `TELEGRAM_BOT` | 必填。`token,chat_id`。 |
 | `WEB_USER` | 可选。`用户名,密码`（按第一个逗号拆分）。配置后：网页登录保护 `/email` 预览与 `/init`（可记住 30 天）。未配置：`/init` 放开；网页预览用 1 天 token + 倒计时。 |
 | `UI_LANG` | 界面语言：`en`（默认）、`zh`（简体）或 `tw`（繁体）。影响 TG 文案/按钮、预览页、小程序、Bot 命令描述。修改后请重新打开 `/init`。 |
-| `GEMINI_API_KEY` | Google AI Studio Key（`AIza…`）。出网可能受地区限制；失败时自动本地正则。 |
+| `GEMINI_API` | Google AI Studio Key（`AIza…`）。出网可能受地区限制；失败时自动本地正则。 |
 | `GEMINI_MODEL` | 可选。默认 `gemini-2.5-flash-lite`。 |
 | `FORWARD_MAIL` | 单一备份：`邮箱` \| `邮箱,文件夹` \| `邮箱,文件夹,noforwarded\|forwarded` \| `邮箱,forwarded`。例：`you+bak@gmail.com,Backup,noforwarded`。默认 `noforwarded`：只备份真正发到域名邮箱的信；外站自动转发进域名的不备份（仍推 Telegram）。`forwarded`：转发进来的也备份。From / 相关 To 头命中该备份地址（Gmail `+` 归一）则永不备份。须为已验证的 Email Routing 目的地。 |
 | `DB` | **必须**的 KV 绑定，变量名必须是 `DB`。 |

@@ -106,12 +106,12 @@ interface ChatCompletionResponse {
 }
 
 export async function extractCodeGemini(text: string, env: Environment): Promise<string | undefined> {
-    const apiKey = env.GEMINI_API_KEY;
+    const apiKey = env.GEMINI_API;
     if (!apiKey) {
-        throw new LlmNetworkError('GEMINI_API_KEY 未配置');
+        throw new LlmNetworkError('GEMINI_API 未配置');
     }
     if (apiKey.startsWith('sk-')) {
-        console.warn('[extract] GEMINI_API_KEY 以 sk- 开头，官方 Gemini 请用 AIza...');
+        console.warn('[extract] GEMINI_API 以 sk- 开头，官方 Gemini 请用 AIza...');
     }
 
     const model = env.GEMINI_MODEL || 'gemini-2.5-flash-lite';

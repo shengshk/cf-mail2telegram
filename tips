@@ -19,7 +19,7 @@ Bind a KV namespace to this Worker:
 Secrets (recommended):
 
   TELEGRAM_BOT       token,chat_id
-  GEMINI_API_KEY     Google AI Studio key (AIza…)
+  GEMINI_API         Google AI Studio key (AIza…)
   WEB_USER           username,password  (optional; web login for /email + /init)
 
 
@@ -83,7 +83,7 @@ JSON/toast should show host. Re-run /init after changing UI_LANG or switching pr
   [ ] TELEGRAM_BOT
   [ ] WEB_USER optional (username,password)
   [ ] UI_LANG if you want zh or tw
-  [ ] GEMINI_API_KEY for AI OTP
+  [ ] GEMINI_API for AI OTP
   [ ] FORWARD_MAIL verified in Email Routing destinations
   [ ] BotFather Mini App URL + Privacy Policy URL
   [ ] Email Routing → this Worker
