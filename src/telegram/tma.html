@@ -8,49 +8,19 @@
   <title>cf-mail2telegram</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
-  <link href="https://unpkg.com/boltcss/bolt.min.css" rel="stylesheet">
   <style>
+    * { box-sizing: border-box; }
     body {
-      max-width: 600px;
-      margin: 0 auto;
-      padding: 20px;
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: #f0f1f3;
+      color: #1f2937;
+      -webkit-font-smoothing: antialiased;
     }
-
-    table {
-      width: 100%;
-    }
-
-    th,
-    td {
-      text-align: left;
-    }
-
-    th:last-child,
-    td:last-child {
-      width: 80px;
-      text-align: center;
-    }
-
-    button {
-      padding: 5px 10px;
-      min-width: 80px;
-    }
-
-    .growContainer {
-      display: flex;
-      align-items: center;
-    }
-
-    .growItem {
-      max-width: 100%;
-      flex-grow: 1;
-    }
-
-    /* mail preview */
     .preview {
       max-width: 820px;
       margin: 0 auto;
-      padding: 0 0 2rem;
+      padding: 1.25rem 1rem 2.5rem;
     }
     .preview-bar {
       display: flex;
@@ -62,6 +32,7 @@
       border-bottom: 1px solid #e5e7eb;
       font-size: .8125rem;
       color: #6b7280;
+      letter-spacing: .01em;
     }
     .preview-sheet {
       background: #fff;
@@ -94,10 +65,7 @@
       padding: 1.5rem;
       overflow-x: auto;
     }
-    .mail-canvas img {
-      max-width: 100%;
-      height: auto;
-    }
+    .mail-canvas img { max-width: 100%; height: auto; }
     .mail-canvas a {
       color: #2563eb;
       text-decoration: underline;
@@ -108,6 +76,107 @@
       text-align: center;
       color: #6b7280;
       font-size: .9375rem;
+    }
+    .list-tabs {
+      display: flex;
+      gap: .5rem;
+      padding: 1rem 1.25rem 0;
+      border-bottom: 1px solid #eceef1;
+    }
+    .list-tabs button {
+      flex: 1;
+      border: none;
+      background: transparent;
+      padding: .55rem .75rem;
+      margin-bottom: -1px;
+      font: inherit;
+      font-size: .875rem;
+      font-weight: 600;
+      color: #6b7280;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+    }
+    .list-tabs button.active {
+      color: #111827;
+      border-bottom-color: #3ecf8e;
+    }
+    .list-body { padding: 1.25rem 1.5rem 1.5rem; }
+    .list-tip {
+      margin: 0 0 .75rem;
+      font-size: .8125rem;
+      color: #b45309;
+      word-break: break-word;
+    }
+    .list-add {
+      display: flex;
+      gap: .5rem;
+      margin-bottom: 1rem;
+    }
+    .list-add input {
+      flex: 1;
+      min-width: 0;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: .55rem .75rem;
+      font: inherit;
+      font-size: .875rem;
+      background: #fff;
+    }
+    .list-add input:focus {
+      outline: none;
+      border-color: #3ecf8e;
+      box-shadow: 0 0 0 2px rgba(62, 207, 142, .15);
+    }
+    .btn-primary {
+      border: none;
+      border-radius: 8px;
+      padding: .55rem 1rem;
+      font: inherit;
+      font-size: .875rem;
+      font-weight: 600;
+      background: #3ecf8e;
+      color: #0b1210;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn-ghost {
+      border: none;
+      background: transparent;
+      padding: .25rem .5rem;
+      font: inherit;
+      font-size: .8125rem;
+      font-weight: 500;
+      color: #6b7280;
+      cursor: pointer;
+    }
+    .btn-ghost:hover { color: #ef4444; }
+    .list-items {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    .list-items li {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: .75rem;
+      padding: .65rem 0;
+      border-bottom: 1px solid #f3f4f6;
+      font-size: .875rem;
+    }
+    .list-items li:last-child { border-bottom: none; }
+    .list-addr {
+      flex: 1;
+      min-width: 0;
+      word-break: break-all;
+      color: #111827;
+    }
+    .list-empty {
+      margin: 0;
+      text-align: center;
+      color: #9ca3af;
+      font-size: .875rem;
+      padding: 1.5rem 0 .5rem;
     }
   </style>
 </head>
@@ -132,91 +201,28 @@
         </div>
       </div>
     </div>
-    <div v-else-if="func === 'list'">
-      <h3 class="growContainer">
-        {{ i18n.listMode }}
-        <select class="growItem" style="margin-left: 10px;" v-model="mode">
-          <option value="block">{{ i18n.blockList }}</option>
-          <option value="white">{{ i18n.whiteList }}</option>
-          <option value="test">{{ i18n.testAddress }}</option>
-        </select>
-      </h3>
-      <p v-if="tipMessage">{{ tipMessage }}</p>
-      <table>
-        <thead>
-          <tr>
-            <th>{{ i18n.address }}</th>
-            <th>{{ mode === 'test' ? i18n.type : i18n.action }}</th>
-          </tr>
-        </thead>
-        <tbody v-if="mode!=='test'">
-          <tr>
-            <td class="growContainer">
-              <input :placeholder="inputPlaceholder" class="growItem" v-model="inputAddress">
-            </td>
-            <td>
-              <button @click="addAddress">{{ i18n.add }}</button>
-            </td>
-          </tr>
-          <tr :key="index" v-for="(address, index) in addresses">
-            <td>{{ address }}</td>
-            <td>
-              <button @click="removeAddress(index)">{{ i18n.delete }}</button>
-            </td>
-          </tr>
-        </tbody>
-        <tbody v-else>
-          <tr>
-            <td class="growContainer">
-              <input :placeholder="inputPlaceholder" class="growItem" v-model="inputAddress">
-            </td>
-            <td>
-              <button @click="testAddress">{{ i18n.test }}</button>
-            </td>
-          </tr>
-          <tr :key="index" v-for="(item, index) in testList">
-            <td>{{ item.address }}</td>
-            <td>{{ item.result }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <div v-if="func === 'sendmail'">
-      <h3>{{ i18n.sendMail }}</h3>
-      <p v-if="tipMessage">{{ tipMessage }}</p>
-      <table>
-        <tbody>
-          <tr>
-            <td>{{ i18n.from }}</td>
-            <td class="growContainer">
-              <input v-model="sendMail.from" class="growItem">
-            </td>
-          </tr>
-          <tr>
-            <td>{{ i18n.to }}</td>
-            <td class="growContainer">
-              <input v-model="sendMail.to" class="growItem">
-            </td>
-          </tr>
-          <tr>
-            <td>{{ i18n.subject }}</td>
-            <td class="growContainer">
-              <input v-model="sendMail.subject" class="growItem">
-            </td>
-          </tr>
-          <tr>
-            <td>{{ i18n.text }}</td>
-            <td class="growContainer">
-              <textarea v-model="sendMail.text" class="growItem"></textarea>
-            </td>
-          </tr>
-          <tr>
-            <td colspan="2">
-              <button>{{ i18n.send }}</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <div v-else-if="func === 'list'" class="preview">
+      <div class="preview-bar"><span>{{ i18n.manageTitle }}</span></div>
+      <div class="preview-sheet">
+        <div class="list-tabs">
+          <button type="button" :class="{ active: mode === 'block' }" @click="mode = 'block'">{{ i18n.blockList }}</button>
+          <button type="button" :class="{ active: mode === 'white' }" @click="mode = 'white'">{{ i18n.whiteList }}</button>
+        </div>
+        <div class="list-body">
+          <p v-if="tipMessage" class="list-tip">{{ tipMessage }}</p>
+          <div class="list-add">
+            <input v-model="inputAddress" :placeholder="inputPlaceholder" @keyup.enter="addAddress">
+            <button type="button" class="btn-primary" @click="addAddress">{{ i18n.add }}</button>
+          </div>
+          <ul v-if="addresses.length" class="list-items">
+            <li v-for="(address, index) in addresses" :key="mode + ':' + index">
+              <span class="list-addr">{{ address }}</span>
+              <button type="button" class="btn-ghost" @click="removeAddress(index)">{{ i18n.delete }}</button>
+            </li>
+          </ul>
+          <p v-else class="list-empty">{{ i18n.emptyList }}</p>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -247,21 +253,22 @@
     function listModeFromStart(s) {
       if (s === 'list_block') return 'block';
       if (s === 'list_white') return 'white';
-      if (s === 'list_test') return 'test';
       return '';
     }
 
+    function isListPath() {
+      return /\/tma\/list(\/(block|white))?\/?$/i.test(location.pathname);
+    }
+
     function listModeFromPath() {
-      const m = location.pathname.match(/\/tma\/list\/(block|white|test)\/?$/i);
-      return m ? m[1].toLowerCase() : '';
+      const m = location.pathname.match(/\/tma\/list(?:\/(block|white))?\/?$/i);
+      if (!m) return '';
+      return (m[1] || 'block').toLowerCase();
     }
 
     class Client {
       constructor(tma) {
         this.tma = tma;
-        this.addAddress = this.addAddress.bind(this);
-        this.removeAddress = this.removeAddress.bind(this);
-        this.loadAddress = this.loadAddress.bind(this);
       }
 
       async request(path, method, body) {
@@ -315,76 +322,46 @@
         const startParam = readStartParam();
         const pathListMode = listModeFromPath();
         const listMode = listModeFromStart(startParam) || pathListMode;
+        const queryMode = urlParams.get('mode');
+        const isListQuery = queryMode === 'block' || queryMode === 'white';
 
         const blockList = ref([]);
         const whiteList = ref([]);
-        const testList = ref([]);
         const tipMessage = ref('');
         const inputAddress = ref('');
         const previewMail = ref(null);
         const previewError = ref('');
 
-        const sendMail = ref({
-          from: '',
-          to: '',
-          subject: '',
-          text: '',
-        });
-
         const initialFunc = isMailId(startParam)
-          || (urlParams.get('mode') === 'preview' && urlParams.get('id'))
+          || (queryMode === 'preview' && urlParams.get('id'))
           ? 'preview'
-          : (pathListMode ? 'list' : (urlParams.get('func') || 'list'));
+          : (isListPath() || listMode || isListQuery ? 'list' : 'list');
         const func = ref(initialFunc);
-        const mode = ref(listMode || urlParams.get('mode') || 'block');
+        const mode = ref(listMode || (isListQuery ? queryMode : 'block'));
         const previewId = isMailId(startParam)
           ? startParam
           : (urlParams.get('id') || '');
         const client = new Client('');
 
-        const addresses = computed(() => {
-          switch (mode.value) {
-            case 'block':
-              return blockList.value;
-            case 'white':
-              return whiteList.value;
-            case 'test':
-              return testList.value;
-          }
-        });
+        const addresses = computed(() => mode.value === 'white' ? whiteList.value : blockList.value);
 
-        const inputPlaceholder = computed(() => {
-          switch (mode.value) {
-            case 'block':
-              return i18n.placeholderBlock;
-            case 'white':
-              return i18n.placeholderWhite;
-            case 'test':
-              return i18n.placeholderTest;
-          }
-        });
+        const inputPlaceholder = computed(() =>
+          mode.value === 'white' ? i18n.placeholderWhite : i18n.placeholderBlock);
 
         const addAddress = async () => {
           try {
-            if (!inputAddress.value) {
-              return;
-            }
             const address = inputAddress.value.trim();
+            if (!address) return;
             await client.addAddress(address, mode.value);
             inputAddress.value = '';
-            switch (mode.value) {
-              case 'block':
-                blockList.value.push(address);
-                break;
-              case 'white':
-                whiteList.value.push(address);
-                break;
-              case 'test':
-                break;
+            if (mode.value === 'white') {
+              whiteList.value.push(address);
+            } else {
+              blockList.value.push(address);
             }
-            tipMessage.value = null;
+            tipMessage.value = '';
           } catch (error) {
-            tipMessage.value = `ERROR: ` + error;
+            tipMessage.value = String(error.message || error);
           }
         };
 
@@ -392,52 +369,20 @@
           try {
             const address = addresses.value[index];
             await client.removeAddress(address, mode.value);
-            switch (mode.value) {
-              case 'block':
-                blockList.value.splice(index, 1);
-                break;
-              case 'white':
-                whiteList.value.splice(index, 1);
-                break;
-              case 'test':
-                break;
+            if (mode.value === 'white') {
+              whiteList.value.splice(index, 1);
+            } else {
+              blockList.value.splice(index, 1);
             }
-            tipMessage.value = null;
+            tipMessage.value = '';
           } catch (error) {
-            tipMessage.value = `ERROR: ` + error;
+            tipMessage.value = String(error.message || error);
           }
-        };
-
-        const testAddressWithPattern = (pattern, address) => {
-          if (pattern.toLowerCase() === address.toLowerCase()) {
-            return true;
-          }
-          try {
-            const regex = new RegExp(pattern, 'i');
-            return !!regex.test(address);
-          } catch (e) {
-            return false;
-          }
-        };
-
-        const testAddress = () => {
-          const test = [];
-          const address = inputAddress.value.trim();
-          for (const pattern of blockList.value) {
-            if (testAddressWithPattern(pattern, address)) {
-              test.push({ address: pattern, result: 'block' });
-            }
-          }
-          for (const pattern of whiteList.value) {
-            if (testAddressWithPattern(pattern, address)) {
-              test.push({ address: pattern, result: 'white' });
-            }
-          }
-          testList.value = test;
         };
 
         watch(mode, () => {
           inputAddress.value = '';
+          tipMessage.value = '';
         });
 
         onMounted(async () => {
@@ -464,7 +409,7 @@
             if (func.value === 'preview') {
               previewError.value = error.message || String(error);
             } else {
-              tipMessage.value = `ERROR: ` + error.message;
+              tipMessage.value = String(error.message || error);
             }
           }
         });
@@ -475,15 +420,12 @@
           tipMessage,
           inputAddress,
           inputPlaceholder,
-          sendMail,
           mode,
           func,
           previewMail,
           previewError,
-          testList,
           addAddress,
           removeAddress,
-          testAddress,
         };
       },
     }).mount('#app');

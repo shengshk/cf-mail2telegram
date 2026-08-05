@@ -16,13 +16,6 @@ cf-mail2telegram
     <a href="#english">English</a> · <a href="#中文">中文</a>
 </p>
 
-![](./doc/social_preview.png)
-
-<details>
-<summary>Demo / 演示</summary>
-<img style="max-width: 600px;" alt="demo" src="doc/example.png">
-</details>
-
 ---
 
 # English
@@ -205,15 +198,11 @@ But Telegram / Preview / Mini App follow **only one** saved host (`PUBLIC_HOST` 
 
 ## Telegram Mini Apps
 
-Black/white lists are managed via Mini Apps (`/cfmail`). Mail **Preview** defaults to Mini App (authenticated). Switch to unauthenticated **Web** with `/previewmode` (warning required).
+Black/white lists are managed in one Mini App (`/cfmail` → **Address rules**; block / white tabs). Mail **Preview** defaults to Mini App (authenticated). Switch to unauthenticated **Web** with `/previewmode` (warning required).
 
 BotFather must have both **Privacy Policy URL** and **Mini App URL** set (see [Configure Telegram](#0-configure-telegram)). Mini App URL = `https://<PUBLIC_HOST>/tma` (chat **Open** → latest cached mail; lists via `/cfmail`).
 
 > After changing `UI_LANG` or the public host, open `/init` again so bot commands stay in sync, and update Mini App URL if the host changed.
-
-| Block list | White list | List test |
-|:-----------|:-----------|:----------|
-| ![block](./doc/tma_block_list.png) | ![white](./doc/tma_white_list.png) | ![test](./doc/tma_test_address.png) |
 
 ## Usage
 
@@ -451,15 +440,11 @@ pnpm pub  # wrangler deploy --keep-vars
 
 ## Telegram 小程序
 
-黑白名单通过小程序管理（`/cfmail`）。邮件 **预览** 默认走小程序（需鉴权）。用 `/previewmode` 可切到未鉴权 **网页**（需确认风险）。
+黑白名单在一个小程序里管理（`/cfmail` → **收信地址管理**；页内 Tab 切换黑/白名单）。邮件 **预览** 默认走小程序（需鉴权）。用 `/previewmode` 可切到未鉴权 **网页**（需确认风险）。
 
 BotFather 必须同时配置 **隐私政策 URL** 与 **Mini App URL**（见 [配置 Telegram](#0-配置-telegram)）。Mini App URL = `https://<PUBLIC_HOST>/tma`（聊天里「打开」→ 最新缓存邮件；名单用 `/cfmail`）。
 
 > 修改 `UI_LANG` 或公网主机后，请重新打开 `/init` 以同步 Bot 命令；若主机变了，同步更新 Mini App URL。
-
-| 黑名单 | 白名单 | 名单测试 |
-|:-------|:-------|:---------|
-| ![block](./doc/tma_block_list.png) | ![white](./doc/tma_white_list.png) | ![test](./doc/tma_test_address.png) |
 
 ## 使用说明
 

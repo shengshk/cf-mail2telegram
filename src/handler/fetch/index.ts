@@ -230,8 +230,8 @@ function createRouter(env: Environment, ctx?: ExecutionContext): RouterType {
             req.query.tgWebAppStartParam || req.query.startapp || '',
         ).trim();
         const mode = String(req.query.mode || '').trim().toLowerCase();
-        const listFromQuery = mode === 'block' || mode === 'white' || mode === 'test'
-            ? mode as 'block' | 'white' | 'test'
+        const listFromQuery = mode === 'block' || mode === 'white'
+            ? mode as 'block' | 'white'
             : undefined;
         const listMode = parseListModeStartParam(startParam) || listFromQuery;
         if (listMode) {
@@ -263,10 +263,12 @@ function createRouter(env: Environment, ctx?: ExecutionContext): RouterType {
         });
     });
 
-    /// 名单小程序（web_app 路径传 mode，避免 query 被 Telegram 丢掉）
+    /// 收信地址管理（web_app → /tma/list；页内 Tab 切换黑/白名单）
+    router.get('/tma/list', async (): Promise<Response> => renderTmaListApp(env));
+
     router.get('/tma/list/:mode', async (req: IRequest): Promise<Response> => {
         const raw = String(req.params.mode || '').trim().toLowerCase();
-        if (raw !== 'block' && raw !== 'white' && raw !== 'test') {
+        if (raw !== 'block' && raw !== 'white') {
             throw new HTTPError(404, 'Not found');
         }
         return renderTmaListApp(env);

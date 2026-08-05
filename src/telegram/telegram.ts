@@ -224,16 +224,8 @@ function handleCfmailCommand(env: Environment, ctx?: ExecutionContext): Telegram
                 inline_keyboard: [
                     [
                         {
-                            text: t(lang, 'tmaBlockList'),
-                            web_app: { url: tmaListWebAppUrl(host, 'block') },
-                        },
-                        {
-                            text: t(lang, 'tmaWhiteList'),
-                            web_app: { url: tmaListWebAppUrl(host, 'white') },
-                        },
-                        {
-                            text: t(lang, 'tmaTestAddress'),
-                            web_app: { url: tmaListWebAppUrl(host, 'test') },
+                            text: t(lang, 'tmaAddressManage'),
+                            web_app: { url: tmaListWebAppUrl(host) },
                         },
                     ],
                 ],

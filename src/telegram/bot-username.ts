@@ -48,34 +48,35 @@ export function isMailStartParam(param: string): boolean {
     return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(param);
 }
 
-export function listModeStartParam(mode: 'block' | 'white' | 'test'): string {
+export function listModeStartParam(mode: 'block' | 'white'): string {
     return `list_${mode}`;
 }
 
-export function parseListModeStartParam(param: string): 'block' | 'white' | 'test' | undefined {
+export function parseListModeStartParam(param: string): 'block' | 'white' | undefined {
     switch (param) {
         case 'list_block':
             return 'block';
         case 'list_white':
             return 'white';
-        case 'list_test':
-            return 'test';
         default:
             return undefined;
     }
 }
 
-export function parseListModePath(pathname: string): 'block' | 'white' | 'test' | undefined {
-    const m = pathname.match(/\/tma\/list\/(block|white|test)\/?$/i);
+export function parseListModePath(pathname: string): 'block' | 'white' | undefined {
+    const m = pathname.match(/\/tma\/list(?:\/(block|white))?\/?$/i);
     if (!m) {
         return undefined;
     }
-    return m[1].toLowerCase() as 'block' | 'white' | 'test';
+    if (!m[1]) {
+        return 'block';
+    }
+    return m[1].toLowerCase() as 'block' | 'white';
 }
 
-/** web_app list manager (path survives Telegram stripping query strings). */
-export function tmaListWebAppUrl(host: string, mode: 'block' | 'white' | 'test'): string {
-    return `https://${host}/tma/list/${mode}`;
+/** web_app address manager (path survives Telegram stripping query strings). */
+export function tmaListWebAppUrl(host: string): string {
+    return `https://${host}/tma/list`;
 }
 
 export { BOT_USERNAME_KEY };

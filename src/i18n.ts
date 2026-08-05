@@ -41,7 +41,9 @@ export type I18nKey =
     | 'tmaListMode'
     | 'tmaBlockList'
     | 'tmaWhiteList'
-    | 'tmaTestAddress'
+    | 'tmaAddressManage'
+    | 'tmaManageTitle'
+    | 'tmaEmptyList'
     | 'tmaAddress'
     | 'tmaType'
     | 'tmaAction'
@@ -125,7 +127,9 @@ const en: Record<I18nKey, string> = {
     tmaListMode: 'List Mode',
     tmaBlockList: 'Block list',
     tmaWhiteList: 'White list',
-    tmaTestAddress: 'Test',
+    tmaAddressManage: 'Address rules',
+    tmaManageTitle: 'cf-mail2telegram · address rules',
+    tmaEmptyList: 'No rules yet.',
     tmaAddress: 'address',
     tmaType: 'type',
     tmaAction: 'action',
@@ -210,7 +214,9 @@ const zh: Record<I18nKey, string> = {
     tmaListMode: '名单模式',
     tmaBlockList: '黑名单',
     tmaWhiteList: '白名单',
-    tmaTestAddress: '测试',
+    tmaAddressManage: '收信地址管理',
+    tmaManageTitle: 'cf-mail2telegram · 收信地址管理',
+    tmaEmptyList: '暂无规则',
     tmaAddress: '地址',
     tmaType: '类型',
     tmaAction: '操作',
@@ -295,7 +301,9 @@ const tw: Record<I18nKey, string> = {
     tmaListMode: '名單模式',
     tmaBlockList: '黑名單',
     tmaWhiteList: '白名單',
-    tmaTestAddress: '測試',
+    tmaAddressManage: '收信地址管理',
+    tmaManageTitle: 'cf-mail2telegram · 收信地址管理',
+    tmaEmptyList: '暫無規則',
     tmaAddress: '地址',
     tmaType: '類型',
     tmaAction: '操作',
@@ -370,25 +378,14 @@ export function t(lang: UiLang, key: I18nKey): string {
 /** Strings injected into tma.html */
 export function tmaI18nPayload(lang: UiLang): Record<string, string> {
     return {
-        listMode: t(lang, 'tmaListMode'),
+        manageTitle: t(lang, 'tmaManageTitle'),
         blockList: t(lang, 'tmaBlockList'),
         whiteList: t(lang, 'tmaWhiteList'),
-        testAddress: t(lang, 'tmaTestAddress'),
-        address: t(lang, 'tmaAddress'),
-        type: t(lang, 'tmaType'),
-        action: t(lang, 'tmaAction'),
         add: t(lang, 'tmaAdd'),
         delete: t(lang, 'tmaDelete'),
-        test: t(lang, 'tmaTestAddress'),
+        emptyList: t(lang, 'tmaEmptyList'),
         placeholderBlock: t(lang, 'tmaPlaceholderBlock'),
         placeholderWhite: t(lang, 'tmaPlaceholderWhite'),
-        placeholderTest: t(lang, 'tmaPlaceholderTest'),
-        sendMail: t(lang, 'tmaSendMail'),
-        from: t(lang, 'tmaFrom'),
-        to: t(lang, 'tmaTo'),
-        subject: t(lang, 'tmaSubject'),
-        text: t(lang, 'tmaText'),
-        send: t(lang, 'tmaSend'),
         previewTitle: t(lang, 'previewTitle'),
         previewFrom: t(lang, 'previewFrom'),
         previewTo: t(lang, 'previewTo'),
