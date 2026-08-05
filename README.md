@@ -217,7 +217,7 @@ BotFather must have both **Privacy Policy URL** and **Mini App URL** set (see [C
 
 ## Usage
 
-Send `/test` in a private chat (must match `TELEGRAM_BOT` chat id). Rate limit: **one per 10 seconds**. Fake mail uses fixed `from@test.mail` / `to@test.mail`, simulates **backed up** (Mailbox → `FORWARD_MAIL`), runs real OTP extract, and shows Preview / Mailbox. Does **not** call Email Routing forward. No “test sent” ack message. User `/test`, `/cfmail`, and `/previewmode` messages are deleted after **60s** (retry up to 3× every 60s on failure).
+Send `/test` in a private chat (must match `TELEGRAM_BOT` chat id). Rate limit: **one per 10 seconds**. Fake mail uses fixed `from@test.mail` / `to@test.mail`, simulates **backed up** (Mailbox → `FORWARD_MAIL`), runs real OTP extract, and shows Preview / Mailbox. Does **not** call Email Routing forward. No “test sent” ack message. **Only mail cards stay** in chat: user commands (`/test`, `/cfmail`, `/previewmode`, …) and bot config/error/status replies are deleted after **60s** (retry up to 3× every 60s on failure).
 
 `/previewmode` — switch the single **Preview** button between Mini App (default) and Web. Switching to Web shows a risk warning (Yes/No). Only **new** mail messages pick up the change.
 
@@ -234,14 +234,16 @@ Time
 ### Email preview
 
 1. **Preview** (one button) — mode from `/previewmode`:
-   - **Mini App** (default): `https://t.me/<bot>?startapp=<mailId>` (Main Mini App URL must be `https://<host>/tma`). TMA auth.
+   - **Mini App** (default): Telegram `web_app` button → `https://<host>/tma/email/<mailId>` (no `t.me?startapp` confirm each tap). Main Mini App URL must still be `https://<host>/tma`.
    - **Web**: `/email/<id>` —
      - with `WEB_USER`: requires login page (no link TTL);
      - without `WEB_USER`: `/email/<id>?t=<token>`, unauthenticated token expires in **1 day** (live countdown).
+     Opening Web Preview from the chat button still shows Telegram’s own “open link?” confirm (cannot disable).
      Mail body stays up to **100** caches; Mini App can still open while cached.
+   Preview HTML auto-linkifies bare `http(s)://` URLs in the body.
 2. **Mailbox** — jump to webmail per [Mailbox button rules](#mailbox-button-rules).
 
-BotFather: **Mini App URL** = `https://<PUBLIC_HOST>/tma`, **Privacy Policy URL** = `https://telegram.org/privacy-tpa` (see [Configure Telegram](#0-configure-telegram)). Re-open `/init` after deploy so the bot username is cached for Preview links.
+BotFather: **Mini App URL** = `https://<PUBLIC_HOST>/tma`, **Privacy Policy URL** = `https://telegram.org/privacy-tpa` (see [Configure Telegram](#0-configure-telegram)). Re-open `/init` after deploy (webhook + commands; also caches bot username for `/cfmail` deep links).
 
 ### Security and cache
 
@@ -461,7 +463,7 @@ BotFather 必须同时配置 **隐私政策 URL** 与 **Mini App URL**（见 [�
 
 ## 使用说明
 
-向 Bot 发送 `/test`（须为 `TELEGRAM_BOT` 中的 chat id）。频率限制：**10 秒一封**。假信固定 `from@test.mail` / `to@test.mail`，模拟**已备份**（「邮箱」→ `FORWARD_MAIL`），真走抽码，显示预览 / 邮箱；**不会**真实 Email Routing 备份。不发「测试已发送」确认。用户 `/test`、`/cfmail`、`/previewmode` 在 **60 秒**后删除（失败则每隔 60 秒重试，最多 3 次）。
+向 Bot 发送 `/test`（须为 `TELEGRAM_BOT` 中的 chat id）。频率限制：**10 秒一封**。假信固定 `from@test.mail` / `to@test.mail`，模拟**已备份**（「邮箱」→ `FORWARD_MAIL`），真走抽码，显示预览 / 邮箱；**不会**真实 Email Routing 备份。不发「测试已发送」确认。**对话里只保留邮件卡片**：用户命令（`/test`、`/cfmail`、`/previewmode` 等）以及 Bot 的配置/错误/状态回复均在 **60 秒**后删除（失败则每隔 60 秒重试，最多 3 次）。
 
 `/previewmode` — 切换唯一的「预览」按钮：小程序（默认）或网页。切到网页会弹出风险确认（是/否）。**仅影响之后的新邮件**。
 
@@ -478,14 +480,16 @@ BotFather 必须同时配置 **隐私政策 URL** 与 **Mini App URL**（见 [�
 ### 邮件预览
 
 1. **预览**（单个按钮）— 由 `/previewmode` 决定：
-   - **小程序**（默认）：`https://t.me/<bot>?startapp=<mailId>`（主小程序须为 `https://<host>/tma`），TMA 鉴权。
+   - **小程序**（默认）：Telegram `web_app` 按钮 → `https://<host>/tma/email/<mailId>`（避免每次 `t.me?startapp` 确认）。主小程序 URL 仍须为 `https://<host>/tma`。
    - **网页**：`/email/<id>` —
      - 已配置 `WEB_USER`：需登录页（链接不过期）；
      - 未配置：`/email/<id>?t=<token>`，未鉴权 token **1 天**失效（页顶倒计时）。
+     聊天里点「预览」进网页时，Telegram 仍会弹「是否打开链接」（无法关闭）。
      正文最多保留 **100** 封；缓存期内仍可用小程序打开。
+   预览正文会把裸 `http(s)://` 网址自动变成可点击链接。
 2. **邮箱**：按 [「邮箱」按钮规则](#邮箱按钮规则) 跳转网页邮箱。
 
-BotFather：**Mini App URL** = `https://<PUBLIC_HOST>/tma`，**隐私政策 URL** = `https://telegram.org/privacy-tpa`（见 [配置 Telegram](#0-配置-telegram)）。部署后重新打开一次 `/init`，以缓存 bot username 供预览链接使用。
+BotFather：**Mini App URL** = `https://<PUBLIC_HOST>/tma`，**隐私政策 URL** = `https://telegram.org/privacy-tpa`（见 [配置 Telegram](#0-配置-telegram)）。部署后重新打开一次 `/init`（webhook / 命令；并缓存 bot username 供 `/cfmail` 深链）。
 
 ### 安全与邮件缓存
 

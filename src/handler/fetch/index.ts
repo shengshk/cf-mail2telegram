@@ -210,7 +210,7 @@ function createRouter(env: Environment, ctx?: ExecutionContext): RouterType {
         };
     });
 
-    /// Telegram Mini Apps：名单 + 预览（预览靠 start_param / tgWebAppStartParam，见 tma.html）
+    /// Telegram Mini Apps：名单 + 预览（预览按钮用 web_app → /tma/email/:id，避免 startapp 确认框）
     router.get('/tma', async (req: IRequest): Promise<Response> => {
         const startParam = String(
             req.query.tgWebAppStartParam || req.query.startapp || '',
@@ -240,7 +240,7 @@ function createRouter(env: Environment, ctx?: ExecutionContext): RouterType {
         });
     });
 
-    /// Alias：路径可能被客户端丢掉；优先用 t.me?startapp=
+    /// 邮件预览 Mini App（web_app 按钮直达；路径保留 id，避免 query 被客户端丢掉）
     router.get('/tma/email/:id', async (req: IRequest): Promise<Response> => {
         const id = req.params.id;
         const html = renderPreviewMiniAppShell(id, env);

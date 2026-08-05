@@ -27,6 +27,7 @@ line-height:1.35;word-break:break-word}
 .meta{color:#6b7280;font-size:.8125rem;line-height:1.65;margin:0}
 .mail-canvas{background:#fff;color:#111;padding:1.5rem;overflow-x:auto}
 .mail-canvas img{max-width:100%;height:auto}
+.mail-canvas a{color:#2563eb;text-decoration:underline;word-break:break-all}
 `.trim();
 
 function escapeHtml(s: string): string {
@@ -38,7 +39,59 @@ function escapeHtml(s: string): string {
         .replace(/'/g, '&#39;');
 }
 
-/** 轻量消毒：去掉危险标签/事件，保留原排版与颜色 */
+const BARE_URL_RE = /https?:\/\/[^\s<>"'`]+/gi;
+
+function splitUrlTrail(raw: string): { url: string; trail: string } {
+    const url = raw.replace(/[),.;:!?]+$/g, '');
+    return { url, trail: raw.slice(url.length) };
+}
+
+/** Escape plain text and wrap bare http(s) URLs as anchors */
+export function linkifyAndEscapeText(text: string): string {
+    let out = '';
+    let last = 0;
+    BARE_URL_RE.lastIndex = 0;
+    let m: RegExpExecArray | null;
+    while ((m = BARE_URL_RE.exec(text))) {
+        out += escapeHtml(text.slice(last, m.index));
+        const { url, trail } = splitUrlTrail(m[0]);
+        if (url) {
+            const href = escapeHtml(url);
+            out += `<a href="${href}" rel="noopener noreferrer" target="_blank">${href}</a>${escapeHtml(trail)}`;
+        } else {
+            out += escapeHtml(m[0]);
+        }
+        last = m.index + m[0].length;
+    }
+    out += escapeHtml(text.slice(last));
+    return out;
+}
+
+/** Wrap bare URLs in HTML text nodes (skip existing <a>…</a>) */
+function linkifyHtmlDocument(html: string): string {
+    return html.split(/(<a\b[^>]*>[\s\S]*?<\/a>)/gi).map((part) => {
+        if (/^<a\b/i.test(part)) {
+            return part;
+        }
+        return part.replace(/(<[^>]+>)|([^<]+)/g, (chunk, tag: string | undefined, text: string | undefined) => {
+            if (tag) {
+                return tag;
+            }
+            const raw = text || '';
+            BARE_URL_RE.lastIndex = 0;
+            return raw.replace(BARE_URL_RE, (match) => {
+                const { url, trail } = splitUrlTrail(match);
+                if (!url) {
+                    return match;
+                }
+                const href = url.replace(/"/g, '&quot;');
+                return `<a href="${href}" rel="noopener noreferrer" target="_blank">${url}</a>${trail}`;
+            });
+        });
+    }).join('');
+}
+
+/** 轻量消毒：去掉危险标签/事件，保留原排版与颜色；正文裸 URL 可点 */
 export function sanitizeHtmlForPreview(rawHtml: string, maxLength = 200000): string {
     let html = rawHtml
         .replace(/<(script|iframe|object|embed|form|meta|link|base|style)\b[^>]*>[\s\S]*?<\/\1>/gi, '')
@@ -52,6 +105,7 @@ export function sanitizeHtmlForPreview(rawHtml: string, maxLength = 200000): str
             }
             return `<img referrerpolicy="no-referrer"${attrs}>`;
         });
+    html = linkifyHtmlDocument(html);
     if (html.length > maxLength) {
         html = `${html.slice(0, maxLength)}…`;
     }
@@ -62,7 +116,7 @@ export function buildPreviewBodyHtml(mail: EmailCache): string {
     if (mail.html?.trim()) {
         return sanitizeHtmlForPreview(mail.html);
     }
-    return `<pre style="white-space:pre-wrap;margin:0">${escapeHtml(mail.text || '')}</pre>`;
+    return `<pre style="white-space:pre-wrap;margin:0">${linkifyAndEscapeText(mail.text || '')}</pre>`;
 }
 
 export interface WebPreviewBarOptions {

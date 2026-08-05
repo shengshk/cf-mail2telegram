@@ -3,11 +3,10 @@ import type { EmailCache, Environment } from '../types';
 import type { ExtractResult } from './extract';
 import { resolveUiLang, t } from '../i18n';
 import { loadPublicHost } from '../public-host';
-import { loadBotUsername, miniAppStartLink } from '../telegram/bot-username';
+import { buildKeyboard, mailboxButtonUrl, type InlineBtn } from './mailbox';
+import { loadPreviewMode, type PreviewMode } from './preview-mode';
 import { webPreviewUrl } from './cache-policy';
 import { truncateDisplay } from './extract';
-import { buildKeyboard, mailboxButtonUrl } from './mailbox';
-import { loadPreviewMode, type PreviewMode } from './preview-mode';
 import { isWebAuthEnabled } from '../web-auth';
 
 export interface EmailDetailParams {
@@ -30,23 +29,28 @@ function isDebug(env: Environment): boolean {
     return (env.DEBUG || '').toLowerCase() === 'true';
 }
 
-async function resolvePreviewUrl(
+/** Mini App preview via web_app path (avoids t.me?startapp confirm every tap). */
+export function miniAppPreviewWebAppUrl(host: string, mailId: string): string {
+    return `https://${host}/tma/email/${encodeURIComponent(mailId)}`;
+}
+
+async function resolvePreviewButton(
     mail: EmailCache,
     env: Environment,
     mode: PreviewMode,
     host: string | undefined,
-): Promise<string | undefined> {
+    lang: ReturnType<typeof resolveUiLang>,
+): Promise<InlineBtn | undefined> {
     const hasBody = !!(mail.html || mail.text);
-    if (!hasBody) {
+    if (!hasBody || !host) {
         return undefined;
     }
+    const label = t(lang, 'previewBtn');
     if (mode === 'web') {
-        return host
-            ? webPreviewUrl(host, mail, { authEnabled: isWebAuthEnabled(env) })
-            : undefined;
+        const url = webPreviewUrl(host, mail, { authEnabled: isWebAuthEnabled(env) });
+        return url ? { text: label, url } : undefined;
     }
-    const botUsername = await loadBotUsername(env);
-    return botUsername ? miniAppStartLink(botUsername, mail.id) : undefined;
+    return { text: label, web_app: { url: miniAppPreviewWebAppUrl(host, mail.id) } };
 }
 
 /** OTP AI bold / local italic; DEBUG shows fallback reason */
@@ -84,9 +88,9 @@ export async function renderEmailListMode(
     const mode = opts?.chatId
         ? await loadPreviewMode(env, opts.chatId)
         : 'miniapp';
-    const previewUrl = await resolvePreviewUrl(mail, env, mode, host);
+    const previewBtn = await resolvePreviewButton(mail, env, mode, host, lang);
     const mailboxUrl = mailboxButtonUrl(mail, env);
-    const reply_markup = buildKeyboard(previewUrl, mailboxUrl, lang) as Telegram.InlineKeyboardMarkup | undefined;
+    const reply_markup = buildKeyboard(previewBtn, mailboxUrl, lang) as Telegram.InlineKeyboardMarkup | undefined;
 
     return {
         text: lines.join('\n'),

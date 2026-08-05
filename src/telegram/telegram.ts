@@ -66,14 +66,36 @@ async function sleepMs(ms: number): Promise<void> {
     await new Promise(resolve => setTimeout(resolve, ms));
 }
 
-/** 首次等 60s，失败再隔 60s，最多 3 次，失败放弃 */
-async function deleteUserCommandWithRetry(
+/** Ephemeral TG messages (commands / config / errors): wait 60s, retry every 60s ×3, then give up. Mail cards are never scheduled. */
+async function deleteMessageWithRetry(
     token: string,
     chatId: number,
     messageId: number,
+    env?: Environment,
 ): Promise<void> {
     const api = createTelegramBotAPI(token);
-    await sleepMs(CMD_DELETE_WAIT_MS);
+    const deadlineKey = `EPHEMERAL_DEL:${chatId}:${messageId}`;
+    const waitUntilDeadline = async () => {
+        for (;;) {
+            let deadline = Date.now() + CMD_DELETE_WAIT_MS;
+            if (env?.DB) {
+                const raw = await env.DB.get(deadlineKey);
+                const n = raw ? Number(raw) : NaN;
+                if (Number.isFinite(n) && n > 0) {
+                    deadline = n;
+                }
+            }
+            const wait = Math.max(0, deadline - Date.now());
+            if (wait <= 0) {
+                return;
+            }
+            await sleepMs(Math.min(wait, CMD_DELETE_WAIT_MS));
+            if (Date.now() >= deadline) {
+                return;
+            }
+        }
+    };
+    await waitUntilDeadline();
     for (let attempt = 1; attempt <= CMD_DELETE_ATTEMPTS; attempt++) {
         try {
             const response = await api.deleteMessage({
@@ -81,33 +103,74 @@ async function deleteUserCommandWithRetry(
                 message_id: messageId,
             });
             if (response.ok) {
-                logTelegram('cmd.delete.ok', { chatId, messageId, attempt });
+                logTelegram('ephemeral.delete.ok', { chatId, messageId, attempt });
+                if (env?.DB) {
+                    try {
+                        await env.DB.delete(deadlineKey);
+                    } catch { /* ignore */ }
+                }
                 return;
             }
             await logTelegramResponse('deleteMessage', response);
-            logTelegram('cmd.delete.fail', { chatId, messageId, attempt, status: response.status });
+            logTelegram('ephemeral.delete.fail', { chatId, messageId, attempt, status: response.status });
         } catch (e) {
-            logTelegramError('cmd.delete.error', e, { chatId, messageId, attempt });
+            logTelegramError('ephemeral.delete.error', e, { chatId, messageId, attempt });
         }
         if (attempt < CMD_DELETE_ATTEMPTS) {
             await sleepMs(CMD_DELETE_WAIT_MS);
         }
     }
-    logTelegram('cmd.delete.give_up', { chatId, messageId });
+    logTelegram('ephemeral.delete.give_up', { chatId, messageId });
 }
 
-function scheduleDeleteUserCommand(
+function scheduleDeleteMessage(
     ctx: ExecutionContext | undefined,
     token: string,
     chatId: number,
-    messageId: number,
+    messageId: number | undefined | null,
+    env?: Environment,
 ): void {
-    const task = deleteUserCommandWithRetry(token, chatId, messageId);
+    if (messageId == null || !Number.isFinite(messageId)) {
+        return;
+    }
+    const deadline = Date.now() + CMD_DELETE_WAIT_MS;
+    const task = (async () => {
+        if (env?.DB) {
+            try {
+                await env.DB.put(`EPHEMERAL_DEL:${chatId}:${messageId}`, String(deadline), {
+                    expirationTtl: Math.ceil((CMD_DELETE_WAIT_MS * (CMD_DELETE_ATTEMPTS + 1)) / 1000) + 60,
+                });
+            } catch (e) {
+                logTelegramError('ephemeral.deadline.put', e, { chatId, messageId });
+            }
+        }
+        await deleteMessageWithRetry(token, chatId, messageId, env);
+    })();
     if (ctx?.waitUntil) {
         ctx.waitUntil(task);
     } else {
         void task;
     }
+}
+
+async function sentMessageId(response: Response): Promise<number | undefined> {
+    try {
+        const data = await response.clone().json() as { ok?: boolean; result?: { message_id?: number } };
+        const id = data?.result?.message_id;
+        return typeof id === 'number' ? id : undefined;
+    } catch {
+        return undefined;
+    }
+}
+
+async function scheduleDeleteSent(
+    ctx: ExecutionContext | undefined,
+    token: string,
+    chatId: number,
+    response: Response,
+    env?: Environment,
+): Promise<void> {
+    scheduleDeleteMessage(ctx, token, chatId, await sentMessageId(response), env);
 }
 
 function handlePreviewModeCommand(env: Environment, ctx?: ExecutionContext): TelegramMessageHandler {
@@ -133,7 +196,8 @@ function handlePreviewModeCommand(env: Environment, ctx?: ExecutionContext): Tel
             },
             disable_web_page_preview: true,
         } as Telegram.SendMessageParams);
-        scheduleDeleteUserCommand(ctx, token, msg.chat.id, msg.message_id);
+        scheduleDeleteMessage(ctx, token, msg.chat.id, msg.message_id, env);
+        await scheduleDeleteSent(ctx, token, msg.chat.id, response, env);
         return response;
     };
 }
@@ -199,7 +263,8 @@ function handleCfmailCommand(env: Environment, ctx?: ExecutionContext): Telegram
         }
 
         const response = await createTelegramBotAPI(token).sendMessage(params);
-        scheduleDeleteUserCommand(ctx, token, msg.chat.id, msg.message_id);
+        scheduleDeleteMessage(ctx, token, msg.chat.id, msg.message_id, env);
+        await scheduleDeleteSent(ctx, token, msg.chat.id, response, env);
         return response;
     };
 }
@@ -211,14 +276,18 @@ function handleTestCommand(env: Environment, ctx?: ExecutionContext): TelegramMe
         const lang = resolveUiLang(env);
         const chatId = msg.chat.id;
         const fromId = msg.from?.id;
-        const reply = async (text: string) => api.sendMessage({
-            chat_id: chatId,
-            text,
-            reply_parameters: { message_id: msg.message_id },
-        });
+        const reply = async (text: string) => {
+            const response = await api.sendMessage({
+                chat_id: chatId,
+                text,
+                reply_parameters: { message_id: msg.message_id },
+            });
+            await scheduleDeleteSent(ctx, token, chatId, response, env);
+            return response;
+        };
 
         const finish = async (response: Response) => {
-            scheduleDeleteUserCommand(ctx, token, chatId, msg.message_id);
+            scheduleDeleteMessage(ctx, token, chatId, msg.message_id, env);
             return response;
         };
 
@@ -239,8 +308,8 @@ function handleTestCommand(env: Environment, ctx?: ExecutionContext): TelegramMe
         try {
             logTelegram('test.run', { chatId, fromId });
             await runFakeMailUiTest(env);
-            // 不发「测试邮件已发送」确认；仅删除用户 /test
-            scheduleDeleteUserCommand(ctx, token, chatId, msg.message_id);
+            // Keep mail card; only delete user /test
+            scheduleDeleteMessage(ctx, token, chatId, msg.message_id, env);
             return new Response('ok');
         } catch (e) {
             logTelegramError('test.error', e, { chatId, fromId });
@@ -249,7 +318,11 @@ function handleTestCommand(env: Environment, ctx?: ExecutionContext): TelegramMe
     };
 }
 
-async function handleReplyEmailCommand(message: Telegram.Message, env: Environment): Promise<void> {
+async function handleReplyEmailCommand(
+    message: Telegram.Message,
+    env: Environment,
+    ctx?: ExecutionContext,
+): Promise<void> {
     const { token } = requireTelegram(env);
     const {
         RESEND_API_KEY,
@@ -257,49 +330,52 @@ async function handleReplyEmailCommand(message: Telegram.Message, env: Environme
     } = env;
     const dao = new Dao(DB);
     const api = createTelegramBotAPI(token);
+    const chatId = message.chat.id;
+    scheduleDeleteMessage(ctx, token, chatId, message.message_id, env);
     const reply = async (text: string) => {
-        await api.sendMessage({
-            chat_id: message.chat.id,
+        const response = await api.sendMessage({
+            chat_id: chatId,
             reply_parameters: {
                 message_id: message.message_id,
             },
             text,
         });
+        await scheduleDeleteSent(ctx, token, chatId, response, env);
     };
     if (!RESEND_API_KEY) {
-        logTelegram('reply_email.disabled', { chatId: message.chat.id, messageId: message.message_id });
+        logTelegram('reply_email.disabled', { chatId, messageId: message.message_id });
         await reply('Resend API is not enabled.');
         return;
     }
     if (!message.text) {
-        logTelegram('reply_email.missing_text', { chatId: message.chat.id, messageId: message.message_id });
+        logTelegram('reply_email.missing_text', { chatId, messageId: message.message_id });
         await reply('Please provide a message to resend.');
         return;
     }
     try {
         const messageID = message.reply_to_message?.message_id;
         if (!messageID) {
-            logTelegram('reply_email.missing_reply', { chatId: message.chat.id, messageId: message.message_id });
+            logTelegram('reply_email.missing_reply', { chatId, messageId: message.message_id });
             await reply('Please reply to a message to resend.');
             return;
         }
         const mailID = await dao.telegramIDToMailID(`${messageID}`);
         if (!mailID) {
-            logTelegram('reply_email.mail_id_not_found', { chatId: message.chat.id, messageId: message.message_id, replyMessageId: messageID });
+            logTelegram('reply_email.mail_id_not_found', { chatId, messageId: message.message_id, replyMessageId: messageID });
             await reply('Message not found.');
             return;
         }
         const mail = await dao.loadMailCache(mailID);
         if (!mail) {
-            logTelegram('reply_email.mail_not_found', { chatId: message.chat.id, messageId: message.message_id, mailId: mailID });
+            logTelegram('reply_email.mail_not_found', { chatId, messageId: message.message_id, mailId: mailID });
             await reply('Message not found or expired.');
             return;
         }
-        logTelegram('reply_email.send', { chatId: message.chat.id, messageId: message.message_id, mailId: mailID });
+        logTelegram('reply_email.send', { chatId, messageId: message.message_id, mailId: mailID });
         await replyToEmail(RESEND_API_KEY, mail, message.text);
         await reply('Reply sent successfully.');
     } catch (e) {
-        logTelegramError('reply_email.error', e, { chatId: message.chat.id, messageId: message.message_id });
+        logTelegramError('reply_email.error', e, { chatId, messageId: message.message_id });
         await reply((e as Error).message);
     }
 }
@@ -317,7 +393,7 @@ async function telegramCommandHandler(
         isReply: !!message?.reply_to_message,
     });
     if (message?.reply_to_message) {
-        await handleReplyEmailCommand(message, env);
+        await handleReplyEmailCommand(message, env, ctx);
         return;
     }
     let [command] = message.text?.split(/ (.*)/) || [''];
@@ -346,7 +422,11 @@ async function telegramCommandHandler(
     await cfmail(message);
 }
 
-async function telegramCallbackHandler(callback: Telegram.CallbackQuery, env: Environment): Promise<void> {
+async function telegramCallbackHandler(
+    callback: Telegram.CallbackQuery,
+    env: Environment,
+    ctx?: ExecutionContext,
+): Promise<void> {
     const { token } = requireTelegram(env);
     const { DB } = env;
 
@@ -448,16 +528,19 @@ async function telegramCallbackHandler(callback: Telegram.CallbackQuery, env: En
             if (arg === 'mini') {
                 if (current === 'miniapp') {
                     await answer(fill(t(lang, 'previewModeAlready'), { mode: modeLabel(lang, 'miniapp') }));
+                    scheduleDeleteMessage(ctx, token, chatId, messageId, env);
                     return;
                 }
                 await savePreviewMode(env, chatKey, 'miniapp');
                 await edit(fill(t(lang, 'previewModeSetOk'), { mode: modeLabel(lang, 'miniapp') }));
                 await answer();
+                scheduleDeleteMessage(ctx, token, chatId, messageId, env);
                 return;
             }
             if (arg === 'webwarn') {
                 if (current === 'web') {
                     await answer(fill(t(lang, 'previewModeAlready'), { mode: modeLabel(lang, 'web') }));
+                    scheduleDeleteMessage(ctx, token, chatId, messageId, env);
                     return;
                 }
                 await edit(t(lang, isWebAuthEnabled(env) ? 'previewModeWarnAuth' : 'previewModeWarnOpen'), {
@@ -467,20 +550,25 @@ async function telegramCallbackHandler(callback: Telegram.CallbackQuery, env: En
                     ]],
                 });
                 await answer();
+                // Bump 60s so Yes/No stays readable; final set/cancel bumps again
+                scheduleDeleteMessage(ctx, token, chatId, messageId, env);
                 return;
             }
             if (arg === 'web') {
                 await savePreviewMode(env, chatKey, 'web');
                 await edit(fill(t(lang, 'previewModeSetOk'), { mode: modeLabel(lang, 'web') }));
                 await answer();
+                scheduleDeleteMessage(ctx, token, chatId, messageId, env);
                 return;
             }
             if (arg === 'cancel') {
                 await edit(t(lang, 'previewModeCancel'));
                 await answer();
+                scheduleDeleteMessage(ctx, token, chatId, messageId, env);
                 return;
             }
             await answer();
+            scheduleDeleteMessage(ctx, token, chatId, messageId, env);
         } catch (e) {
             logTelegramError('callback.previewmode.error', e, { data, chatId, messageId });
             const response = await api.answerCallbackQuery({
@@ -489,6 +577,7 @@ async function telegramCallbackHandler(callback: Telegram.CallbackQuery, env: En
                 show_alert: true,
             });
             await logTelegramResponse('answerCallbackQuery', response);
+            scheduleDeleteMessage(ctx, token, chatId, messageId, env);
         }
         return;
     }
@@ -528,7 +617,7 @@ export async function telegramWebhookHandler(
         return;
     }
     if (body?.callback_query) {
-        await telegramCallbackHandler(body?.callback_query, env);
+        await telegramCallbackHandler(body?.callback_query, env, ctx);
         return;
     }
     logTelegram('webhook.unhandled_update', { updateId: body?.update_id, keys: body ? Object.keys(body) : [] });
