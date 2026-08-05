@@ -1,5 +1,5 @@
-import type { EmailCache, Environment } from '../types';
 import type { UiLang } from '../i18n';
+import type { EmailCache, Environment } from '../types';
 import { t } from '../i18n';
 import { emailDomain, getForwardTarget } from './forward';
 
@@ -100,12 +100,13 @@ export function mailboxButtonUrl(mail: EmailCache, env: Environment): string | u
     return providerHomeUrl(original, env);
 }
 
-export type InlineBtn =
-    | { text: string; url: string }
-    | { text: string; web_app: { url: string } };
+export type InlineBtn
+    = | { text: string; url: string }
+        | { text: string; web_app: { url: string } };
 
 /**
- * Buttons: Preview (Mini App) · Web (browser) · Mailbox
+ * Buttons: Preview (Mini App via t.me?startapp=) · Web (browser) · Mailbox
+ * Preview must be `url` (deep link), not `web_app` — clients drop web_app query/path.
  */
 export function buildKeyboard(
     previewAppUrl: string | undefined,
@@ -115,7 +116,7 @@ export function buildKeyboard(
 ): { inline_keyboard: InlineBtn[][] } | undefined {
     const row: InlineBtn[] = [];
     if (previewAppUrl) {
-        row.push({ text: t(lang, 'previewBtn'), web_app: { url: previewAppUrl } });
+        row.push({ text: t(lang, 'previewBtn'), url: previewAppUrl });
     }
     if (webUrl) {
         row.push({ text: t(lang, 'webBtn'), url: webUrl });

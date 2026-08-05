@@ -5,11 +5,12 @@ import { validate } from '@tma.js/init-data-node/web';
 import { json, Router } from 'itty-router';
 import { Dao } from '../../db';
 import { requireTelegram } from '../../env';
-import { resolveUiLang, htmlLang, t, tmaI18nPayload } from '../../i18n';
+import { htmlLang, resolveUiLang, t, tmaI18nPayload } from '../../i18n';
 import { buildPreviewBodyHtml, renderPreviewMiniAppShell, renderPreviewPage, sanitizeHtmlForPreview } from '../../mail/preview';
 import { publicHostFromRequest, savePublicHost } from '../../public-host';
-import { createTelegramBotAPI, telegramCommands, telegramWebhookHandler, tmaHTML } from '../../telegram';
 import statusHtml from '../../status.html';
+import { createTelegramBotAPI, telegramCommands, telegramWebhookHandler, tmaHTML } from '../../telegram';
+import { isMailStartParam, saveBotUsername } from '../../telegram/bot-username';
 
 class HTTPError extends Error {
     readonly status: number;
@@ -102,6 +103,15 @@ function createRouter(env: Environment, ctx?: ExecutionContext): RouterType {
         const savedHost = await savePublicHost(dao, host);
         const api = createTelegramBotAPI(TELEGRAM_TOKEN);
         const lang = resolveUiLang(env);
+        let botUsername: string | undefined;
+        try {
+            const me = await api.getMeWithReturns({});
+            if (me.ok && me.result?.username) {
+                botUsername = await saveBotUsername(dao, me.result.username);
+            }
+        } catch (e) {
+            console.error('[init] getMe failed', e);
+        }
         const webhook = await api.setWebhook({
             url: `https://${savedHost}/telegram/${TELEGRAM_TOKEN}/webhook`,
         });
@@ -110,16 +120,21 @@ function createRouter(env: Environment, ctx?: ExecutionContext): RouterType {
         });
         return {
             host: savedHost,
+            botUsername: botUsername || null,
             webhook: await webhook.json(),
             commands: await commands.json(),
         };
     });
 
-    /// Telegram Mini Apps（预览与名单共用 /tma，避免客户端丢掉子路径）
+    /// Telegram Mini Apps：名单 + 预览（预览靠 start_param / tgWebAppStartParam，见 tma.html）
     router.get('/tma', async (req: IRequest): Promise<Response> => {
+        const startParam = String(
+            req.query.tgWebAppStartParam || req.query.startapp || '',
+        ).trim();
         const mode = String(req.query.mode || '');
-        const previewId = String(req.query.id || '').trim();
-        if (mode === 'preview' && previewId) {
+        const previewId = String(req.query.id || '').trim()
+            || (isMailStartParam(startParam) ? startParam : '');
+        if ((mode === 'preview' || isMailStartParam(startParam)) && previewId) {
             const html = renderPreviewMiniAppShell(previewId, env);
             return new Response(html, {
                 headers: {
@@ -136,11 +151,12 @@ function createRouter(env: Environment, ctx?: ExecutionContext): RouterType {
         return new Response(html, {
             headers: {
                 'content-type': 'text/html; charset=utf-8',
+                'Referrer-Policy': 'no-referrer',
             },
         });
     });
 
-    /// Alias（旧链接）；优先用 /tma?mode=preview&id=
+    /// Alias：路径可能被客户端丢掉；优先用 t.me?startapp=
     router.get('/tma/email/:id', async (req: IRequest): Promise<Response> => {
         const id = req.params.id;
         const html = renderPreviewMiniAppShell(id, env);

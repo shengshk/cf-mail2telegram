@@ -201,9 +201,11 @@ Time
 
 ### Email preview
 
-1. **Preview** — Telegram Mini App (`/tma?mode=preview&id=`). Same light reading UI; content loads after TMA auth (your `TELEGRAM_BOT` chat id).
+1. **Preview** — Mini App via `https://t.me/<bot>?startapp=<mailId>` (Main Mini App URL must be `https://<host>/tma`). TMA auth required. Do not use `web_app` query URLs — clients drop them and show the list UI.
 2. **Web** — open the same preview page in a browser (`/email/<id>`). Kept for convenience; link is still guessable while cached.
 3. **Mailbox** — jump to webmail per [Mailbox button rules](#mailbox-button-rules).
+
+BotFather: enable **Main Mini App** → `https://<PUBLIC_HOST>/tma`. Re-open `/init` after deploy so the bot username is cached for Preview links.
 
 ### Security and cache
 
@@ -408,9 +410,11 @@ pnpm pub  # wrangler deploy --keep-vars
 
 当邮件转发通知到 Telegram 时，展示验证码（如有）、发件人、收件人、时间，以及按钮：
 
-1. **预览**：Telegram 小程序（`/tma?mode=preview&id=`）。样式与现网页预览相同；需 TMA 鉴权（匹配 `TELEGRAM_BOT` 的 chat id）后加载正文。
+1. **预览**：通过 `https://t.me/<bot>?startapp=<mailId>` 打开主小程序（BotFather 主小程序须为 `https://<host>/tma`）。需 TMA 鉴权。不要用带 query 的 `web_app` 链接——客户端会丢掉参数并打开名单页。
 2. **网页**：浏览器打开同一预览页（`/email/<id>`）。暂时保留；缓存期内链接仍可能被直接打开。
 3. **邮箱**：按 [「邮箱」按钮规则](#邮箱按钮规则) 跳转网页邮箱。
+
+BotFather 需开启 **Main Mini App** → `https://<PUBLIC_HOST>/tma`。部署后重新打开一次 `/init`，以缓存 bot username 供预览链接使用。
 
 ### 安全与邮件缓存
 

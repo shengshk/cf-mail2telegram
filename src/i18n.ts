@@ -273,5 +273,12 @@ export function tmaI18nPayload(lang: UiLang): Record<string, string> {
         subject: t(lang, 'tmaSubject'),
         text: t(lang, 'tmaText'),
         send: t(lang, 'tmaSend'),
+        previewTitle: t(lang, 'previewTitle'),
+        previewFrom: t(lang, 'previewFrom'),
+        previewTo: t(lang, 'previewTo'),
+        previewLoading: t(lang, 'previewLoading'),
+        previewExpired: t(lang, 'previewExpired'),
+        previewDenied: t(lang, 'previewDenied'),
+        previewAuthRequired: t(lang, 'previewAuthRequired'),
     };
 }

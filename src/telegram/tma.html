@@ -4,6 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <meta name="referrer" content="no-referrer">
   <title>cf-mail2telegram</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
@@ -44,12 +45,89 @@
       max-width: 100%;
       flex-grow: 1;
     }
+
+    /* mail preview */
+    .preview {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 0 0 2rem;
+    }
+    .preview-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      padding: .35rem 0 1rem;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid #e5e7eb;
+      font-size: .8125rem;
+      color: #6b7280;
+    }
+    .preview-sheet {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, .04), 0 8px 24px rgba(15, 23, 42, .05);
+      overflow: hidden;
+    }
+    .preview-meta {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid #eceef1;
+    }
+    .preview-meta h1 {
+      margin: 0 0 .65rem;
+      font-size: 1.2rem;
+      font-weight: 650;
+      color: #111827;
+      line-height: 1.35;
+      word-break: break-word;
+    }
+    .meta {
+      color: #6b7280;
+      font-size: .8125rem;
+      line-height: 1.65;
+      margin: 0;
+    }
+    .mail-canvas {
+      background: #fff;
+      color: #111;
+      padding: 1.5rem;
+      overflow-x: auto;
+    }
+    .mail-canvas img {
+      max-width: 100%;
+      height: auto;
+    }
+    .status {
+      padding: 2.5rem 1.25rem;
+      text-align: center;
+      color: #6b7280;
+      font-size: .9375rem;
+    }
   </style>
 </head>
 
 <body>
   <div id="app">
-    <div v-if="func === 'list'">
+    <div v-if="func === 'preview'">
+      <div v-if="previewError" class="status">{{ previewError }}</div>
+      <div v-else-if="!previewMail" class="status">{{ i18n.previewLoading || 'Loading…' }}</div>
+      <div v-else class="preview">
+        <div class="preview-bar"><span>{{ i18n.previewTitle || 'Preview' }}</span></div>
+        <div class="preview-sheet">
+          <div class="preview-meta">
+            <h1>{{ previewMail.subject }}</h1>
+            <div class="meta">
+              {{ i18n.previewFrom || 'From:' }} {{ previewMail.from }}<br>
+              {{ i18n.previewTo || 'To:' }} {{ previewMail.to }}
+              <template v-if="previewMail.date"><br>{{ previewMail.date }}</template>
+            </div>
+          </div>
+          <div class="mail-canvas" v-html="previewMail.bodyHtml"></div>
+        </div>
+      </div>
+    </div>
+    <div v-else-if="func === 'list'">
       <h3 class="growContainer">
         {{ i18n.listMode }}
         <select class="growItem" style="margin-left: 10px;" v-model="mode">
@@ -91,7 +169,7 @@
               <button @click="testAddress">{{ i18n.test }}</button>
             </td>
           </tr>
-          <tr :key="index" v-for="(item, index) in addresses">
+          <tr :key="index" v-for="(item, index) in testList">
             <td>{{ item.address }}</td>
             <td>{{ item.result }}</td>
           </tr>
@@ -104,26 +182,26 @@
       <table>
         <tbody>
           <tr>
-            <td style="width: 10px;">{{ i18n.from }}</td>
-            <td>
+            <td>{{ i18n.from }}</td>
+            <td class="growContainer">
               <input v-model="sendMail.from" class="growItem">
             </td>
           </tr>
           <tr>
             <td>{{ i18n.to }}</td>
-            <td>
+            <td class="growContainer">
               <input v-model="sendMail.to" class="growItem">
             </td>
           </tr>
           <tr>
             <td>{{ i18n.subject }}</td>
-            <td>
+            <td class="growContainer">
               <input v-model="sendMail.subject" class="growItem">
             </td>
           </tr>
           <tr>
             <td>{{ i18n.text }}</td>
-            <td>
+            <td class="growContainer">
               <textarea v-model="sendMail.text" class="growItem"></textarea>
             </td>
           </tr>
@@ -141,9 +219,34 @@
     const I18N = __I18N_JSON__;
     const { createApp, computed, ref, onMounted, watch } = Vue;
 
+    function readStartParam() {
+      try {
+        const tg = window.Telegram && window.Telegram.WebApp;
+        if (tg) {
+          try { tg.ready(); } catch (e) {}
+          try { tg.expand(); } catch (e) {}
+          const fromUnsafe = tg.initDataUnsafe && tg.initDataUnsafe.start_param;
+          if (fromUnsafe) return String(fromUnsafe);
+        }
+        const q = new URLSearchParams(window.location.search);
+        return q.get('tgWebAppStartParam') || q.get('startapp') || q.get('id') || '';
+      } catch (e) {
+        return '';
+      }
+    }
+
+    function isMailId(s) {
+      return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
+    }
+
+    function listModeFromStart(s) {
+      if (s === 'list_block') return 'block';
+      if (s === 'list_white') return 'white';
+      if (s === 'list_test') return 'test';
+      return '';
+    }
 
     class Client {
-
       constructor(tma) {
         this.tma = tma;
         this.addAddress = this.addAddress.bind(this);
@@ -158,7 +261,7 @@
             'Content-Type': 'application/json',
             'Authorization': `tma ${this.tma}`,
           },
-          body: JSON.stringify(body),
+          body: body !== undefined ? JSON.stringify(body) : undefined,
         }).then(response => response.json());
         if (res.error) {
           throw new Error(res.error);
@@ -167,45 +270,65 @@
       }
 
       async addAddress(address, type) {
-        return this.request('/api/address/add', 'POST', {
-          address,
-          type,
-        });
+        return this.request('/api/address/add', 'POST', { address, type });
       }
 
       async removeAddress(address, type) {
-        return this.request('/api/address/remove', 'POST', {
-          address,
-          type,
-        });
+        return this.request('/api/address/remove', 'POST', { address, type });
       }
 
-      async loadAddress(tma) {
+      async loadAddress() {
         return this.request('/api/address/list', 'GET');
+      }
+
+      async loadEmail(id) {
+        const res = await fetch('/api/email/' + encodeURIComponent(id), {
+          headers: { 'Authorization': 'tma ' + this.tma },
+        });
+        if (res.status === 401 || res.status === 403) {
+          throw new Error(I18N.previewDenied || 'Permission denied');
+        }
+        if (res.status === 404) {
+          throw new Error(I18N.previewExpired || 'Preview not found or expired');
+        }
+        if (!res.ok) {
+          throw new Error(I18N.previewDenied || 'Permission denied');
+        }
+        return res.json();
       }
     }
 
     createApp({
       setup() {
-
         const urlParams = new URLSearchParams(window.location.search);
         const i18n = I18N;
+        const startParam = readStartParam();
+        const listMode = listModeFromStart(startParam);
 
         const blockList = ref([]);
         const whiteList = ref([]);
         const testList = ref([]);
         const tipMessage = ref('');
         const inputAddress = ref('');
+        const previewMail = ref(null);
+        const previewError = ref('');
 
         const sendMail = ref({
           from: '',
           to: '',
           subject: '',
           text: '',
-        })
+        });
 
-        const func = ref(urlParams.get('func') || 'list');
-        const mode = ref(urlParams.get('mode') || 'block');
+        const initialFunc = isMailId(startParam)
+          || (urlParams.get('mode') === 'preview' && urlParams.get('id'))
+          ? 'preview'
+          : (urlParams.get('func') || 'list');
+        const func = ref(initialFunc);
+        const mode = ref(listMode || urlParams.get('mode') || 'block');
+        const previewId = isMailId(startParam)
+          ? startParam
+          : (urlParams.get('id') || '');
         const client = new Client('');
 
         const addresses = computed(() => {
@@ -291,18 +414,12 @@
           const address = inputAddress.value.trim();
           for (const pattern of blockList.value) {
             if (testAddressWithPattern(pattern, address)) {
-              test.push({
-                address: pattern,
-                result: 'block',
-              });
+              test.push({ address: pattern, result: 'block' });
             }
           }
           for (const pattern of whiteList.value) {
             if (testAddressWithPattern(pattern, address)) {
-              test.push({
-                address: pattern,
-                result: 'white',
-              });
+              test.push({ address: pattern, result: 'white' });
             }
           }
           testList.value = test;
@@ -312,15 +429,32 @@
           inputAddress.value = '';
         });
 
-
         onMounted(async () => {
           try {
-            client.tma = window.Telegram.WebApp.initData;
+            const tg = window.Telegram && window.Telegram.WebApp;
+            client.tma = (tg && tg.initData) || '';
+            if (func.value === 'preview') {
+              if (!client.tma) {
+                previewError.value = i18n.previewAuthRequired || 'Open from Telegram';
+                return;
+              }
+              if (!previewId) {
+                previewError.value = i18n.previewExpired || 'Missing id';
+                return;
+              }
+              previewMail.value = await client.loadEmail(previewId);
+              document.title = previewMail.value.subject || (i18n.previewTitle || 'Preview');
+              return;
+            }
             const { block, white } = await client.loadAddress();
             blockList.value = block;
             whiteList.value = white;
           } catch (error) {
-            tipMessage.value = `ERROR: ` + error.message;
+            if (func.value === 'preview') {
+              previewError.value = error.message || String(error);
+            } else {
+              tipMessage.value = `ERROR: ` + error.message;
+            }
           }
         });
 
@@ -333,11 +467,13 @@
           sendMail,
           mode,
           func,
+          previewMail,
+          previewError,
+          testList,
           addAddress,
           removeAddress,
           testAddress,
         };
-
       },
     }).mount('#app');
   </script>

@@ -3,11 +3,12 @@ import type { EmailRender } from '../mail';
 import type { Environment } from '../types';
 import { Dao } from '../db';
 import { requireTelegram } from '../env';
+import { resolveUiLang, t } from '../i18n';
 import { renderEmailDebugMode, renderEmailListMode, renderEmailPreviewMode, renderEmailSummaryMode, replyToEmail } from '../mail';
 import { checkTestCommandRate, isAllowedTestUser, runFakeMailUiTest } from '../mail/test-mail';
-import { resolveUiLang, t } from '../i18n';
 import { loadPublicHost } from '../public-host';
 import { createTelegramBotAPI } from './api';
+import { listModeStartParam, loadBotUsername, miniAppStartLink } from './bot-username';
 
 type TelegramMessageHandler = (message: Telegram.Message) => Promise<Response>;
 type CommandHandlerGroup = Record<string, TelegramMessageHandler>;
@@ -118,24 +119,46 @@ function handleCfmailCommand(env: Environment, ctx?: ExecutionContext): Telegram
         } as Telegram.SendMessageParams;
 
         if (msg.chat.type === 'private' && host) {
-            params.reply_markup = {
-                inline_keyboard: [
-                    [
-                        {
-                            text: t(lang, 'tmaBlockList'),
-                            web_app: { url: `https://${host}/tma?mode=block` },
-                        },
-                        {
-                            text: t(lang, 'tmaWhiteList'),
-                            web_app: { url: `https://${host}/tma?mode=white` },
-                        },
-                        {
-                            text: t(lang, 'tmaTestAddress'),
-                            web_app: { url: `https://${host}/tma?mode=test` },
-                        },
+            const botUsername = await loadBotUsername(env);
+            if (botUsername) {
+                params.reply_markup = {
+                    inline_keyboard: [
+                        [
+                            {
+                                text: t(lang, 'tmaBlockList'),
+                                url: miniAppStartLink(botUsername, listModeStartParam('block')),
+                            },
+                            {
+                                text: t(lang, 'tmaWhiteList'),
+                                url: miniAppStartLink(botUsername, listModeStartParam('white')),
+                            },
+                            {
+                                text: t(lang, 'tmaTestAddress'),
+                                url: miniAppStartLink(botUsername, listModeStartParam('test')),
+                            },
+                        ],
                     ],
-                ],
-            };
+                };
+            } else {
+                params.reply_markup = {
+                    inline_keyboard: [
+                        [
+                            {
+                                text: t(lang, 'tmaBlockList'),
+                                web_app: { url: `https://${host}/tma?mode=block` },
+                            },
+                            {
+                                text: t(lang, 'tmaWhiteList'),
+                                web_app: { url: `https://${host}/tma?mode=white` },
+                            },
+                            {
+                                text: t(lang, 'tmaTestAddress'),
+                                web_app: { url: `https://${host}/tma?mode=test` },
+                            },
+                        ],
+                    ],
+                };
+            }
         }
 
         const response = await createTelegramBotAPI(token).sendMessage(params);

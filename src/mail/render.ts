@@ -1,8 +1,9 @@
 import type * as Telegram from 'telegram-bot-api-types';
-import type { ExtractResult } from './extract';
 import type { EmailCache, Environment } from '../types';
+import type { ExtractResult } from './extract';
 import { resolveUiLang, t } from '../i18n';
 import { loadPublicHost } from '../public-host';
+import { loadBotUsername, miniAppStartLink } from '../telegram/bot-username';
 import { truncateDisplay } from './extract';
 import { buildKeyboard, mailboxButtonUrl } from './mailbox';
 
@@ -58,8 +59,9 @@ export async function renderEmailListMode(
     }
 
     const hasBody = !!(mail.html || mail.text);
-    const previewAppUrl = hasBody && host
-        ? `https://${host}/tma?mode=preview&id=${encodeURIComponent(mail.id)}`
+    const botUsername = hasBody ? await loadBotUsername(env) : undefined;
+    const previewAppUrl = hasBody && botUsername
+        ? miniAppStartLink(botUsername, mail.id)
         : undefined;
     const webUrl = hasBody && host
         ? `https://${host}/email/${mail.id}`

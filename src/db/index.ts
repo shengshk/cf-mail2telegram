@@ -146,6 +146,20 @@ export class Dao {
     async savePublicHost(host: string): Promise<void> {
         await this.db.put('PUBLIC_HOST', host);
     }
+
+    async loadBotUsername(): Promise<string | null> {
+        try {
+            const raw = await this.db.get('BOT_USERNAME');
+            return raw?.trim().replace(/^@/, '') || null;
+        } catch (e) {
+            console.error(e);
+            return null;
+        }
+    }
+
+    async saveBotUsername(username: string): Promise<void> {
+        await this.db.put('BOT_USERNAME', username.trim().replace(/^@/, ''));
+    }
 }
 
 export function loadArrayFromRaw(raw: string | null | undefined): string[] {
