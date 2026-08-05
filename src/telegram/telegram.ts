@@ -10,6 +10,7 @@ import { loadPreviewMode, savePreviewMode, type PreviewMode } from '../mail/prev
 import { isWebAuthEnabled } from '../web-auth';
 import { loadPublicHost } from '../public-host';
 import { createTelegramBotAPI } from './api';
+import { tmaListWebAppUrl } from './bot-username';
 
 type TelegramMessageHandler = (message: Telegram.Message) => Promise<Response>;
 type CommandHandlerGroup = Record<string, TelegramMessageHandler>;
@@ -224,15 +225,15 @@ function handleCfmailCommand(env: Environment, ctx?: ExecutionContext): Telegram
                     [
                         {
                             text: t(lang, 'tmaBlockList'),
-                            web_app: { url: `https://${host}/tma?mode=block` },
+                            web_app: { url: tmaListWebAppUrl(host, 'block') },
                         },
                         {
                             text: t(lang, 'tmaWhiteList'),
-                            web_app: { url: `https://${host}/tma?mode=white` },
+                            web_app: { url: tmaListWebAppUrl(host, 'white') },
                         },
                         {
                             text: t(lang, 'tmaTestAddress'),
-                            web_app: { url: `https://${host}/tma?mode=test` },
+                            web_app: { url: tmaListWebAppUrl(host, 'test') },
                         },
                     ],
                 ],

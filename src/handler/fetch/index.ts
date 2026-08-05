@@ -83,6 +83,20 @@ function errorHandler(error: Error): Response {
     }), { status: 500 });
 }
 
+function renderTmaListApp(env: Environment): Response {
+    const lang = resolveUiLang(env);
+    const payload = JSON.stringify(tmaI18nPayload(lang)).replace(/</g, '\\u003c');
+    const html = tmaHTML
+        .replace(/__UI_LANG__/g, htmlLang(lang))
+        .replace('__I18N_JSON__', payload);
+    return new Response(html, {
+        headers: {
+            'content-type': 'text/html; charset=utf-8',
+            'Referrer-Policy': 'no-referrer',
+        },
+    });
+}
+
 function createRouter(env: Environment, ctx?: ExecutionContext): RouterType {
     const router = Router({
         catch: errorHandler,
@@ -221,17 +235,7 @@ function createRouter(env: Environment, ctx?: ExecutionContext): RouterType {
             : undefined;
         const listMode = parseListModeStartParam(startParam) || listFromQuery;
         if (listMode) {
-            const lang = resolveUiLang(env);
-            const payload = JSON.stringify(tmaI18nPayload(lang)).replace(/</g, '\\u003c');
-            const html = tmaHTML
-                .replace(/__UI_LANG__/g, htmlLang(lang))
-                .replace('__I18N_JSON__', payload);
-            return new Response(html, {
-                headers: {
-                    'content-type': 'text/html; charset=utf-8',
-                    'Referrer-Policy': 'no-referrer',
-                },
-            });
+            return renderTmaListApp(env);
         }
 
         const previewId = String(req.query.id || '').trim()
@@ -257,6 +261,15 @@ function createRouter(env: Environment, ctx?: ExecutionContext): RouterType {
                 'Referrer-Policy': 'no-referrer',
             },
         });
+    });
+
+    /// 名单小程序（web_app 路径传 mode，避免 query 被 Telegram 丢掉）
+    router.get('/tma/list/:mode', async (req: IRequest): Promise<Response> => {
+        const raw = String(req.params.mode || '').trim().toLowerCase();
+        if (raw !== 'block' && raw !== 'white' && raw !== 'test') {
+            throw new HTTPError(404, 'Not found');
+        }
+        return renderTmaListApp(env);
     });
 
     /// 邮件预览 Mini App（web_app 按钮直达；路径保留 id，避免 query 被客户端丢掉）

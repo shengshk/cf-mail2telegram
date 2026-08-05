@@ -65,4 +65,17 @@ export function parseListModeStartParam(param: string): 'block' | 'white' | 'tes
     }
 }
 
+export function parseListModePath(pathname: string): 'block' | 'white' | 'test' | undefined {
+    const m = pathname.match(/\/tma\/list\/(block|white|test)\/?$/i);
+    if (!m) {
+        return undefined;
+    }
+    return m[1].toLowerCase() as 'block' | 'white' | 'test';
+}
+
+/** web_app list manager (path survives Telegram stripping query strings). */
+export function tmaListWebAppUrl(host: string, mode: 'block' | 'white' | 'test'): string {
+    return `https://${host}/tma/list/${mode}`;
+}
+
 export { BOT_USERNAME_KEY };

@@ -251,6 +251,11 @@
       return '';
     }
 
+    function listModeFromPath() {
+      const m = location.pathname.match(/\/tma\/list\/(block|white|test)\/?$/i);
+      return m ? m[1].toLowerCase() : '';
+    }
+
     class Client {
       constructor(tma) {
         this.tma = tma;
@@ -308,7 +313,8 @@
         const urlParams = new URLSearchParams(window.location.search);
         const i18n = I18N;
         const startParam = readStartParam();
-        const listMode = listModeFromStart(startParam);
+        const pathListMode = listModeFromPath();
+        const listMode = listModeFromStart(startParam) || pathListMode;
 
         const blockList = ref([]);
         const whiteList = ref([]);
@@ -328,7 +334,7 @@
         const initialFunc = isMailId(startParam)
           || (urlParams.get('mode') === 'preview' && urlParams.get('id'))
           ? 'preview'
-          : (urlParams.get('func') || 'list');
+          : (pathListMode ? 'list' : (urlParams.get('func') || 'list'));
         const func = ref(initialFunc);
         const mode = ref(listMode || urlParams.get('mode') || 'block');
         const previewId = isMailId(startParam)
