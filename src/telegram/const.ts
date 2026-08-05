@@ -7,5 +7,9 @@ export function telegramCommands(lang: UiLang) {
             command: 'cfmail',
             description: t(lang, 'cmdCfmail'),
         },
+        {
+            command: 'test',
+            description: t(lang, 'cmdTest'),
+        },
     ];
 }

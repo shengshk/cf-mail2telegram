@@ -6,4 +6,5 @@ export * from './parse';
 export * from './preview';
 export * from './render';
 export * from './resend';
+export * from './test-mail';
 export * from './ttl';

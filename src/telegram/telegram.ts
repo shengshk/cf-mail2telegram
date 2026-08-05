@@ -4,6 +4,7 @@ import type { Environment } from '../types';
 import { Dao } from '../db';
 import { requireTelegram } from '../env';
 import { renderEmailDebugMode, renderEmailListMode, renderEmailPreviewMode, renderEmailSummaryMode, replyToEmail } from '../mail';
+import { checkTestCommandRate, isAllowedTestUser, runFakeMailUiTest } from '../mail/test-mail';
 // Summary / 旧 Preview 回调仅兼容历史消息；新消息已改为 URL「预览」
 import { resolveUiLang, t } from '../i18n';
 import { loadPublicHost } from '../public-host';
@@ -86,6 +87,44 @@ function handleCfmailCommand(env: Environment): TelegramMessageHandler {
     };
 }
 
+function handleTestCommand(env: Environment): TelegramMessageHandler {
+    return async (msg: Telegram.Message): Promise<Response> => {
+        const { token } = requireTelegram(env);
+        const api = createTelegramBotAPI(token);
+        const lang = resolveUiLang(env);
+        const chatId = msg.chat.id;
+        const fromId = msg.from?.id;
+        const reply = async (text: string) => api.sendMessage({
+            chat_id: chatId,
+            text,
+            reply_parameters: { message_id: msg.message_id },
+        });
+
+        if (!isAllowedTestUser(env, chatId, fromId)) {
+            logTelegram('test.denied', { chatId, fromId });
+            return await reply(t(lang, 'testDenied'));
+        }
+        if (!env.DB) {
+            return await reply('KV binding DB is required');
+        }
+        const rateUser = `${fromId ?? chatId}`;
+        const rate = await checkTestCommandRate(env.DB, rateUser);
+        if (!rate.ok) {
+            logTelegram('test.rate_limited', { chatId, fromId, retryAfterSec: rate.retryAfterSec });
+            return await reply(t(lang, 'testRateLimit').replace('{n}', `${rate.retryAfterSec}`));
+        }
+
+        try {
+            logTelegram('test.run', { chatId, fromId });
+            await runFakeMailUiTest(env);
+            return await reply(t(lang, 'testDone'));
+        } catch (e) {
+            logTelegramError('test.error', e, { chatId, fromId });
+            return await reply((e as Error).message || t(lang, 'testDenied'));
+        }
+    };
+}
+
 async function handleReplyEmailCommand(message: Telegram.Message, env: Environment): Promise<void> {
     const { token } = requireTelegram(env);
     const {
@@ -162,9 +201,11 @@ async function telegramCommandHandler(message: Telegram.Message, env: Environmen
     // Telegram may send "cfmail@BotName"
     command = command.split('@')[0] || command;
     const cfmail = handleCfmailCommand(env);
+    const test = handleTestCommand(env);
     const handlers: CommandHandlerGroup = {
         cfmail,
         start: cfmail,
+        test,
     };
 
     if (handlers[command]) {

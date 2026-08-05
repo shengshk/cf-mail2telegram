@@ -26,6 +26,10 @@ export type I18nKey =
     | 'openManager'
     | 'addressManager'
     | 'cmdCfmail'
+    | 'cmdTest'
+    | 'testDenied'
+    | 'testRateLimit'
+    | 'testDone'
     | 'tmaTest'
     | 'tmaWhite'
     | 'tmaBlock'
@@ -77,6 +81,10 @@ const en: Record<I18nKey, string> = {
     openManager: 'Open Manager',
     addressManager: 'Address Manager',
     cmdCfmail: 'Show Chat ID, Worker URL, and list managers',
+    cmdTest: 'Send a fake mail through TG UI (OTP extract, rate-limited)',
+    testDenied: 'Not allowed.',
+    testRateLimit: 'Too fast. Try again in {n}s.',
+    testDone: 'Test mail sent (fake; no backup).',
     tmaTest: 'Test address rules',
     tmaWhite: 'Manage the white list',
     tmaBlock: 'Manage the block list',
@@ -129,6 +137,10 @@ const zh: Record<I18nKey, string> = {
     openManager: '打开管理',
     addressManager: '地址管理',
     cmdCfmail: '显示 Chat ID、Worker 地址与名单管理',
+    cmdTest: '发送假信走 TG UI（含抽码，有频率限制）',
+    testDenied: '无权限。',
+    testRateLimit: '操作过快，请 {n} 秒后再试。',
+    testDone: '测试邮件已发送（假信，不会备份）。',
     tmaTest: '测试地址规则',
     tmaWhite: '管理白名单',
     tmaBlock: '管理黑名单',
@@ -181,6 +193,10 @@ const tw: Record<I18nKey, string> = {
     openManager: '開啟管理',
     addressManager: '地址管理',
     cmdCfmail: '顯示 Chat ID、Worker 地址與名單管理',
+    cmdTest: '傳送假信走 TG UI（含抽碼，有頻率限制）',
+    testDenied: '無權限。',
+    testRateLimit: '操作過快，請 {n} 秒後再試。',
+    testDone: '測試郵件已傳送（假信，不會備份）。',
     tmaTest: '測試地址規則',
     tmaWhite: '管理白名單',
     tmaBlock: '管理黑名單',

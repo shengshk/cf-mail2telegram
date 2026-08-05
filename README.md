@@ -187,6 +187,8 @@ Black/white lists are managed via Mini Apps (`/cfmail`). Mail **Preview** also o
 
 ## Usage
 
+Send `/test` in a private chat (must match `TELEGRAM_BOT` chat id). Rate limit: **one per 10 seconds**. Sends a fake mail through OTP extract + Telegram UI (Preview / Web / Mailbox). Does **not** call Email Routing backup.
+
 Default Telegram message shape:
 
 ```
@@ -389,6 +391,8 @@ pnpm pub  # wrangler deploy --keep-vars
 | ![block](./doc/tma_block_list.png) | ![white](./doc/tma_white_list.png) | ![test](./doc/tma_test_address.png) |
 
 ## 使用说明
+
+向 Bot 发送 `/test`（须为 `TELEGRAM_BOT` 中的 chat id）。频率限制：**10 秒一封**。假信走抽码 + TG UI（预览 / 网页 / 邮箱），**不会**真实备份。
 
 默认消息结构如下：
 
