@@ -6,7 +6,7 @@ export type ForwardedBackupPolicy = 'noforwarded' | 'forwarded';
 export interface ForwardTarget {
     /** Destination address for Email Routing forward */
     email: string;
-    /** Optional Gmail label/folder; used by the Mailbox button */
+    /** Optional Gmail label/folder; used by the Mailbox button when backed up */
     folder?: string;
     /**
      * `noforwarded` (default): only backup mail addressed to the domain inbox.
@@ -19,7 +19,7 @@ const POLICY_RE = /^(noforwarded|forwarded)$/i;
 const EMAIL_IN_HEADER_RE = /[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)*/gi;
 
 /**
- * Parse one value: `user@gmail.com` | `user@gmail.com,Backup` |
+ * Parse: `user@gmail.com` | `user@gmail.com,Backup` |
  * `user@gmail.com,Backup,noforwarded` | `user@gmail.com,forwarded` | `user@gmail.com,,forwarded`
  */
 export function parseForwardMailsValue(raw: string): ForwardTarget | undefined {
@@ -114,6 +114,23 @@ export function relatedRecipientAddresses(message: EmailMessage): string[] {
 }
 
 /**
+ * First header recipient that is not on the CF routing domain — typical Gmail/Outlook auto-forward source.
+ */
+export function pickOriginalMailboxAddress(message: EmailMessage): string | undefined {
+    const routedTo = (message.to || '').trim().toLowerCase();
+    const routedDomain = emailDomain(routedTo);
+    if (!routedDomain) {
+        return undefined;
+    }
+    for (const addr of relatedRecipientAddresses(message)) {
+        if (emailDomain(addr) && emailDomain(addr) !== routedDomain) {
+            return addr;
+        }
+    }
+    return undefined;
+}
+
+/**
  * True when the message was delivered to the CF routing address but the
  * visible To/Cc (etc.) only reference other mailboxes — typical of auto-forward.
  */
@@ -135,45 +152,14 @@ export function isExternallyForwarded(message: EmailMessage): boolean {
     return true;
 }
 
-/**
- * Single backup target only.
- * Prefer FORWARD_MAILS; fall back to legacy FORWARD_MAIL, then first FORWARD_LIST entry.
- * FORWARD_MAIL0/1/… are ignored.
- */
+/** Single backup target from FORWARD_MAILS only. */
 export function getForwardTarget(env: Environment): ForwardTarget | undefined {
-    const primary = parseForwardMailsValue(env.FORWARD_MAILS || '');
-    if (primary) {
-        return primary;
-    }
-    const legacyMail = parseForwardMailsValue(env.FORWARD_MAIL || '');
-    if (legacyMail) {
-        return legacyMail;
-    }
-    const list = (env.FORWARD_LIST || '').split(',').map(s => s.trim()).filter(Boolean);
-    if (list.length > 0) {
-        const folder = (env.FORWARD_DIR || env.GMAIL_LABEL || '').trim();
-        return folder
-            ? { email: list[0], folder, policy: 'noforwarded' }
-            : { email: list[0], policy: 'noforwarded' };
-    }
-    return undefined;
+    return parseForwardMailsValue(env.FORWARD_MAILS || '');
 }
 
-/** @deprecated use getForwardTarget */
+/** @deprecated alias */
 export function primaryForwardTarget(env: Environment): ForwardTarget | undefined {
     return getForwardTarget(env);
-}
-
-/** @deprecated single backup only; returns 0–1 addresses */
-export function listForwardTargets(env: Environment): ForwardTarget[] {
-    const t = getForwardTarget(env);
-    return t ? [t] : [];
-}
-
-/** @deprecated single backup only */
-export function forwardEmailAddresses(env: Environment): string[] {
-    const t = getForwardTarget(env);
-    return t ? [t.email] : [];
 }
 
 /**

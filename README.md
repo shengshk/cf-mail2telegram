@@ -8,12 +8,8 @@ cf-mail2telegram
 </p>
 
 <p align="center">
-    Public fork of / 基于 <a href="https://github.com/tbxark/mail2telegram">tbxark/mail2telegram</a> 的公开 Fork
-</p>
-
-<p align="center">
-    OTP recognition logic referenced from / 验证码识别逻辑参考自<br>
-    <a href="https://github.com/Heavrnl/Mail2Telegram">Heavrnl/Mail2Telegram</a>
+    Based on / 基于 <a href="https://github.com/tbxark/mail2telegram">tbxark/mail2telegram</a>
+    · OTP / 验证码参考 <a href="https://github.com/Heavrnl/Mail2Telegram">Heavrnl/Mail2Telegram</a>
 </p>
 
 <p align="center">
@@ -32,22 +28,10 @@ cf-mail2telegram
 # English
 
 This project is a Cloudflare Email Routing Worker that turns inbound mail into Telegram messages.  
-It is a **public fork** of [tbxark/mail2telegram](https://github.com/tbxark/mail2telegram), customized for a simpler OTP-first workflow.  
-OTP / verification-code recognition is referenced from [Heavrnl/Mail2Telegram](https://github.com/Heavrnl/Mail2Telegram).
+OTP / verification-code recognition uses **Gemini**, with a local regex fallback.  
+Buttons: **Preview** + **Mailbox**. UI: `UI_LANG=en` (default) / `zh` / `tw`.
 
-### Differences from upstream
-
-| Upstream | This fork |
-|----------|-----------|
-| Summary / Workers AI / OpenAI | Removed |
-| Buttons: Preview / Summary / Text / HTML | **Preview** + **Mailbox** only |
-| `TELEGRAM_TOKEN` + `TELEGRAM_ID` | Prefer `TELEGRAM_BOT=token,chat_id` (legacy vars still work) |
-| No built-in OTP AI | **Gemini** extracts OTP; local regex fallback |
-| OTP styling | AI match **bold**; local regex *italic* |
-| `FORWARD_LIST` + `FORWARD_DIR` | `FORWARD_MAILS` only (single backup): `email[,Folder][,noforwarded\|forwarded]` |
-| English-only UI | `UI_LANG=en` (default) / `zh` / `tw` |
-
-Source of truth is `src/`. Do not treat root `worker.js` / stale `build/` as current logic.
+Source of truth is `src/`.
 
 ## Installation
 
@@ -167,16 +151,13 @@ But Telegram / Preview / Mini App follow **only one** saved host (`PUBLIC_HOST` 
 
 | Key | Description |
 |:----|:------------|
-| `TELEGRAM_BOT` | Recommended. `token,chat_id` (same shape as the Docker companion). Compatible with legacy `TELEGRAM_TOKEN` + `TELEGRAM_ID`. |
-| `TELEGRAM_TOKEN` / `TELEGRAM_ID` | Legacy pair; used only if `TELEGRAM_BOT` is unset. |
+| `TELEGRAM_BOT` | Required. `token,chat_id`. |
 | `UI_LANG` | UI language: `en` (default), `zh` (Simplified), or `tw` (Traditional). Affects Telegram labels/buttons, preview chrome, Mini App, and bot command descriptions. Re-open `/init` after changing. |
 | `GEMINI_API_KEY` | Google AI Studio key (`AIza…`). Worker egress may hit region limits; on failure the Worker falls back to local regex. |
 | `GEMINI_MODEL` | Optional. Default `gemini-2.5-flash-lite`. |
-| `FORWARD_MAILS` | **Single** backup only. `you@gmail.com` or `you@gmail.com,Backup` or `you+bak@gmail.com,Backup,noforwarded`. Third field: `noforwarded` (default) = skip auto-forwards from other mailboxes; `forwarded` = backup those too. Must be a verified Email Routing destination. Drives the Mailbox button. Hard rule: never backup when From / related To headers match this address (Gmail `+` normalized). |
-| ~~`FORWARD_MAIL` / `FORWARD_MAIL0`…~~ | Legacy. `FORWARD_MAIL` still parsed like `FORWARD_MAILS` if unset; numbered extras ignored. |
-| ~~`FORWARD_LIST` / `FORWARD_DIR`~~ | Legacy. First list address only if no `FORWARD_MAILS` / `FORWARD_MAIL`. |
+| `FORWARD_MAILS` | Single backup: `email` \| `email,Folder` \| `email,Folder,noforwarded\|forwarded` \| `email,forwarded`. Example: `you+bak@gmail.com,Backup,noforwarded`. Default policy `noforwarded`: backup only mail addressed to the CF domain; skip auto-forwards from other mailboxes (Telegram notify still runs). `forwarded`: also backup those. Never backup when From / related To headers match this address (Gmail `+` normalized). Must be a verified Email Routing destination. |
+| `MAILS_TTL` | Preview retention: `duration,maxCount`. Example: `1d,10`. Duration: `30m` / `1h` / `1d` / seconds. Default if unset: `1d,100`. Oldest previews are deleted when over maxCount. |
 | `DB` | **Required** KV binding. Variable name must be exactly `DB`. |
-| `MAIL_TTL` | Cache TTL in seconds (default one day). Expired mail previews stop working. |
 | `TIMEZONE` | Optional. Default `Asia/Shanghai`. |
 | `GMAIL_U` | Optional. Gmail multi-account index, default `0`. |
 | `BLOCK_POLICY` | `reject`, `forward`, `telegram` (comma-separated). Default `telegram`. |
@@ -185,32 +166,24 @@ But Telegram / Preview / Mini App follow **only one** saved host (`PUBLIC_HOST` 
 | `MAX_EMAIL_SIZE_POLICY` | `unhandled` / `truncate` / `continue`. Default `truncate`. |
 | `RESEND_API_KEY` | Optional. Reply-to-email via [Resend](https://resend.com/docs/introduction). |
 | `DEBUG` | Optional. `true` shows Gemini error reasons in Telegram on local fallback, and enables verbose webhook logs. |
-| ~~`WHITE_LIST` / `BLOCK_LIST`~~ | Env lists are being phased out; prefer the built-in Mini App editors. |
 
 ## Mailbox button rules
 
 | Condition | Behavior |
 |-----------|----------|
-| Message has `X-GM-THRID` | Prefer deep link into that Gmail thread (often missing via Email Routing) |
-| `FORWARD_MAILS` is Gmail + folder part set | Open that label/folder |
-| Gmail without folder | Gmail home |
-| Outlook / Hotmail / Live | Outlook web home (folder ignored) |
-| Other domains | `https://mail.<domain>` |
-| No `FORWARD_MAILS` (and no legacy) | Hide Mailbox; Preview only |
-
-`rfc822msgid` search links are **removed** in this fork.
+| Mail was backed up to `FORWARD_MAILS` | Open that backup mailbox (Gmail: folder / optional thread) |
+| Not backed up, header has external original `To` | Open that original webmail (Gmail/Outlook home; no Backup folder) |
+| Otherwise | Hide Mailbox; Preview only |
 
 ## Telegram Mini Apps
 
 Black/white lists are managed via Mini Apps. Use `/cfmail` to see your Chat ID, Worker URL (from `/init`), and open Block / White / Test. Rules are stored in KV.
 
-> After upgrading, call `/init` again so bot commands stay in sync.
+> After changing `UI_LANG` or the public host, open `/init` again so bot commands stay in sync.
 
 | Block list | White list | List test |
 |:-----------|:-----------|:----------|
 | ![block](./doc/tma_block_list.png) | ![white](./doc/tma_white_list.png) | ![test](./doc/tma_test_address.png) |
-
-*(Screenshots may be replaced later.)*
 
 ## Usage
 
@@ -229,17 +202,15 @@ Time
 1. **Preview** — open cached HTML/text in the browser (`/email/<id>`). Requires KV `DB` and a successful `/init` (so the public host is saved).
 2. **Mailbox** — jump to webmail per [Mailbox button rules](#mailbox-button-rules).
 
-Summary / Text / HTML buttons from upstream are not used in this fork.
-
 ### Security and cache
 
-1. After `MAIL_TTL`, preview links stop working — back up important mail.
+1. After `MAILS_TTL` expires (or the cache is evicted by maxCount), preview links stop working — back up important mail.
 2. Large attachments may time out Workers; put a real mailbox in `FORWARD_MAILS`.
 3. `GUARDIAN_MODE` can reduce duplicate notifications at the cost of more KV writes.
 
 ### Blacklist and whitelist
 
-Env lists and KV lists are merged. Exact string match first, then regex. Prefer Mini Apps for day-to-day edits. Helper: [regexs2jsArray](https://codepen.io/tbxark/full/JjxdNEX).
+Lists live in KV and are edited in the Mini App. Exact string match first, then regex. Helper: [regexs2jsArray](https://codepen.io/tbxark/full/JjxdNEX).
 
 ### Attachments
 
@@ -253,29 +224,16 @@ This bot does not render attachments. Use `FORWARD_MAILS` to keep a real mailbox
 
 ## License
 
-Released under the MIT license, same as upstream. See [LICENSE](LICENSE).
+Released under the MIT license. See [LICENSE](LICENSE).
 
 ---
 
 # 中文
 
 本项目是一个基于 Cloudflare Email Routing Worker 的 Telegram 邮件通知机器人：把任意前缀收件地址收到的邮件转成 Telegram 消息。  
-这是 [tbxark/mail2telegram](https://github.com/tbxark/mail2telegram) 的**公开 Fork**，面向更简洁的「验证码优先」使用方式做了定制。  
-验证码识别逻辑参考自 [Heavrnl/Mail2Telegram](https://github.com/Heavrnl/Mail2Telegram)。
+用 **Gemini** 提取验证码，失败时回退本地正则。按钮仅 **预览** + **邮箱**。界面：`UI_LANG=en`（默认）/ `zh` / `tw`。
 
-### 相对上游的差异
-
-| 上游 | 本 Fork |
-|------|---------|
-| Summary / Workers AI / OpenAI | 已移除 |
-| 按钮：预览 / 摘要 / Text / HTML | 仅 **预览** + **邮箱** |
-| `TELEGRAM_TOKEN` + `TELEGRAM_ID` | 推荐 `TELEGRAM_BOT=token,chat_id`（仍兼容旧变量） |
-| 无内置验证码 AI | **Gemini** 抽码；失败回退本地正则 |
-| 验证码样式 | AI 结果 **加粗**；本地正则 *斜体* |
-| `FORWARD_LIST` + `FORWARD_DIR` | 仅 `FORWARD_MAILS`（单一备份）：`邮箱[,文件夹][,noforwarded\|forwarded]` |
-| 仅英文界面 | `UI_LANG=en`（默认）/ `zh` / `tw` |
-
-配置与逻辑以 `src/` 为准；根目录旧 `worker.js` / 过期 `build/` 请勿当作现行实现。
+配置与逻辑以 `src/` 为准。
 
 ## 安装流程
 
@@ -395,17 +353,13 @@ pnpm pub  # wrangler deploy --keep-vars
 
 | KEY | 描述 |
 |:----|:-----|
-| `TELEGRAM_BOT` | **推荐**。`token,chat_id`（与 Docker 版同格式）。未配置时回退旧变量。 |
-| `TELEGRAM_TOKEN` | 旧版 Bot Token。仅在未设置 `TELEGRAM_BOT` 时使用。 |
-| `TELEGRAM_ID` | 旧版 Chat ID。仅在未设置 `TELEGRAM_BOT` 时使用。 |
+| `TELEGRAM_BOT` | 必填。`token,chat_id`。 |
 | `UI_LANG` | 界面语言：`en`（默认）、`zh`（简体）或 `tw`（繁体）。影响 TG 文案/按钮、预览页、小程序、Bot 命令描述。修改后请重新打开 `/init`。 |
 | `GEMINI_API_KEY` | Google AI Studio Key（`AIza…`）。出网可能受地区限制；失败时自动本地正则。 |
 | `GEMINI_MODEL` | 可选。默认 `gemini-2.5-flash-lite`。 |
-| `FORWARD_MAILS` | **仅一个**备份。`you@gmail.com` 或 `you@gmail.com,Backup` 或 `you+bak@gmail.com,Backup,noforwarded`。第三段：`noforwarded`（默认）= 跳过外站自动转发进域名的信；`forwarded` = 这类也备份。须已验证。决定「邮箱」按钮。写死规则：From / 相关 To 头命中该地址（Gmail `+` 归一）则永不备份。 |
-| ~~`FORWARD_MAIL` / `FORWARD_MAIL0`…~~ | 旧变量。未设 `FORWARD_MAILS` 时仍解析 `FORWARD_MAIL`；带数字后缀的多备份已忽略。 |
-| ~~`FORWARD_LIST` / `FORWARD_DIR`~~ | 旧变量。无 `FORWARD_MAILS` / `FORWARD_MAIL` 时只取列表第一个地址。 |
+| `FORWARD_MAILS` | 单一备份：`邮箱` \| `邮箱,文件夹` \| `邮箱,文件夹,noforwarded\|forwarded` \| `邮箱,forwarded`。例：`you+bak@gmail.com,Backup,noforwarded`。默认 `noforwarded`：只备份真正发到域名邮箱的信；外站自动转发进域名的不备份（仍推 Telegram）。`forwarded`：转发进来的也备份。From / 相关 To 头命中该备份地址（Gmail `+` 归一）则永不备份。须为已验证的 Email Routing 目的地。 |
+| `MAILS_TTL` | 预览保留：`时长,最大封数`。例：`1d,10`。时长：`30m` / `1h` / `1d` / 秒数。未设置时默认 `1d,100`。超过封数删除最旧预览。 |
 | `DB` | **必须**的 KV 绑定，变量名必须是 `DB`。 |
-| `MAIL_TTL` | 邮件缓存秒数，默认一天。 |
 | `TIMEZONE` | 可选。默认 `Asia/Shanghai`。 |
 | `GMAIL_U` | 可选。Gmail 多账号序号，默认 `0`。 |
 | `BLOCK_POLICY` | `reject` / `forward` / `telegram`，逗号分隔。默认 `telegram`。 |
@@ -414,34 +368,24 @@ pnpm pub  # wrangler deploy --keep-vars
 | `MAX_EMAIL_SIZE_POLICY` | `unhandled` / `truncate` / `continue`。默认 `truncate`。 |
 | `RESEND_API_KEY` | 可选。通过 [Resend](https://resend.com/docs/introduction) 回复邮件。 |
 | `DEBUG` | 可选。`true`：本地兜底时在 TG 显示 Gemini 错误原因。 |
-| ~~`WHITE_LIST` / `BLOCK_LIST`~~ | 环境变量名单将淘汰，建议用内置小程序维护。 |
-
-> 本 Fork **已移除**上游的 `WORKERS_AI_MODEL` / `OPENAI_*` / `SUMMARY_TARGET_LANG` 摘要能力；验证码请配置 `GEMINI_API_KEY`。
 
 ## 「邮箱」按钮规则
 
 | 条件 | 行为 |
 |------|------|
-| 邮件带 `X-GM-THRID` | 优先 Gmail 线程深链（Email Routing 通常没有） |
-| `FORWARD_MAILS` 为 Gmail 且带了文件夹 | 打开该标签/文件夹 |
-| Gmail 未配文件夹 | Gmail 首页 |
-| Outlook / Hotmail / Live | Outlook 网页首页（忽略文件夹） |
-| 其它域名 | `https://mail.<域名>` |
-| 未配置 `FORWARD_MAILS`（及旧变量） | 不显示「邮箱」，仅「预览」 |
-
-本 Fork **已取消** `rfc822msgid` 搜索链接。
+| 已备份到 `FORWARD_MAILS` | 打开备份邮箱（Gmail：文件夹 / 可选线程） |
+| 未备份，且头里有外站原 `To` | 打开原网页邮箱（Gmail/Outlook 首页；不用 Backup 文件夹） |
+| 其它 | 不显示「邮箱」，仅「预览」 |
 
 ## Telegram 小程序
 
-黑白名单通过小程序管理。使用 `/cfmail` 查看 Chat ID、Worker 地址（来自 `/init`），并打开「黑名单 / 白名单 / 测试」三个按钮。规则保存在 KV。环境变量中的黑白名单无法在小程序中显示和修改。
+黑白名单通过小程序管理。使用 `/cfmail` 查看 Chat ID、Worker 地址（来自 `/init`），并打开「黑名单 / 白名单 / 测试」三个按钮。规则保存在 KV。
 
-> 升级后请重新执行 `/init`，以同步 Bot 命令（仅保留 `/cfmail`）。
+> 修改 `UI_LANG` 或公网主机后，请重新打开 `/init` 以同步 Bot 命令。
 
 | 黑名单 | 白名单 | 名单测试 |
 |:-------|:-------|:---------|
 | ![block](./doc/tma_block_list.png) | ![white](./doc/tma_white_list.png) | ![test](./doc/tma_test_address.png) |
-
-*（截图后续可自行替换。）*
 
 ## 使用说明
 
@@ -462,25 +406,19 @@ pnpm pub  # wrangler deploy --keep-vars
 1. **预览**：浏览器打开缓存的 HTML/文本（`/email/<id>`）。需要 KV `DB`，并且已经成功打开过 `/init`（公网主机已写入 KV）。
 2. **邮箱**：按 [「邮箱」按钮规则](#邮箱按钮规则) 跳转网页邮箱。
 
-上游的 `Summary` / `TEXT` / `HTML` 按钮在本 Fork 中**不使用**。
-
 ### 安全与邮件缓存
 
-1. `MAIL_TTL`：为了安全起见，当超过邮件缓存保存时间，按钮跳转的链接无法打开。你可以自行修改环境变量调整过期时间。
+1. `MAILS_TTL`：超过保留时间或超过最大封数被挤掉后，预览链接无法打开。可按需调整。
 2. 由于 Workers 限制，邮件（特别是附件较大时）可能导致函数超时和多次重试，从而可能收到重复通知。建议在 `FORWARD_MAILS` 中配置备份邮箱，以防邮件丢失。
 3. 开启 `GUARDIAN_MODE` 可减少重复消息干扰，提高 Worker 成功率，但会消耗较多 KV 写入次数。建议在必要时开启。
 
 ### 黑名单与白名单
 
-关于黑白名单匹配规则，以白名单为例：首先从环境变量读取 `WHITE_LIST` 转换成数组，再从 KV 读取 `WHITE_LIST` 转换成数组，然后合并得到完整规则。匹配时先判断数组元素是否与待匹配字符串相等；不相等再把元素当成正则匹配。全部失败则匹配失败。
-
-生成白名单/黑名单正则 JSON 数组字符串可用：[regexs2jsArray](https://codepen.io/tbxark/full/JjxdNEX)
-
-建议使用小程序管理黑白名单，更方便添加和删除。环境变量中的黑白名单即将废弃。
+名单保存在 KV，通过小程序增删。匹配时先精确相等，再按正则。可用：[regexs2jsArray](https://codepen.io/tbxark/full/JjxdNEX)。
 
 ### 邮件附件
 
-此 Bot **不支持展示附件**。若需附件，可配合 [testmail-viewer](https://github.com/TBXark/testmail-viewer)，用 `FORWARD_MAILS` 把邮件转到可下载附件的邮箱；或直接用真实备份邮箱查看。
+此 Bot **不支持展示附件**。若需附件，用 `FORWARD_MAILS` 备份到真实邮箱查看，或配合 [testmail-viewer](https://github.com/TBXark/testmail-viewer)。
 
 ## 已知限制
 
@@ -490,4 +428,4 @@ pnpm pub  # wrangler deploy --keep-vars
 
 ## 许可证
 
-**cf-mail2telegram** 以 MIT 许可证发布（与上游相同）。详见 [LICENSE](LICENSE)。
+**cf-mail2telegram** 以 MIT 许可证发布。详见 [LICENSE](LICENSE)。

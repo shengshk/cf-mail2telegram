@@ -3,6 +3,8 @@ import type { EmailCache, EmailHandleStatus } from '../types';
 
 export type AddressListStoreKey = 'BLOCK_LIST' | 'WHITE_LIST';
 
+const MAIL_CACHE_INDEX_KEY = 'MAIL_CACHE_INDEX';
+
 export class Dao {
     private readonly db: KVNamespace;
 
@@ -76,6 +78,51 @@ export class Dao {
 
     async saveMailCache(id: string, cache: EmailCache, ttl?: number): Promise<void> {
         await this.db.put(id, JSON.stringify(cache), { expirationTtl: ttl });
+    }
+
+    async deleteMailCache(id: string): Promise<void> {
+        try {
+            await this.db.delete(id);
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    async loadMailCacheIndex(): Promise<string[]> {
+        try {
+            const raw = await this.db.get(MAIL_CACHE_INDEX_KEY);
+            return loadArrayFromRaw(raw);
+        } catch (e) {
+            console.error(e);
+        }
+        return [];
+    }
+
+    async saveMailCacheIndex(ids: string[]): Promise<void> {
+        await this.db.put(MAIL_CACHE_INDEX_KEY, JSON.stringify(ids));
+    }
+
+    /**
+     * Persist preview cache, append to index, delete oldest when over maxCount.
+     * Index key itself has no TTL (small); entries expire via their own TTL too.
+     */
+    async saveMailCacheWithLimit(
+        id: string,
+        cache: EmailCache,
+        ttlSeconds: number,
+        maxCount: number,
+    ): Promise<void> {
+        await this.saveMailCache(id, cache, ttlSeconds);
+        let index = await this.loadMailCacheIndex();
+        index = index.filter(x => x !== id);
+        index.push(id);
+        while (index.length > maxCount) {
+            const old = index.shift();
+            if (old) {
+                await this.deleteMailCache(old);
+            }
+        }
+        await this.saveMailCacheIndex(index);
     }
 
     async telegramIDToMailID(id: string): Promise<string | null> {

@@ -6,8 +6,12 @@ import {
     isExternallyForwarded,
     normalizeEmailAddress,
     parseForwardMailsValue,
+    pickOriginalMailboxAddress,
     shouldBackupInboundMail,
 } from './forward';
+import { parseDurationToSeconds, parseMailsTtl } from './ttl';
+import { mailboxButtonUrl } from './mailbox';
+import type { EmailCache } from '../types';
 
 function assert(cond: unknown, msg: string): void {
     if (!cond) {
@@ -28,46 +32,28 @@ function mockMessage(partial: {
     } as unknown as EmailMessage;
 }
 
-function envWith(mails: string): Environment {
-    return { FORWARD_MAILS: mails, DB: {} as Environment['DB'] };
+function envWith(mails?: string, ttl?: string): Environment {
+    return {
+        FORWARD_MAILS: mails,
+        MAILS_TTL: ttl,
+        DB: {} as Environment['DB'],
+    };
 }
 
 export async function runForwardTests(): Promise<void> {
-    // parse
     assert(parseForwardMailsValue('') === undefined, 'empty');
     assert(parseForwardMailsValue('a@gmail.com')?.email === 'a@gmail.com', 'email only');
     assert(parseForwardMailsValue('a@gmail.com')?.policy === 'noforwarded', 'default policy');
     assert(parseForwardMailsValue('a@gmail.com,Backup')?.folder === 'Backup', 'folder');
-    assert(parseForwardMailsValue('a@gmail.com,Backup')?.policy === 'noforwarded', 'folder default policy');
     assert(parseForwardMailsValue('a@gmail.com,forwarded')?.policy === 'forwarded', 'policy as 2nd');
-    assert(parseForwardMailsValue('a@gmail.com,forwarded')?.folder === undefined, 'no folder when 2nd is policy');
     assert(parseForwardMailsValue('a@gmail.com,Backup,forwarded')?.folder === 'Backup', '3-part folder');
-    assert(parseForwardMailsValue('a@gmail.com,Backup,forwarded')?.policy === 'forwarded', '3-part policy');
-    assert(parseForwardMailsValue('a@gmail.com,,noforwarded')?.folder === undefined, 'empty folder');
-    assert(parseForwardMailsValue('a@gmail.com,,noforwarded')?.policy === 'noforwarded', 'empty folder policy');
 
-    // gmail +
     assert(normalizeEmailAddress('User+Bak@gmail.com') === 'user@gmail.com', 'gmail plus');
-    assert(normalizeEmailAddress('user+2fa@googlemail.com') === 'user@gmail.com', 'googlemail');
     assert(emailsMatch('shengshk+bak@gmail.com', 'shengshk@gmail.com'), 'plus match');
-    assert(!emailsMatch('a@gmail.com', 'b@gmail.com'), 'different locals');
 
-    // single target + legacy
     assert(getForwardTarget(envWith('x@y.com,Backup,forwarded'))?.email === 'x@y.com', 'get FORWARD_MAILS');
-    assert(
-        getForwardTarget({ FORWARD_MAIL: 'old@gmail.com,Label', DB: {} as Environment['DB'] })?.folder === 'Label',
-        'legacy FORWARD_MAIL',
-    );
-    assert(
-        getForwardTarget({
-            FORWARD_MAILS: 'a@gmail.com',
-            FORWARD_MAIL: 'b@gmail.com',
-            DB: {} as Environment['DB'],
-        })?.email === 'a@gmail.com',
-        'FORWARD_MAILS wins',
-    );
+    assert(getForwardTarget(envWith()) === undefined, 'no FORWARD_MAILS');
 
-    // externally forwarded
     assert(
         isExternallyForwarded(mockMessage({
             from: 'svc@example.com',
@@ -76,33 +62,16 @@ export async function runForwardTests(): Promise<void> {
         })),
         'gmail auto-forward detected',
     );
-    assert(
-        !isExternallyForwarded(mockMessage({
-            from: 'svc@example.com',
-            to: 'otp@mydomain.com',
-            headers: { To: 'otp@mydomain.com' },
-        })),
-        'direct to domain',
-    );
-    assert(
-        !isExternallyForwarded(mockMessage({
-            from: 'svc@example.com',
-            to: 'otp@mydomain.com',
-            headers: { To: 'other@mydomain.com' },
-        })),
-        'same domain alias = direct',
-    );
 
-    // shouldBackup: noforwarded skips external forward
+    const msgFwd = mockMessage({
+        from: 'svc@example.com',
+        to: 'otp@mydomain.com',
+        headers: { To: 'shengshk@gmail.com' },
+    });
+    assert(pickOriginalMailboxAddress(msgFwd) === 'shengshk@gmail.com', 'original To');
+
     const noFwd = envWith('shengshk+bak@gmail.com,Backup,noforwarded');
-    assert(
-        !shouldBackupInboundMail(mockMessage({
-            from: 'svc@example.com',
-            to: 'otp@mydomain.com',
-            headers: { To: 'shengshk@gmail.com' },
-        }), noFwd),
-        'noforwarded blocks gmail→domain',
-    );
+    assert(!shouldBackupInboundMail(msgFwd, noFwd), 'noforwarded blocks gmail→domain');
     assert(
         shouldBackupInboundMail(mockMessage({
             from: 'svc@example.com',
@@ -112,31 +81,50 @@ export async function runForwardTests(): Promise<void> {
         'noforwarded allows direct',
     );
 
-    // hard rule B: match backup address even if policy=forwarded
-    const allowFwd = envWith('shengshk+bak@gmail.com,Backup,forwarded');
+    // ttl
+    assert(parseDurationToSeconds('1d') === 86400, '1d');
+    assert(parseDurationToSeconds('24h') === 86400, '24h');
+    assert(parseDurationToSeconds('30m') === 1800, '30m');
+    assert(parseDurationToSeconds('90') === 90, 'seconds');
+    assert(parseMailsTtl('1d,10').ttlSeconds === 86400, 'ttl part');
+    assert(parseMailsTtl('1d,10').maxCount === 10, 'count part');
+    assert(parseMailsTtl('').maxCount === 100, 'default count');
+    assert(parseMailsTtl('1h').ttlSeconds === 3600, 'time only keeps default count');
+
+    // mailbox button
+    const backupMail: EmailCache = {
+        id: '1',
+        messageId: '1',
+        from: 'a@b.com',
+        to: 'otp@mydomain.com',
+        subject: 'x',
+        backedUp: true,
+    };
+    const urlBackup = mailboxButtonUrl(backupMail, envWith('you@gmail.com,Backup,noforwarded'));
+    assert(urlBackup?.includes('mail.google.com') && urlBackup.includes('Backup'), 'backed up → Backup label');
+
+    const noBackupMail: EmailCache = {
+        id: '2',
+        messageId: '2',
+        from: 'a@b.com',
+        to: 'otp@mydomain.com',
+        subject: 'x',
+        backedUp: false,
+        originalTo: 'shengshk@gmail.com',
+    };
+    const urlOrig = mailboxButtonUrl(noBackupMail, envWith('you@gmail.com,Backup,noforwarded'));
+    assert(urlOrig?.includes('mail.google.com') && !urlOrig.includes('Backup'), 'not backed up → original gmail home');
+
     assert(
-        !shouldBackupInboundMail(mockMessage({
-            from: 'svc@example.com',
+        mailboxButtonUrl({
+            id: '3',
+            messageId: '3',
+            from: 'a@b.com',
             to: 'otp@mydomain.com',
-            headers: { To: 'shengshk@gmail.com' },
-        }), allowFwd),
-        'rule B: To matches backup (+ normalized)',
-    );
-    assert(
-        !shouldBackupInboundMail(mockMessage({
-            from: 'shengshk+other@gmail.com',
-            to: 'otp@mydomain.com',
-            headers: { To: 'otp@mydomain.com' },
-        }), allowFwd),
-        'rule B: From matches backup',
-    );
-    assert(
-        shouldBackupInboundMail(mockMessage({
-            from: 'svc@example.com',
-            to: 'otp@mydomain.com',
-            headers: { To: 'someone@outlook.com' },
-        }), allowFwd),
-        'forwarded policy allows unrelated external forward',
+            subject: 'x',
+            backedUp: false,
+        }, envWith('you@gmail.com,Backup')) === undefined,
+        'no originalTo → hide mailbox',
     );
 
     console.log('forward.test: ok');

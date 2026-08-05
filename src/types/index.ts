@@ -15,6 +15,10 @@ export interface EmailCache {
     gmThrid?: string;
     html?: string;
     text?: string;
+    /** Whether Email Routing backup to FORWARD_MAILS ran for this mail */
+    backedUp?: boolean;
+    /** Header To (external) for Mailbox when not backed up */
+    originalTo?: string;
 }
 
 export type MaxEmailSizePolicy = 'unhandled' | 'continue' | 'truncate';
@@ -22,39 +26,39 @@ export type MaxEmailSizePolicy = 'unhandled' | 'continue' | 'truncate';
 export type BlockPolicy = 'reject' | 'forward' | 'telegram';
 
 /**
- * Required: TELEGRAM_BOT (or legacy TOKEN+ID), KV binding DB
- * Recommended: GEMINI_API_KEY, FORWARD_MAILS
+ * Required: TELEGRAM_BOT, KV binding DB
+ * Recommended: GEMINI_API_KEY, FORWARD_MAILS, MAILS_TTL
  * Optional: UI_LANG (en|zh|tw, default en)
- * Public hostname is saved automatically when you open /init (stored in KV as PUBLIC_HOST).
+ * Public hostname is saved when you open /init (KV PUBLIC_HOST).
  */
 export interface Environment {
-    /** token,chat_id[,junk_chat_id] — preferred over legacy vars */
+    /** token,chat_id[,junk_chat_id] */
     TELEGRAM_BOT?: string;
-    /** @deprecated use TELEGRAM_BOT */
+    /** @deprecated */
     TELEGRAM_TOKEN?: string;
-    /** @deprecated use TELEGRAM_BOT */
+    /** @deprecated */
     TELEGRAM_ID?: string;
 
     /** UI language: en (default) | zh | tw */
     UI_LANG?: string;
 
     /**
-     * Single backup only:
+     * Single backup:
      * `email` | `email,Folder` | `email,Folder,noforwarded|forwarded` | `email,forwarded`
-     * Default policy: noforwarded (skip mail auto-forwarded in from another mailbox).
+     * Default policy: noforwarded.
      */
     FORWARD_MAILS?: string;
-    /** @deprecated use FORWARD_MAILS */
-    FORWARD_MAIL?: string;
-    /** @deprecated use FORWARD_MAILS */
-    FORWARD_LIST?: string;
-    /** @deprecated fold into FORWARD_MAILS as `email,Folder` */
-    FORWARD_DIR?: string;
+
+    /**
+     * Preview retention: `duration,maxCount` e.g. `1d,10` / `24h,50` / `86400,20`
+     * Default if unset: `1d,100`
+     */
+    MAILS_TTL?: string;
+
     BLOCK_LIST?: string;
     WHITE_LIST?: string;
     DISABLE_LOAD_REGEX_FROM_DB?: string;
     BLOCK_POLICY?: string;
-    MAIL_TTL?: string;
     MAX_EMAIL_SIZE?: string;
     MAX_EMAIL_SIZE_POLICY?: MaxEmailSizePolicy;
 
@@ -66,8 +70,6 @@ export interface Environment {
     TIMEZONE?: string;
     /** Gmail multi-account index, default 0 */
     GMAIL_U?: string;
-    /** @deprecated use FORWARD_MAILS folder part */
-    GMAIL_LABEL?: string;
 
     GUARDIAN_MODE?: string;
     RESEND_API_KEY?: string;
