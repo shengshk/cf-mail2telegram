@@ -8,6 +8,7 @@ import { webPreviewUrl } from './cache-policy';
 import { truncateDisplay } from './extract';
 import { buildKeyboard, mailboxButtonUrl } from './mailbox';
 import { loadPreviewMode, type PreviewMode } from './preview-mode';
+import { isWebAuthEnabled } from '../web-auth';
 
 export interface EmailDetailParams {
     text: string;
@@ -40,7 +41,9 @@ async function resolvePreviewUrl(
         return undefined;
     }
     if (mode === 'web') {
-        return host ? webPreviewUrl(host, mail) : undefined;
+        return host
+            ? webPreviewUrl(host, mail, { authEnabled: isWebAuthEnabled(env) })
+            : undefined;
     }
     const botUsername = await loadBotUsername(env);
     return botUsername ? miniAppStartLink(botUsername, mail.id) : undefined;

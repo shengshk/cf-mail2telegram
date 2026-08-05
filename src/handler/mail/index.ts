@@ -17,6 +17,7 @@ import {
     MAIL_CACHE_MAX,
     TELEGRAM_ID_MAP_TTL_SECONDS,
 } from '../../mail/cache-policy';
+import { isWebAuthEnabled } from '../../web-auth';
 import { createTelegramBotAPI } from '../../telegram';
 
 export async function sendMailToTelegram(mail: EmailCache, env: Environment, extract?: ExtractResult): Promise<number[]> {
@@ -95,7 +96,9 @@ export async function emailHandler(message: ForwardableEmailMessage, env: Enviro
             if (originalTo) {
                 mail.originalTo = originalTo;
             }
-            attachWebPreviewMeta(mail);
+            if (!isWebAuthEnabled(env)) {
+                attachWebPreviewMeta(mail);
+            }
             const extractText = [mail.subject, mail.text].filter(Boolean).join('\n');
             const short = extractText.length <= 3000 ? extractText : `${extractText.slice(0, 3000)}...`;
             const extract = await extractVerificationCode(short, env);

@@ -10,6 +10,7 @@ import {
 import { extractVerificationCode } from './extract';
 import { formatMailDate } from './parse';
 import { renderEmailListMode } from './render';
+import { isWebAuthEnabled } from '../web-auth';
 
 const SUBJECTS = [
     'Login verification',
@@ -108,7 +109,9 @@ export async function runFakeMailUiTest(env: Environment): Promise<{ mailId: str
         html,
         backedUp: true,
     };
-    attachWebPreviewMeta(mail);
+    if (!isWebAuthEnabled(env)) {
+        attachWebPreviewMeta(mail);
+    }
 
     const extractText = [mail.subject, mail.text].filter(Boolean).join('\n');
     const short = extractText.length <= 3000 ? extractText : `${extractText.slice(0, 3000)}...`;

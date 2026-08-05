@@ -25,8 +25,18 @@ export function isWebLinkValid(mail: EmailCache, token: string | undefined, now 
     return true;
 }
 
-export function webPreviewUrl(host: string, mail: EmailCache): string | undefined {
-    if (!host || !mail.id || !mail.webToken) {
+export function webPreviewUrl(
+    host: string,
+    mail: EmailCache,
+    opts?: { authEnabled?: boolean },
+): string | undefined {
+    if (!host || !mail.id) {
+        return undefined;
+    }
+    if (opts?.authEnabled) {
+        return `https://${host}/email/${encodeURIComponent(mail.id)}`;
+    }
+    if (!mail.webToken) {
         return undefined;
     }
     return `https://${host}/email/${encodeURIComponent(mail.id)}?t=${encodeURIComponent(mail.webToken)}`;

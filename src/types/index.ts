@@ -47,6 +47,13 @@ export interface Environment {
     UI_LANG?: string;
 
     /**
+     * Optional web login: `username,password` (first comma).
+     * When set: protects /email preview and /init via cookie session (login page).
+     * When unset: /init open; web preview uses 1d token + countdown.
+     */
+    WEB_USER?: string;
+
+    /**
      * Single backup:
      * `email` | `email,Folder` | `email,Folder,noforwarded|forwarded` | `email,forwarded`
      * Default policy: noforwarded.

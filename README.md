@@ -93,7 +93,15 @@ Opening `/init` will:
 1. Register the Telegram webhook on that same host
 2. Save the host into KV (`PUBLIC_HOST`) for Preview / Mini App links later
 
-You can open `/init` directly, or open the Worker root URL (status page) and **click the center status text** (1.5s debounce). The glowing orb opens the GitHub repo; blank areas do nothing.
+You can open `/init` directly, or open the Worker root URL (status page). The page compares saved `PUBLIC_HOST` with the browser host:
+
+| State | Color | Click status text |
+|-------|-------|-------------------|
+| Unbound | Red | Confirm → login if `WEB_USER` set → `/init` |
+| Switchable | Yellow | Confirm → login if `WEB_USER` set → `/init` with new host |
+| Running | Green | Not clickable |
+
+The glowing orb always opens the GitHub repo; blank areas do nothing.
 
 There are **two common ways** to get that URL. Pick **one** and use it consistently.
 
@@ -132,7 +140,7 @@ Only if you have already bound a custom domain / route to this Worker in Cloudfl
 #### Notes for both modes
 
 - Always use `https://`, never `http://`.
-- Visiting the Worker **root URL** (for example the `….workers.dev` link in the Cloudflare dashboard) opens a status page (same look as cf-webhook): **orb → GitHub repo**; **click the rotating status text → run `/init`** (full bind every time; 1.5s debounce against double-taps). Blank page area does nothing.
+- Visiting the Worker **root URL** opens a status page: **orb → GitHub**; status text is **red / yellow / green** (unbound / switchable / running) by comparing KV `PUBLIC_HOST` with the page host. Only unbound/switchable are clickable (confirm → web login when `WEB_USER` is set → `/init`; UI updates on success without reload). Status page itself stays public.
 - You can still open `/init` directly in the address bar if you prefer.
 - `/init` is not a daily task: do it after deploy, after changing `UI_LANG`, or after changing which public hostname you want Telegram to use.
 - The easiest way to avoid typos: copy the Worker’s visit URL from the Cloudflare dashboard (two levels before `workers.dev`), open it, then click the status text.
@@ -159,6 +167,7 @@ But Telegram / Preview / Mini App follow **only one** saved host (`PUBLIC_HOST` 
 | Key | Description |
 |:----|:------------|
 | `TELEGRAM_BOT` | Required. `token,chat_id`. |
+| `WEB_USER` | Optional. `username,password` (split on first comma). When set: web login protects `/email` preview and `/init` (remember 30 days). When unset: `/init` is open; web preview uses 1-day token + countdown. |
 | `UI_LANG` | UI language: `en` (default), `zh` (Simplified), or `tw` (Traditional). Affects Telegram labels/buttons, preview chrome, Mini App, and bot command descriptions. Re-open `/init` after changing. |
 | `GEMINI_API_KEY` | Google AI Studio key (`AIza…`). Worker egress may hit region limits; on failure the Worker falls back to local regex. |
 | `GEMINI_MODEL` | Optional. Default `gemini-2.5-flash-lite`. |
@@ -213,7 +222,10 @@ Time
 
 1. **Preview** (one button) — mode from `/previewmode`:
    - **Mini App** (default): `https://t.me/<bot>?startapp=<mailId>` (Main Mini App URL must be `https://<host>/tma`). TMA auth.
-   - **Web**: `/email/<id>?t=<token>` — unauthenticated; token link expires after **1 day** (live countdown in the page bar). Mail body stays in KV until the **100**-mail cache limit drops it; Mini App can still open it while cached.
+   - **Web**: `/email/<id>` —
+     - with `WEB_USER`: requires login page (no link TTL);
+     - without `WEB_USER`: `/email/<id>?t=<token>`, unauthenticated token expires in **1 day** (live countdown).
+     Mail body stays up to **100** caches; Mini App can still open while cached.
 2. **Mailbox** — jump to webmail per [Mailbox button rules](#mailbox-button-rules).
 
 BotFather: **Mini App URL** = `https://<PUBLIC_HOST>/tma`, **Privacy Policy URL** = `https://telegram.org/privacy-tpa` (see [Configure Telegram](#0-configure-telegram)). Re-open `/init` after deploy so the bot username is cached for Preview links.
@@ -221,7 +233,7 @@ BotFather: **Mini App URL** = `https://<PUBLIC_HOST>/tma`, **Privacy Policy URL*
 ### Security and cache
 
 1. Mail bodies: hard limit **100** newest in KV (oldest deleted). No Dashboard TTL var.
-2. Web Preview links: hard **1 day** token expiry (data may remain). Prefer Mini App.
+2. Web Preview without `WEB_USER`: hard **1 day** token expiry. With `WEB_USER`: login session (optional remember 30 days). Prefer Mini App for Telegram-native auth.
 3. Large attachments may time out Workers; put a real mailbox in `FORWARD_MAIL`.
 4. `GUARDIAN_MODE` can reduce duplicate notifications at the cost of more KV writes.
 
@@ -312,7 +324,15 @@ pnpm pub  # wrangler deploy --keep-vars
 1. 用当前这个主机注册 Telegram webhook  
 2. 把该主机名写入 KV（`PUBLIC_HOST`），供以后「预览 / 小程序」拼链接
 
-可以直接访问 `/init`，也可以先打开 Worker 根地址（状态页），再**点击中间那行状态文字**触发初始化（完整执行；1.5 秒防抖）。中心球打开 GitHub 仓库；空白处无效。
+可以直接访问 `/init`，也可以先打开 Worker 根地址（状态页）。状态页对比已保存的 `PUBLIC_HOST` 与当前浏览器域名：
+
+| 状态 | 颜色 | 点状态文字 |
+|------|------|------------|
+| 待绑定 | 红 | 确认 → 若配置了 `WEB_USER` 则先登录 → `/init` |
+| 可切换 | 黄 | 确认 → 若配置了 `WEB_USER` 则先登录 → 用新域名 `/init` |
+| 运行中 | 绿 | 不可点 |
+
+中心球仍打开 GitHub 仓库；空白处无效。
 
 常见有 **两种方式**。请 **选定一种并一直用同一种**。
 
@@ -351,7 +371,7 @@ pnpm pub  # wrangler deploy --keep-vars
 #### 两种方式的共同注意点
 
 - 必须用 `https://`，不要用 `http://`。
-- 访问 Worker **根地址**（例如控制台里的 `….workers.dev` 链接）会打开状态页（样式同 cf-webhook）：**球 → GitHub 仓库**；**点击轮换的状态文字 → 执行 `/init`**（每次完整绑定；1.5 秒防抖防连点）。页面空白处不触发。
+- 访问 Worker **根地址**会打开状态页：**球 → GitHub**；状态文字按 KV `PUBLIC_HOST` 与当前域名对比为 **红 / 黄 / 绿**（待绑定 / 可切换 / 运行中）。仅前两种可点（确认 → 若配置了 `WEB_USER` 则先网页登录 → `/init`；成功后自动切到运行中，无需手动刷新）。状态页本身不要求登录。
 - 仍可直接在地址栏打开 `/init`。
 - `/init` 不是每天都要做：部署后做一次；改 `UI_LANG`，或要更换「给 Telegram 用的公网主机」后再做。
 - 最稳妥的做法：从 Cloudflare 控制台复制 Worker 的「访问」完整链接（`workers.dev` 前两级名称都要有），打开后点击中间状态文字。
@@ -378,6 +398,7 @@ pnpm pub  # wrangler deploy --keep-vars
 | KEY | 描述 |
 |:----|:-----|
 | `TELEGRAM_BOT` | 必填。`token,chat_id`。 |
+| `WEB_USER` | 可选。`用户名,密码`（按第一个逗号拆分）。配置后：网页登录保护 `/email` 预览与 `/init`（可记住 30 天）。未配置：`/init` 放开；网页预览用 1 天 token + 倒计时。 |
 | `UI_LANG` | 界面语言：`en`（默认）、`zh`（简体）或 `tw`（繁体）。影响 TG 文案/按钮、预览页、小程序、Bot 命令描述。修改后请重新打开 `/init`。 |
 | `GEMINI_API_KEY` | Google AI Studio Key（`AIza…`）。出网可能受地区限制；失败时自动本地正则。 |
 | `GEMINI_MODEL` | 可选。默认 `gemini-2.5-flash-lite`。 |
@@ -432,7 +453,10 @@ BotFather 必须同时配置 **隐私政策 URL** 与 **Mini App URL**（见 [�
 
 1. **预览**（单个按钮）— 由 `/previewmode` 决定：
    - **小程序**（默认）：`https://t.me/<bot>?startapp=<mailId>`（主小程序须为 `https://<host>/tma`），TMA 鉴权。
-   - **网页**：`/email/<id>?t=<token>`，未鉴权；token 链接 **1 天**失效（页顶倒计时）。正文在 KV 中最多保留 **100** 封；缓存期内仍可用小程序打开。
+   - **网页**：`/email/<id>` —
+     - 已配置 `WEB_USER`：需登录页（链接不过期）；
+     - 未配置：`/email/<id>?t=<token>`，未鉴权 token **1 天**失效（页顶倒计时）。
+     正文最多保留 **100** 封；缓存期内仍可用小程序打开。
 2. **邮箱**：按 [「邮箱」按钮规则](#邮箱按钮规则) 跳转网页邮箱。
 
 BotFather：**Mini App URL** = `https://<PUBLIC_HOST>/tma`，**隐私政策 URL** = `https://telegram.org/privacy-tpa`（见 [配置 Telegram](#0-配置-telegram)）。部署后重新打开一次 `/init`，以缓存 bot username 供预览链接使用。
@@ -440,7 +464,7 @@ BotFather：**Mini App URL** = `https://<PUBLIC_HOST>/tma`，**隐私政策 URL*
 ### 安全与邮件缓存
 
 1. 邮件正文：硬编码最多 **100** 封（超限删最旧）；无 Dashboard TTL 变量。
-2. 网页预览链接：硬编码 **1 天** token 过期（正文可能仍在）。优先使用小程序。
+2. 未配置 `WEB_USER` 时网页预览：硬编码 **1 天** token。配置了 `WEB_USER`：网页登录会话（可选记住 30 天）。优先小程序。
 3. 由于 Workers 限制，附件较大时可能导致超时与重试。建议配置 `FORWARD_MAIL`。
 4. 开启 `GUARDIAN_MODE` 可减少重复消息，但会增加 KV 写入。
 

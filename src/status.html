@@ -12,7 +12,34 @@
     :root {
       --bg0: #0b1210;
       --glow: #3ecf8e;
+      --glow-rgb: 62, 207, 142;
       --text: #e8f5ee;
+      --muted: #7a9a88;
+      --bg-mid: #1a3a2a;
+      --bg-low: #0e1c16;
+    }
+
+    body.state-unbound {
+      --glow: #ef4444;
+      --glow-rgb: 239, 68, 68;
+      --bg-mid: #3a1a1a;
+      --bg-low: #1c0e0e;
+      --muted: #9a7a7a;
+    }
+
+    body.state-switchable {
+      --glow: #eab308;
+      --glow-rgb: 234, 179, 8;
+      --bg-mid: #3a351a;
+      --bg-low: #1c1a0e;
+      --muted: #9a947a;
+    }
+
+    body.state-running {
+      --glow: #3ecf8e;
+      --glow-rgb: 62, 207, 142;
+      --bg-mid: #1a3a2a;
+      --bg-low: #0e1c16;
       --muted: #7a9a88;
     }
 
@@ -29,11 +56,12 @@
       color: var(--text);
       font-family: "Unbounded", "Noto Sans SC", sans-serif;
       background:
-        radial-gradient(ellipse 80% 60% at 50% 35%, #1a3a2a 0%, transparent 55%),
-        radial-gradient(ellipse 100% 80% at 50% 100%, #0e1c16 0%, var(--bg0) 60%);
+        radial-gradient(ellipse 80% 60% at 50% 35%, var(--bg-mid) 0%, transparent 55%),
+        radial-gradient(ellipse 100% 80% at 50% 100%, var(--bg-low) 0%, var(--bg0) 60%);
       overflow: hidden;
       cursor: default;
       user-select: none;
+      transition: background 0.45s ease;
     }
 
     .stage {
@@ -49,11 +77,12 @@
       border-radius: 50%;
       pointer-events: auto;
       cursor: pointer;
-      background: radial-gradient(circle at 35% 30%, #8dffc4, var(--glow) 45%, #1a5c3c 100%);
+      background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--glow) 70%, white), var(--glow) 45%, color-mix(in srgb, var(--glow) 35%, black) 100%);
       box-shadow:
-        0 0 24px rgba(62, 207, 142, 0.45),
-        0 0 64px rgba(62, 207, 142, 0.2);
+        0 0 24px rgba(var(--glow-rgb), 0.45),
+        0 0 64px rgba(var(--glow-rgb), 0.2);
       animation: breathe 3.2s ease-in-out infinite;
+      transition: background 0.45s ease, box-shadow 0.45s ease;
     }
 
     .orb::after {
@@ -62,7 +91,7 @@
       width: 100%;
       height: 100%;
       border-radius: 50%;
-      box-shadow: 0 0 0 0 rgba(62, 207, 142, 0.35);
+      box-shadow: 0 0 0 0 rgba(var(--glow-rgb), 0.35);
       animation: ring 3.2s ease-in-out infinite;
     }
 
@@ -73,6 +102,11 @@
       place-items: center;
       line-height: 1.35;
       padding: 0.1rem 0;
+      pointer-events: none;
+      cursor: default;
+    }
+
+    .status.clickable {
       pointer-events: auto;
       cursor: pointer;
     }
@@ -98,9 +132,13 @@
       font-size: 0.72rem;
       font-weight: 500;
       color: var(--muted);
-      letter-spacing: 0.1em;
+      letter-spacing: 0.06em;
       line-height: 1.45;
       opacity: 0.85;
+      max-width: 22rem;
+      margin-left: auto;
+      margin-right: auto;
+      word-break: break-all;
     }
 
     .toast {
@@ -118,6 +156,8 @@
       pointer-events: none;
       transition: opacity 0.25s ease, transform 0.25s ease;
       backdrop-filter: blur(8px);
+      max-width: min(90vw, 28rem);
+      text-align: center;
     }
 
     .toast.show {
@@ -138,50 +178,184 @@
 
     @keyframes ring {
       0%, 100% {
-        box-shadow: 0 0 0 0 rgba(62, 207, 142, 0);
+        box-shadow: 0 0 0 0 rgba(var(--glow-rgb), 0);
       }
       50% {
-        box-shadow: 0 0 0 18px rgba(62, 207, 142, 0);
+        box-shadow: 0 0 0 18px rgba(var(--glow-rgb), 0);
       }
     }
   </style>
 </head>
-<body>
+<body class="state-running">
   <main class="stage">
     <div class="orb" id="orb" title="Open GitHub" role="link" tabindex="0"></div>
-    <div class="status" id="status" aria-live="polite" title="Bind Telegram webhook">
-      <span class="active">运行中</span>
-      <span>Working</span>
-      <span>運作中</span>
-      <span>稼働中</span>
-      <span>작동 중</span>
-      <span>En cours</span>
-    </div>
-    <p class="hint">cf-mail2telegram · online</p>
+    <div class="status" id="status" aria-live="polite"></div>
+    <p class="hint" id="hint">cf-mail2telegram</p>
   </main>
   <div class="toast" id="toast"></div>
   <script>
     const GITHUB = "https://github.com/shengshk/cf-mail2telegram";
     const DEBOUNCE_MS = 1500;
 
-    const phrases = document.querySelectorAll("#status span");
-    let i = 0;
-    setInterval(() => {
-      phrases[i].classList.remove("active");
-      i = (i + 1) % phrases.length;
-      phrases[i].classList.add("active");
-    }, 2200);
+    const LABELS = {
+      unbound: ["待绑定", "Unbound", "待綁定", "未設定", "미연결", "Non lié"],
+      switchable: ["可切换", "Switchable", "可切換", "切替可", "전환 가능", "Commutable"],
+      running: ["运行中", "Working", "運作中", "稼働中", "작동 중", "En cours"],
+    };
 
+    const statusEl = document.getElementById("status");
+    const hintEl = document.getElementById("hint");
     const toast = document.getElementById("toast");
+
+    let phraseIndex = 0;
+    let phraseTimer = null;
+    let pageHost = normalizeHost(location.host);
+    let boundHost = null;
+    let mode = "running";
+    let webAuthEnabled = false;
+    let authenticated = true;
     let toastTimer;
     let lastInitAt = 0;
     let initBusy = false;
+
+    function normalizeHost(raw) {
+      let host = String(raw || "").trim();
+      if (!host) return "";
+      host = host.replace(/^https?:\/\//i, "");
+      host = host.split("/")[0] || "";
+      host = host.replace(/:\d+$/, "");
+      return host.trim().toLowerCase();
+    }
 
     function showToast(msg) {
       toast.textContent = msg;
       toast.classList.add("show");
       clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => toast.classList.remove("show"), 1600);
+      toastTimer = setTimeout(() => toast.classList.remove("show"), 1800);
+    }
+
+    function resolveMode(saved, current) {
+      if (!saved) return "unbound";
+      if (saved !== current) return "switchable";
+      return "running";
+    }
+
+    function renderPhrases(nextMode) {
+      const list = LABELS[nextMode] || LABELS.running;
+      statusEl.innerHTML = "";
+      list.forEach((text, idx) => {
+        const span = document.createElement("span");
+        span.textContent = text;
+        if (idx === 0) span.classList.add("active");
+        statusEl.appendChild(span);
+      });
+      phraseIndex = 0;
+      if (phraseTimer) clearInterval(phraseTimer);
+      phraseTimer = setInterval(() => {
+        const phrases = statusEl.querySelectorAll("span");
+        if (!phrases.length) return;
+        phrases[phraseIndex].classList.remove("active");
+        phraseIndex = (phraseIndex + 1) % phrases.length;
+        phrases[phraseIndex].classList.add("active");
+      }, 2200);
+    }
+
+    function applyState(nextMode) {
+      mode = nextMode;
+      document.body.classList.remove("state-unbound", "state-switchable", "state-running");
+      document.body.classList.add("state-" + nextMode);
+      renderPhrases(nextMode);
+
+      if (nextMode === "running") {
+        statusEl.classList.remove("clickable");
+        statusEl.removeAttribute("title");
+        hintEl.textContent = "cf-mail2telegram · online";
+      } else if (nextMode === "unbound") {
+        statusEl.classList.add("clickable");
+        statusEl.title = "Bind Telegram webhook";
+        hintEl.textContent = "cf-mail2telegram · unbound · " + pageHost;
+      } else {
+        statusEl.classList.add("clickable");
+        statusEl.title = "Re-bind with this host";
+        hintEl.textContent = (boundHost || "?") + " → " + pageHost;
+      }
+    }
+
+    async function refreshStatus() {
+      pageHost = normalizeHost(location.host);
+      try {
+        const res = await fetch("/api/status", { cache: "no-store" });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          showToast(data.error || ("状态失败 " + res.status));
+          applyState("unbound");
+          return;
+        }
+        boundHost = normalizeHost(data.host || "");
+        webAuthEnabled = !!data.webAuthEnabled;
+        authenticated = data.authenticated !== false;
+        applyState(resolveMode(boundHost, pageHost));
+        if (new URLSearchParams(location.search).get("runInit") === "1") {
+          history.replaceState({}, "", "/");
+          if (mode !== "running") {
+            void runInit(true);
+          }
+        }
+      } catch {
+        showToast("状态加载失败");
+        applyState("unbound");
+      }
+    }
+
+    async function runInit(skipConfirm) {
+      if (mode === "running") return;
+      if (!skipConfirm) {
+        if (mode === "unbound") {
+          if (!confirm("用当前域名绑定 Telegram webhook？\n" + pageHost)) return;
+        } else if (mode === "switchable") {
+          if (!confirm(
+            "将绑定从旧域名切换到当前域名？\n"
+            + (boundHost || "?") + " → " + pageHost + "\n"
+            + "Webhook / 预览 / 小程序将改用新域名。"
+          )) return;
+        }
+      }
+
+      if (webAuthEnabled && !authenticated) {
+        location.href = "/login?next=" + encodeURIComponent("/?runInit=1");
+        return;
+      }
+
+      const now = Date.now();
+      if (initBusy || now - lastInitAt < DEBOUNCE_MS) {
+        showToast("请稍候…");
+        return;
+      }
+
+      initBusy = true;
+      lastInitAt = now;
+      showToast("初始化中…");
+      try {
+        const res = await fetch("/init", { method: "GET", cache: "no-store", credentials: "same-origin" });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          if (res.status === 401 && webAuthEnabled) {
+            location.href = "/login?next=" + encodeURIComponent("/?runInit=1");
+            return;
+          }
+          showToast(data.error || ("失败 " + res.status));
+          return;
+        }
+        boundHost = normalizeHost(data.host || pageHost);
+        pageHost = normalizeHost(location.host);
+        authenticated = true;
+        applyState(resolveMode(boundHost, pageHost));
+        showToast(boundHost ? ("已绑定 " + boundHost) : "初始化完成");
+      } catch {
+        showToast("初始化失败");
+      } finally {
+        initBusy = false;
+      }
     }
 
     document.getElementById("orb").addEventListener("click", (e) => {
@@ -189,30 +363,18 @@
       window.open(GITHUB, "_blank", "noopener,noreferrer");
     });
 
-    document.getElementById("status").addEventListener("click", async (e) => {
+    statusEl.addEventListener("click", async (e) => {
       e.stopPropagation();
+      if (mode === "running") return;
       const now = Date.now();
       if (initBusy || now - lastInitAt < DEBOUNCE_MS) {
         showToast("请稍候…");
         return;
       }
-      initBusy = true;
-      lastInitAt = now;
-      showToast("初始化中…");
-      try {
-        const res = await fetch("/init", { method: "GET", cache: "no-store" });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          showToast(data.error || ("失败 " + res.status));
-          return;
-        }
-        showToast(data.host ? ("已绑定 " + data.host) : "初始化完成");
-      } catch {
-        showToast("初始化失败");
-      } finally {
-        initBusy = false;
-      }
+      await runInit(false);
     });
+
+    refreshStatus();
   </script>
 </body>
 </html>

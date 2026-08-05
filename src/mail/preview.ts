@@ -56,11 +56,13 @@ export function buildPreviewBodyHtml(mail: EmailCache): string {
 }
 
 export interface WebPreviewBarOptions {
-    /** Unix ms when unauthenticated link expires */
-    linkExpiresAt: number;
+    /** Unix ms when unauthenticated link expires; omit when WEB_USER auth mode */
+    linkExpiresAt?: number;
+    /** Show logout link (WEB_USER mode) */
+    showLogout?: boolean;
 }
 
-/** Web page with live countdown for unauthenticated link TTL */
+/** Web page; optional live countdown for token mode; logout when auth mode */
 export function renderPreviewPage(
     mail: EmailCache,
     bodyHtml: string,
@@ -77,6 +79,11 @@ export function renderPreviewPage(
         ? bodyHtml
         : `<pre style="white-space:pre-wrap;margin:0">${escapeHtml(mail.text || '')}</pre>`;
 
+    const logoutHtml = webBar?.showLogout
+        ? `<a class="out" href="/logout?next=${encodeURIComponent(`/email/${mail.id}`)}">${escapeHtml(t(lang, 'logout'))}</a>`
+        : '';
+
+    const useCountdown = !!(webBar?.linkExpiresAt && webBar.linkExpiresAt > 0);
     const countdownLabels = JSON.stringify({
         title: t(lang, 'previewTitle'),
         remain: t(lang, 'linkRemainLabel'),
@@ -87,7 +94,7 @@ export function renderPreviewPage(
         second: t(lang, 'durationSecond'),
     }).replace(/</g, '\\u003c');
     const expiresAt = webBar?.linkExpiresAt ?? 0;
-    const countdownScript = webBar
+    const countdownScript = useCountdown
         ? `<script>(function(){
   var el=document.getElementById('preview-bar-text');
   var L=${countdownLabels};
@@ -116,17 +123,20 @@ export function renderPreviewPage(
 })();</script>`
         : '';
 
-    const barText = webBar
+    const barLeft = useCountdown
         ? `<span id="preview-bar-text">${title}</span>`
         : `<span>${title}</span>`;
 
     return `<!doctype html><html lang="${htmlLang(lang)}"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="referrer" content="no-referrer">
-<title>${subject}</title><style>${PREVIEW_CSS}</style></head>
+<title>${subject}</title><style>${PREVIEW_CSS}
+a.out{color:#4b5563;font-size:.8125rem;text-decoration:none}
+a.out:hover{color:#111827;text-decoration:underline}
+</style></head>
 <body>
 <div class="preview">
-  <div class="preview-bar">${barText}</div>
+  <div class="preview-bar">${barLeft}${logoutHtml}</div>
   <div class="preview-sheet">
     <div class="preview-meta">
       <h1>${subject}</h1>

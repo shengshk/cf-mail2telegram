@@ -10,7 +10,7 @@ import {
     shouldBackupInboundMail,
 } from './forward';
 import { mailboxButtonUrl } from './mailbox';
-import { isWebLinkValid, MAIL_CACHE_MAX, WEB_LINK_TTL_MS, attachWebPreviewMeta } from './cache-policy';
+import { isWebLinkValid, MAIL_CACHE_MAX, WEB_LINK_TTL_MS, attachWebPreviewMeta, webPreviewUrl } from './cache-policy';
 import type { EmailCache } from '../types';
 
 function assert(cond: unknown, msg: string): void {
@@ -95,6 +95,14 @@ export async function runForwardTests(): Promise<void> {
     assert(isWebLinkValid(linkMail, linkMail.webToken, 1_000_000 + 1000), 'web valid');
     assert(!isWebLinkValid(linkMail, 'bad', 1_000_000 + 1000), 'web bad token');
     assert(!isWebLinkValid(linkMail, linkMail.webToken, linkMail.webExpiresAt), 'web expired');
+    assert(
+        webPreviewUrl('h.example', linkMail, { authEnabled: true }) === `https://h.example/email/${linkMail.id}`,
+        'auth url no token',
+    );
+    assert(
+        !!webPreviewUrl('h.example', linkMail)?.includes('?t='),
+        'open url has token',
+    );
 
     // mailbox button
     const backupMail: EmailCache = {

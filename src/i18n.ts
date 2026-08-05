@@ -67,12 +67,21 @@ export type I18nKey =
     | 'previewModeWeb'
     | 'previewModeSwitchMini'
     | 'previewModeSwitchWeb'
-    | 'previewModeWarn'
+    | 'previewModeWarnOpen'
+    | 'previewModeWarnAuth'
     | 'previewModeYes'
     | 'previewModeNo'
     | 'previewModeSetOk'
     | 'previewModeCancel'
-    | 'previewModeAlready';
+    | 'previewModeAlready'
+    | 'loginTitle'
+    | 'loginSub'
+    | 'loginUsername'
+    | 'loginPassword'
+    | 'loginRemember'
+    | 'loginBtn'
+    | 'loginBadCredentials'
+    | 'logout';
 
 const en: Record<I18nKey, string> = {
     otp: 'OTP:',
@@ -141,12 +150,21 @@ const en: Record<I18nKey, string> = {
     previewModeWeb: 'Web',
     previewModeSwitchMini: 'Use Mini App',
     previewModeSwitchWeb: 'Use Web',
-    previewModeWarn: 'Switch Preview to Web?\nUnauthenticated links can be forwarded and opened without Telegram login.\nWeb links expire after about 1 day (mail body may still be available via Mini App within the cache limit).\nContinue?',
+    previewModeWarnOpen: 'Switch Preview to Web?\nNo WEB_USER is set: links are unauthenticated, can be forwarded, and expire after about 1 day (mail body may still open via Mini App within the cache limit).\nContinue?',
+    previewModeWarnAuth: 'Switch Preview to Web?\nWEB_USER is configured: opening Preview requires the web login (remember-me allowed). Links are not useful without that account.\nContinue?',
     previewModeYes: 'Yes',
     previewModeNo: 'No',
     previewModeSetOk: 'Preview mode set to: {mode}\nOnly new mail messages are affected.',
     previewModeCancel: 'Cancelled.',
     previewModeAlready: 'Already using: {mode}',
+    loginTitle: 'Sign in to cf-mail2telegram',
+    loginSub: 'Enter username and password',
+    loginUsername: 'Username',
+    loginPassword: 'Password',
+    loginRemember: 'Remember me for 30 days',
+    loginBtn: 'Sign in',
+    loginBadCredentials: 'Invalid username or password',
+    logout: 'Sign out',
 };
 
 const zh: Record<I18nKey, string> = {
@@ -216,12 +234,21 @@ const zh: Record<I18nKey, string> = {
     previewModeWeb: '网页',
     previewModeSwitchMini: '使用小程序',
     previewModeSwitchWeb: '使用网页',
-    previewModeWarn: '切换预览方式为网页形式？\n存在安全风险：链接可转发，无需 Telegram 登录即可打开。\n未鉴权链接约 1 天后失效（正文在缓存上限内仍可通过小程序查看）。\n是否继续？',
+    previewModeWarnOpen: '切换预览方式为网页形式？\n未配置 WEB_USER：链接未鉴权，可转发，约 1 天后失效（正文在缓存上限内仍可通过小程序查看）。\n是否继续？',
+    previewModeWarnAuth: '切换预览方式为网页形式？\n已配置 WEB_USER：打开预览需网页登录（可勾选记住 30 天）。没有账号无法查看链接内容。\n是否继续？',
     previewModeYes: '是',
     previewModeNo: '否',
     previewModeSetOk: '预览方式已设为：{mode}\n仅影响之后的新邮件。',
     previewModeCancel: '已取消。',
     previewModeAlready: '已经是：{mode}',
+    loginTitle: '登录 cf-mail2telegram',
+    loginSub: '请输入用户名和密码',
+    loginUsername: '用户名',
+    loginPassword: '密码',
+    loginRemember: '记住我 30 天',
+    loginBtn: '登录',
+    loginBadCredentials: '用户名或密码错误',
+    logout: '退出',
 };
 
 const tw: Record<I18nKey, string> = {
@@ -291,12 +318,21 @@ const tw: Record<I18nKey, string> = {
     previewModeWeb: '網頁',
     previewModeSwitchMini: '使用小程式',
     previewModeSwitchWeb: '使用網頁',
-    previewModeWarn: '切換預覽方式為網頁形式？\n存在安全風險：連結可轉發，無需 Telegram 登入即可開啟。\n未鑑權連結約 1 天後失效（正文在快取上限內仍可透過小程式查看）。\n是否繼續？',
+    previewModeWarnOpen: '切換預覽方式為網頁形式？\n未設定 WEB_USER：連結未鑑權，可轉發，約 1 天後失效（正文在快取上限內仍可透過小程式查看）。\n是否繼續？',
+    previewModeWarnAuth: '切換預覽方式為網頁形式？\n已設定 WEB_USER：開啟預覽需網頁登入（可勾選記住 30 天）。沒有帳號無法查看連結內容。\n是否繼續？',
     previewModeYes: '是',
     previewModeNo: '否',
     previewModeSetOk: '預覽方式已設為：{mode}\n僅影響之後的新郵件。',
     previewModeCancel: '已取消。',
     previewModeAlready: '已經是：{mode}',
+    loginTitle: '登入 cf-mail2telegram',
+    loginSub: '請輸入使用者名稱與密碼',
+    loginUsername: '使用者名稱',
+    loginPassword: '密碼',
+    loginRemember: '記住我 30 天',
+    loginBtn: '登入',
+    loginBadCredentials: '使用者名稱或密碼錯誤',
+    logout: '登出',
 };
 
 const catalog: Record<UiLang, Record<I18nKey, string>> = { en, zh, tw };

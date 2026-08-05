@@ -7,6 +7,7 @@ import { resolveUiLang, t } from '../i18n';
 import { renderEmailDebugMode, renderEmailListMode, renderEmailPreviewMode, renderEmailSummaryMode, replyToEmail } from '../mail';
 import { checkTestCommandRate, isAllowedTestUser, runFakeMailUiTest } from '../mail/test-mail';
 import { loadPreviewMode, savePreviewMode, type PreviewMode } from '../mail/preview-mode';
+import { isWebAuthEnabled } from '../web-auth';
 import { loadPublicHost } from '../public-host';
 import { createTelegramBotAPI } from './api';
 import { listModeStartParam, loadBotUsername, miniAppStartLink } from './bot-username';
@@ -459,7 +460,7 @@ async function telegramCallbackHandler(callback: Telegram.CallbackQuery, env: En
                     await answer(fill(t(lang, 'previewModeAlready'), { mode: modeLabel(lang, 'web') }));
                     return;
                 }
-                await edit(t(lang, 'previewModeWarn'), {
+                await edit(t(lang, isWebAuthEnabled(env) ? 'previewModeWarnAuth' : 'previewModeWarnOpen'), {
                     inline_keyboard: [[
                         { text: t(lang, 'previewModeYes'), callback_data: 'pm:web' },
                         { text: t(lang, 'previewModeNo'), callback_data: 'pm:cancel' },

@@ -3011,12 +3011,21 @@ var en = {
   previewModeWeb: "Web",
   previewModeSwitchMini: "Use Mini App",
   previewModeSwitchWeb: "Use Web",
-  previewModeWarn: "Switch Preview to Web?\nUnauthenticated links can be forwarded and opened without Telegram login.\nWeb links expire after about 1 day (mail body may still be available via Mini App within the cache limit).\nContinue?",
+  previewModeWarnOpen: "Switch Preview to Web?\nNo WEB_USER is set: links are unauthenticated, can be forwarded, and expire after about 1 day (mail body may still open via Mini App within the cache limit).\nContinue?",
+  previewModeWarnAuth: "Switch Preview to Web?\nWEB_USER is configured: opening Preview requires the web login (remember-me allowed). Links are not useful without that account.\nContinue?",
   previewModeYes: "Yes",
   previewModeNo: "No",
   previewModeSetOk: "Preview mode set to: {mode}\nOnly new mail messages are affected.",
   previewModeCancel: "Cancelled.",
-  previewModeAlready: "Already using: {mode}"
+  previewModeAlready: "Already using: {mode}",
+  loginTitle: "Sign in to cf-mail2telegram",
+  loginSub: "Enter username and password",
+  loginUsername: "Username",
+  loginPassword: "Password",
+  loginRemember: "Remember me for 30 days",
+  loginBtn: "Sign in",
+  loginBadCredentials: "Invalid username or password",
+  logout: "Sign out"
 };
 var zh = {
   otp: "\u9A8C\u8BC1\u7801\uFF1A",
@@ -3085,12 +3094,21 @@ var zh = {
   previewModeWeb: "\u7F51\u9875",
   previewModeSwitchMini: "\u4F7F\u7528\u5C0F\u7A0B\u5E8F",
   previewModeSwitchWeb: "\u4F7F\u7528\u7F51\u9875",
-  previewModeWarn: "\u5207\u6362\u9884\u89C8\u65B9\u5F0F\u4E3A\u7F51\u9875\u5F62\u5F0F\uFF1F\n\u5B58\u5728\u5B89\u5168\u98CE\u9669\uFF1A\u94FE\u63A5\u53EF\u8F6C\u53D1\uFF0C\u65E0\u9700 Telegram \u767B\u5F55\u5373\u53EF\u6253\u5F00\u3002\n\u672A\u9274\u6743\u94FE\u63A5\u7EA6 1 \u5929\u540E\u5931\u6548\uFF08\u6B63\u6587\u5728\u7F13\u5B58\u4E0A\u9650\u5185\u4ECD\u53EF\u901A\u8FC7\u5C0F\u7A0B\u5E8F\u67E5\u770B\uFF09\u3002\n\u662F\u5426\u7EE7\u7EED\uFF1F",
+  previewModeWarnOpen: "\u5207\u6362\u9884\u89C8\u65B9\u5F0F\u4E3A\u7F51\u9875\u5F62\u5F0F\uFF1F\n\u672A\u914D\u7F6E WEB_USER\uFF1A\u94FE\u63A5\u672A\u9274\u6743\uFF0C\u53EF\u8F6C\u53D1\uFF0C\u7EA6 1 \u5929\u540E\u5931\u6548\uFF08\u6B63\u6587\u5728\u7F13\u5B58\u4E0A\u9650\u5185\u4ECD\u53EF\u901A\u8FC7\u5C0F\u7A0B\u5E8F\u67E5\u770B\uFF09\u3002\n\u662F\u5426\u7EE7\u7EED\uFF1F",
+  previewModeWarnAuth: "\u5207\u6362\u9884\u89C8\u65B9\u5F0F\u4E3A\u7F51\u9875\u5F62\u5F0F\uFF1F\n\u5DF2\u914D\u7F6E WEB_USER\uFF1A\u6253\u5F00\u9884\u89C8\u9700\u7F51\u9875\u767B\u5F55\uFF08\u53EF\u52FE\u9009\u8BB0\u4F4F 30 \u5929\uFF09\u3002\u6CA1\u6709\u8D26\u53F7\u65E0\u6CD5\u67E5\u770B\u94FE\u63A5\u5185\u5BB9\u3002\n\u662F\u5426\u7EE7\u7EED\uFF1F",
   previewModeYes: "\u662F",
   previewModeNo: "\u5426",
   previewModeSetOk: "\u9884\u89C8\u65B9\u5F0F\u5DF2\u8BBE\u4E3A\uFF1A{mode}\n\u4EC5\u5F71\u54CD\u4E4B\u540E\u7684\u65B0\u90AE\u4EF6\u3002",
   previewModeCancel: "\u5DF2\u53D6\u6D88\u3002",
-  previewModeAlready: "\u5DF2\u7ECF\u662F\uFF1A{mode}"
+  previewModeAlready: "\u5DF2\u7ECF\u662F\uFF1A{mode}",
+  loginTitle: "\u767B\u5F55 cf-mail2telegram",
+  loginSub: "\u8BF7\u8F93\u5165\u7528\u6237\u540D\u548C\u5BC6\u7801",
+  loginUsername: "\u7528\u6237\u540D",
+  loginPassword: "\u5BC6\u7801",
+  loginRemember: "\u8BB0\u4F4F\u6211 30 \u5929",
+  loginBtn: "\u767B\u5F55",
+  loginBadCredentials: "\u7528\u6237\u540D\u6216\u5BC6\u7801\u9519\u8BEF",
+  logout: "\u9000\u51FA"
 };
 var tw = {
   otp: "\u9A57\u8B49\u78BC\uFF1A",
@@ -3159,12 +3177,21 @@ var tw = {
   previewModeWeb: "\u7DB2\u9801",
   previewModeSwitchMini: "\u4F7F\u7528\u5C0F\u7A0B\u5F0F",
   previewModeSwitchWeb: "\u4F7F\u7528\u7DB2\u9801",
-  previewModeWarn: "\u5207\u63DB\u9810\u89BD\u65B9\u5F0F\u70BA\u7DB2\u9801\u5F62\u5F0F\uFF1F\n\u5B58\u5728\u5B89\u5168\u98A8\u96AA\uFF1A\u9023\u7D50\u53EF\u8F49\u767C\uFF0C\u7121\u9700 Telegram \u767B\u5165\u5373\u53EF\u958B\u555F\u3002\n\u672A\u9451\u6B0A\u9023\u7D50\u7D04 1 \u5929\u5F8C\u5931\u6548\uFF08\u6B63\u6587\u5728\u5FEB\u53D6\u4E0A\u9650\u5167\u4ECD\u53EF\u900F\u904E\u5C0F\u7A0B\u5F0F\u67E5\u770B\uFF09\u3002\n\u662F\u5426\u7E7C\u7E8C\uFF1F",
+  previewModeWarnOpen: "\u5207\u63DB\u9810\u89BD\u65B9\u5F0F\u70BA\u7DB2\u9801\u5F62\u5F0F\uFF1F\n\u672A\u8A2D\u5B9A WEB_USER\uFF1A\u9023\u7D50\u672A\u9451\u6B0A\uFF0C\u53EF\u8F49\u767C\uFF0C\u7D04 1 \u5929\u5F8C\u5931\u6548\uFF08\u6B63\u6587\u5728\u5FEB\u53D6\u4E0A\u9650\u5167\u4ECD\u53EF\u900F\u904E\u5C0F\u7A0B\u5F0F\u67E5\u770B\uFF09\u3002\n\u662F\u5426\u7E7C\u7E8C\uFF1F",
+  previewModeWarnAuth: "\u5207\u63DB\u9810\u89BD\u65B9\u5F0F\u70BA\u7DB2\u9801\u5F62\u5F0F\uFF1F\n\u5DF2\u8A2D\u5B9A WEB_USER\uFF1A\u958B\u555F\u9810\u89BD\u9700\u7DB2\u9801\u767B\u5165\uFF08\u53EF\u52FE\u9078\u8A18\u4F4F 30 \u5929\uFF09\u3002\u6C92\u6709\u5E33\u865F\u7121\u6CD5\u67E5\u770B\u9023\u7D50\u5167\u5BB9\u3002\n\u662F\u5426\u7E7C\u7E8C\uFF1F",
   previewModeYes: "\u662F",
   previewModeNo: "\u5426",
   previewModeSetOk: "\u9810\u89BD\u65B9\u5F0F\u5DF2\u8A2D\u70BA\uFF1A{mode}\n\u50C5\u5F71\u97FF\u4E4B\u5F8C\u7684\u65B0\u90F5\u4EF6\u3002",
   previewModeCancel: "\u5DF2\u53D6\u6D88\u3002",
-  previewModeAlready: "\u5DF2\u7D93\u662F\uFF1A{mode}"
+  previewModeAlready: "\u5DF2\u7D93\u662F\uFF1A{mode}",
+  loginTitle: "\u767B\u5165 cf-mail2telegram",
+  loginSub: "\u8ACB\u8F38\u5165\u4F7F\u7528\u8005\u540D\u7A31\u8207\u5BC6\u78BC",
+  loginUsername: "\u4F7F\u7528\u8005\u540D\u7A31",
+  loginPassword: "\u5BC6\u78BC",
+  loginRemember: "\u8A18\u4F4F\u6211 30 \u5929",
+  loginBtn: "\u767B\u5165",
+  loginBadCredentials: "\u4F7F\u7528\u8005\u540D\u7A31\u6216\u5BC6\u78BC\u932F\u8AA4",
+  logout: "\u767B\u51FA"
 };
 var catalog = { en, zh, tw };
 function resolveUiLang(env) {
@@ -3267,6 +3294,8 @@ function renderPreviewPage(mail, bodyHtml, env, webBar) {
   const when = escapeHtml(mail.date || "");
   const title = escapeHtml(t2(lang, "previewTitle"));
   const canvas = bodyHtml.trim() ? bodyHtml : `<pre style="white-space:pre-wrap;margin:0">${escapeHtml(mail.text || "")}</pre>`;
+  const logoutHtml = webBar?.showLogout ? `<a class="out" href="/logout?next=${encodeURIComponent(`/email/${mail.id}`)}">${escapeHtml(t2(lang, "logout"))}</a>` : "";
+  const useCountdown = !!(webBar?.linkExpiresAt && webBar.linkExpiresAt > 0);
   const countdownLabels = JSON.stringify({
     title: t2(lang, "previewTitle"),
     remain: t2(lang, "linkRemainLabel"),
@@ -3277,7 +3306,7 @@ function renderPreviewPage(mail, bodyHtml, env, webBar) {
     second: t2(lang, "durationSecond")
   }).replace(/</g, "\\u003c");
   const expiresAt = webBar?.linkExpiresAt ?? 0;
-  const countdownScript = webBar ? `<script>(function(){
+  const countdownScript = useCountdown ? `<script>(function(){
   var el=document.getElementById('preview-bar-text');
   var L=${countdownLabels};
   var exp=${expiresAt};
@@ -3303,14 +3332,17 @@ function renderPreviewPage(mail, bodyHtml, env, webBar) {
   }
   tick();
 })();<\/script>` : "";
-  const barText = webBar ? `<span id="preview-bar-text">${title}</span>` : `<span>${title}</span>`;
+  const barLeft = useCountdown ? `<span id="preview-bar-text">${title}</span>` : `<span>${title}</span>`;
   return `<!doctype html><html lang="${htmlLang(lang)}"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="referrer" content="no-referrer">
-<title>${subject}</title><style>${PREVIEW_CSS}</style></head>
+<title>${subject}</title><style>${PREVIEW_CSS}
+a.out{color:#4b5563;font-size:.8125rem;text-decoration:none}
+a.out:hover{color:#111827;text-decoration:underline}
+</style></head>
 <body>
 <div class="preview">
-  <div class="preview-bar">${barText}</div>
+  <div class="preview-bar">${barLeft}${logoutHtml}</div>
   <div class="preview-sheet">
     <div class="preview-meta">
       <h1>${subject}</h1>
@@ -3399,8 +3431,14 @@ function isWebLinkValid(mail, token2, now = Date.now()) {
   }
   return true;
 }
-function webPreviewUrl(host, mail) {
-  if (!host || !mail.id || !mail.webToken) {
+function webPreviewUrl(host, mail, opts) {
+  if (!host || !mail.id) {
+    return void 0;
+  }
+  if (opts?.authEnabled) {
+    return `https://${host}/email/${encodeURIComponent(mail.id)}`;
+  }
+  if (!mail.webToken) {
     return void 0;
   }
   return `https://${host}/email/${encodeURIComponent(mail.id)}?t=${encodeURIComponent(mail.webToken)}`;
@@ -3452,7 +3490,34 @@ var status_default = `<!DOCTYPE html>
     :root {
       --bg0: #0b1210;
       --glow: #3ecf8e;
+      --glow-rgb: 62, 207, 142;
       --text: #e8f5ee;
+      --muted: #7a9a88;
+      --bg-mid: #1a3a2a;
+      --bg-low: #0e1c16;
+    }
+
+    body.state-unbound {
+      --glow: #ef4444;
+      --glow-rgb: 239, 68, 68;
+      --bg-mid: #3a1a1a;
+      --bg-low: #1c0e0e;
+      --muted: #9a7a7a;
+    }
+
+    body.state-switchable {
+      --glow: #eab308;
+      --glow-rgb: 234, 179, 8;
+      --bg-mid: #3a351a;
+      --bg-low: #1c1a0e;
+      --muted: #9a947a;
+    }
+
+    body.state-running {
+      --glow: #3ecf8e;
+      --glow-rgb: 62, 207, 142;
+      --bg-mid: #1a3a2a;
+      --bg-low: #0e1c16;
       --muted: #7a9a88;
     }
 
@@ -3469,11 +3534,12 @@ var status_default = `<!DOCTYPE html>
       color: var(--text);
       font-family: "Unbounded", "Noto Sans SC", sans-serif;
       background:
-        radial-gradient(ellipse 80% 60% at 50% 35%, #1a3a2a 0%, transparent 55%),
-        radial-gradient(ellipse 100% 80% at 50% 100%, #0e1c16 0%, var(--bg0) 60%);
+        radial-gradient(ellipse 80% 60% at 50% 35%, var(--bg-mid) 0%, transparent 55%),
+        radial-gradient(ellipse 100% 80% at 50% 100%, var(--bg-low) 0%, var(--bg0) 60%);
       overflow: hidden;
       cursor: default;
       user-select: none;
+      transition: background 0.45s ease;
     }
 
     .stage {
@@ -3489,11 +3555,12 @@ var status_default = `<!DOCTYPE html>
       border-radius: 50%;
       pointer-events: auto;
       cursor: pointer;
-      background: radial-gradient(circle at 35% 30%, #8dffc4, var(--glow) 45%, #1a5c3c 100%);
+      background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--glow) 70%, white), var(--glow) 45%, color-mix(in srgb, var(--glow) 35%, black) 100%);
       box-shadow:
-        0 0 24px rgba(62, 207, 142, 0.45),
-        0 0 64px rgba(62, 207, 142, 0.2);
+        0 0 24px rgba(var(--glow-rgb), 0.45),
+        0 0 64px rgba(var(--glow-rgb), 0.2);
       animation: breathe 3.2s ease-in-out infinite;
+      transition: background 0.45s ease, box-shadow 0.45s ease;
     }
 
     .orb::after {
@@ -3502,7 +3569,7 @@ var status_default = `<!DOCTYPE html>
       width: 100%;
       height: 100%;
       border-radius: 50%;
-      box-shadow: 0 0 0 0 rgba(62, 207, 142, 0.35);
+      box-shadow: 0 0 0 0 rgba(var(--glow-rgb), 0.35);
       animation: ring 3.2s ease-in-out infinite;
     }
 
@@ -3513,6 +3580,11 @@ var status_default = `<!DOCTYPE html>
       place-items: center;
       line-height: 1.35;
       padding: 0.1rem 0;
+      pointer-events: none;
+      cursor: default;
+    }
+
+    .status.clickable {
       pointer-events: auto;
       cursor: pointer;
     }
@@ -3538,9 +3610,13 @@ var status_default = `<!DOCTYPE html>
       font-size: 0.72rem;
       font-weight: 500;
       color: var(--muted);
-      letter-spacing: 0.1em;
+      letter-spacing: 0.06em;
       line-height: 1.45;
       opacity: 0.85;
+      max-width: 22rem;
+      margin-left: auto;
+      margin-right: auto;
+      word-break: break-all;
     }
 
     .toast {
@@ -3558,6 +3634,8 @@ var status_default = `<!DOCTYPE html>
       pointer-events: none;
       transition: opacity 0.25s ease, transform 0.25s ease;
       backdrop-filter: blur(8px);
+      max-width: min(90vw, 28rem);
+      text-align: center;
     }
 
     .toast.show {
@@ -3578,50 +3656,184 @@ var status_default = `<!DOCTYPE html>
 
     @keyframes ring {
       0%, 100% {
-        box-shadow: 0 0 0 0 rgba(62, 207, 142, 0);
+        box-shadow: 0 0 0 0 rgba(var(--glow-rgb), 0);
       }
       50% {
-        box-shadow: 0 0 0 18px rgba(62, 207, 142, 0);
+        box-shadow: 0 0 0 18px rgba(var(--glow-rgb), 0);
       }
     }
   </style>
 </head>
-<body>
+<body class="state-running">
   <main class="stage">
     <div class="orb" id="orb" title="Open GitHub" role="link" tabindex="0"></div>
-    <div class="status" id="status" aria-live="polite" title="Bind Telegram webhook">
-      <span class="active">\u8FD0\u884C\u4E2D</span>
-      <span>Working</span>
-      <span>\u904B\u4F5C\u4E2D</span>
-      <span>\u7A3C\u50CD\u4E2D</span>
-      <span>\uC791\uB3D9 \uC911</span>
-      <span>En cours</span>
-    </div>
-    <p class="hint">cf-mail2telegram \xB7 online</p>
+    <div class="status" id="status" aria-live="polite"></div>
+    <p class="hint" id="hint">cf-mail2telegram</p>
   </main>
   <div class="toast" id="toast"></div>
   <script>
     const GITHUB = "https://github.com/shengshk/cf-mail2telegram";
     const DEBOUNCE_MS = 1500;
 
-    const phrases = document.querySelectorAll("#status span");
-    let i = 0;
-    setInterval(() => {
-      phrases[i].classList.remove("active");
-      i = (i + 1) % phrases.length;
-      phrases[i].classList.add("active");
-    }, 2200);
+    const LABELS = {
+      unbound: ["\u5F85\u7ED1\u5B9A", "Unbound", "\u5F85\u7D81\u5B9A", "\u672A\u8A2D\u5B9A", "\uBBF8\uC5F0\uACB0", "Non li\xE9"],
+      switchable: ["\u53EF\u5207\u6362", "Switchable", "\u53EF\u5207\u63DB", "\u5207\u66FF\u53EF", "\uC804\uD658 \uAC00\uB2A5", "Commutable"],
+      running: ["\u8FD0\u884C\u4E2D", "Working", "\u904B\u4F5C\u4E2D", "\u7A3C\u50CD\u4E2D", "\uC791\uB3D9 \uC911", "En cours"],
+    };
 
+    const statusEl = document.getElementById("status");
+    const hintEl = document.getElementById("hint");
     const toast = document.getElementById("toast");
+
+    let phraseIndex = 0;
+    let phraseTimer = null;
+    let pageHost = normalizeHost(location.host);
+    let boundHost = null;
+    let mode = "running";
+    let webAuthEnabled = false;
+    let authenticated = true;
     let toastTimer;
     let lastInitAt = 0;
     let initBusy = false;
+
+    function normalizeHost(raw) {
+      let host = String(raw || "").trim();
+      if (!host) return "";
+      host = host.replace(/^https?:\\/\\//i, "");
+      host = host.split("/")[0] || "";
+      host = host.replace(/:\\d+$/, "");
+      return host.trim().toLowerCase();
+    }
 
     function showToast(msg) {
       toast.textContent = msg;
       toast.classList.add("show");
       clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => toast.classList.remove("show"), 1600);
+      toastTimer = setTimeout(() => toast.classList.remove("show"), 1800);
+    }
+
+    function resolveMode(saved, current) {
+      if (!saved) return "unbound";
+      if (saved !== current) return "switchable";
+      return "running";
+    }
+
+    function renderPhrases(nextMode) {
+      const list = LABELS[nextMode] || LABELS.running;
+      statusEl.innerHTML = "";
+      list.forEach((text, idx) => {
+        const span = document.createElement("span");
+        span.textContent = text;
+        if (idx === 0) span.classList.add("active");
+        statusEl.appendChild(span);
+      });
+      phraseIndex = 0;
+      if (phraseTimer) clearInterval(phraseTimer);
+      phraseTimer = setInterval(() => {
+        const phrases = statusEl.querySelectorAll("span");
+        if (!phrases.length) return;
+        phrases[phraseIndex].classList.remove("active");
+        phraseIndex = (phraseIndex + 1) % phrases.length;
+        phrases[phraseIndex].classList.add("active");
+      }, 2200);
+    }
+
+    function applyState(nextMode) {
+      mode = nextMode;
+      document.body.classList.remove("state-unbound", "state-switchable", "state-running");
+      document.body.classList.add("state-" + nextMode);
+      renderPhrases(nextMode);
+
+      if (nextMode === "running") {
+        statusEl.classList.remove("clickable");
+        statusEl.removeAttribute("title");
+        hintEl.textContent = "cf-mail2telegram \xB7 online";
+      } else if (nextMode === "unbound") {
+        statusEl.classList.add("clickable");
+        statusEl.title = "Bind Telegram webhook";
+        hintEl.textContent = "cf-mail2telegram \xB7 unbound \xB7 " + pageHost;
+      } else {
+        statusEl.classList.add("clickable");
+        statusEl.title = "Re-bind with this host";
+        hintEl.textContent = (boundHost || "?") + " \u2192 " + pageHost;
+      }
+    }
+
+    async function refreshStatus() {
+      pageHost = normalizeHost(location.host);
+      try {
+        const res = await fetch("/api/status", { cache: "no-store" });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          showToast(data.error || ("\u72B6\u6001\u5931\u8D25 " + res.status));
+          applyState("unbound");
+          return;
+        }
+        boundHost = normalizeHost(data.host || "");
+        webAuthEnabled = !!data.webAuthEnabled;
+        authenticated = data.authenticated !== false;
+        applyState(resolveMode(boundHost, pageHost));
+        if (new URLSearchParams(location.search).get("runInit") === "1") {
+          history.replaceState({}, "", "/");
+          if (mode !== "running") {
+            void runInit(true);
+          }
+        }
+      } catch {
+        showToast("\u72B6\u6001\u52A0\u8F7D\u5931\u8D25");
+        applyState("unbound");
+      }
+    }
+
+    async function runInit(skipConfirm) {
+      if (mode === "running") return;
+      if (!skipConfirm) {
+        if (mode === "unbound") {
+          if (!confirm("\u7528\u5F53\u524D\u57DF\u540D\u7ED1\u5B9A Telegram webhook\uFF1F\\n" + pageHost)) return;
+        } else if (mode === "switchable") {
+          if (!confirm(
+            "\u5C06\u7ED1\u5B9A\u4ECE\u65E7\u57DF\u540D\u5207\u6362\u5230\u5F53\u524D\u57DF\u540D\uFF1F\\n"
+            + (boundHost || "?") + " \u2192 " + pageHost + "\\n"
+            + "Webhook / \u9884\u89C8 / \u5C0F\u7A0B\u5E8F\u5C06\u6539\u7528\u65B0\u57DF\u540D\u3002"
+          )) return;
+        }
+      }
+
+      if (webAuthEnabled && !authenticated) {
+        location.href = "/login?next=" + encodeURIComponent("/?runInit=1");
+        return;
+      }
+
+      const now = Date.now();
+      if (initBusy || now - lastInitAt < DEBOUNCE_MS) {
+        showToast("\u8BF7\u7A0D\u5019\u2026");
+        return;
+      }
+
+      initBusy = true;
+      lastInitAt = now;
+      showToast("\u521D\u59CB\u5316\u4E2D\u2026");
+      try {
+        const res = await fetch("/init", { method: "GET", cache: "no-store", credentials: "same-origin" });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          if (res.status === 401 && webAuthEnabled) {
+            location.href = "/login?next=" + encodeURIComponent("/?runInit=1");
+            return;
+          }
+          showToast(data.error || ("\u5931\u8D25 " + res.status));
+          return;
+        }
+        boundHost = normalizeHost(data.host || pageHost);
+        pageHost = normalizeHost(location.host);
+        authenticated = true;
+        applyState(resolveMode(boundHost, pageHost));
+        showToast(boundHost ? ("\u5DF2\u7ED1\u5B9A " + boundHost) : "\u521D\u59CB\u5316\u5B8C\u6210");
+      } catch {
+        showToast("\u521D\u59CB\u5316\u5931\u8D25");
+      } finally {
+        initBusy = false;
+      }
     }
 
     document.getElementById("orb").addEventListener("click", (e) => {
@@ -3629,30 +3841,18 @@ var status_default = `<!DOCTYPE html>
       window.open(GITHUB, "_blank", "noopener,noreferrer");
     });
 
-    document.getElementById("status").addEventListener("click", async (e) => {
+    statusEl.addEventListener("click", async (e) => {
       e.stopPropagation();
+      if (mode === "running") return;
       const now = Date.now();
       if (initBusy || now - lastInitAt < DEBOUNCE_MS) {
         showToast("\u8BF7\u7A0D\u5019\u2026");
         return;
       }
-      initBusy = true;
-      lastInitAt = now;
-      showToast("\u521D\u59CB\u5316\u4E2D\u2026");
-      try {
-        const res = await fetch("/init", { method: "GET", cache: "no-store" });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          showToast(data.error || ("\u5931\u8D25 " + res.status));
-          return;
-        }
-        showToast(data.host ? ("\u5DF2\u7ED1\u5B9A " + data.host) : "\u521D\u59CB\u5316\u5B8C\u6210");
-      } catch {
-        showToast("\u521D\u59CB\u5316\u5931\u8D25");
-      } finally {
-        initBusy = false;
-      }
+      await runInit(false);
     });
+
+    refreshStatus();
   <\/script>
 </body>
 </html>
@@ -14620,8 +14820,193 @@ async function savePreviewMode(env, chatId, mode) {
   await dao.savePreviewMode(chatId, mode);
 }
 
-// src/mail/render.ts
+// src/web-auth.ts
+var WEB_AUTH_COOKIE = "m2t_session";
+var WEB_SESSION_TTL_SEC = 7 * 24 * 60 * 60;
+var WEB_REMEMBER_TTL_SEC = 30 * 24 * 60 * 60;
+function parseWebUser(env) {
+  const raw = (env.WEB_USER || "").trim();
+  if (!raw) {
+    return void 0;
+  }
+  const i2 = raw.indexOf(",");
+  if (i2 <= 0 || i2 >= raw.length - 1) {
+    return void 0;
+  }
+  const username = raw.slice(0, i2).trim();
+  const password = raw.slice(i2 + 1);
+  if (!username || !password) {
+    return void 0;
+  }
+  return { username, password };
+}
+function isWebAuthEnabled(env) {
+  return !!parseWebUser(env);
+}
+function b64urlEncode(bytes) {
+  let s2 = "";
+  for (const b of bytes) {
+    s2 += String.fromCharCode(b);
+  }
+  return btoa(s2).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+function b64urlDecode(s2) {
+  const pad = s2.length % 4 === 0 ? "" : "=".repeat(4 - s2.length % 4);
+  const b64 = s2.replace(/-/g, "+").replace(/_/g, "/") + pad;
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i2 = 0; i2 < bin.length; i2++) {
+    out[i2] = bin.charCodeAt(i2);
+  }
+  return out;
+}
+async function hmacKey(secret) {
+  return crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign", "verify"]
+  );
+}
+async function signPayload(secret, payload) {
+  const key = await hmacKey(secret);
+  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(payload));
+  return b64urlEncode(new Uint8Array(sig));
+}
+async function verifyPayload(secret, payload, signature) {
+  const expected = await signPayload(secret, payload);
+  if (expected.length !== signature.length) {
+    return false;
+  }
+  let ok = 0;
+  for (let i2 = 0; i2 < expected.length; i2++) {
+    ok |= expected.charCodeAt(i2) ^ signature.charCodeAt(i2);
+  }
+  return ok === 0;
+}
+async function makeWebAuthCookie(creds, remember, now = Date.now()) {
+  const maxAge = remember ? WEB_REMEMBER_TTL_SEC : WEB_SESSION_TTL_SEC;
+  const expires = Math.floor(now / 1e3) + maxAge;
+  const raw = `${creds.username}|${expires}`;
+  const payload = b64urlEncode(new TextEncoder().encode(raw));
+  const signature = await signPayload(creds.password, payload);
+  return { value: `${payload}.${signature}`, maxAge };
+}
+async function isWebAuthenticated(env, cookieHeader, now = Date.now()) {
+  const creds = parseWebUser(env);
+  if (!creds) {
+    return true;
+  }
+  const match4 = /(?:^|;\s*)m2t_session=([^;]+)/.exec(cookieHeader || "");
+  const value = match4?.[1] ? decodeURIComponent(match4[1]) : "";
+  if (!value || !value.includes(".")) {
+    return false;
+  }
+  const [payload, signature] = value.split(".", 2);
+  if (!payload || !signature) {
+    return false;
+  }
+  if (!await verifyPayload(creds.password, payload, signature)) {
+    return false;
+  }
+  try {
+    const raw = new TextDecoder().decode(b64urlDecode(payload));
+    const [user, expStr] = raw.split("|", 2);
+    const exp = Number.parseInt(expStr || "", 10);
+    if (!user || user !== creds.username || !Number.isFinite(exp)) {
+      return false;
+    }
+    return exp * 1e3 > now;
+  } catch {
+    return false;
+  }
+}
+function safeNextPath(raw, fallback = "/") {
+  const next = (raw || "").trim() || fallback;
+  if (!next.startsWith("/") || next.startsWith("//")) {
+    return fallback;
+  }
+  return next;
+}
 function escapeHtml3(s2) {
+  return s2.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+var LOGIN_CSS = `
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+background:#f0f1f3;color:#1f2937;-webkit-font-smoothing:antialiased}
+.wrap{min-height:100vh;display:grid;place-items:center;padding:1.5rem}
+.card{width:100%;max-width:420px;padding:1.75rem;border-radius:12px;border:1px solid #e5e7eb;
+background:#fff;box-shadow:0 1px 2px rgba(15,23,42,.04),0 8px 24px rgba(15,23,42,.05);
+display:flex;flex-direction:column;gap:.75rem}
+h1{margin:0;font-size:1.25rem;font-weight:650;color:#111827;letter-spacing:-.01em}
+.sub{margin:0;font-size:.875rem;color:#6b7280;line-height:1.5}
+input{width:100%;border-radius:8px;border:1px solid #d1d5db;background:#fff;
+color:#111827;padding:.65rem .75rem;font-size:.9rem;outline:none}
+input:focus{border-color:#9ca3af;box-shadow:0 0 0 3px rgba(156,163,175,.25)}
+label.rem{display:flex;align-items:center;gap:.5rem;font-size:.8rem;color:#4b5563;cursor:pointer;user-select:none}
+.err{margin:0;font-size:.875rem;color:#b91c1c}
+button{width:100%;border:none;border-radius:8px;padding:.7rem 1rem;font-size:.95rem;font-weight:600;
+color:#fff;background:#374151;cursor:pointer}
+button:hover{background:#1f2937}
+`.trim();
+function renderLoginPage(env, opts = {}) {
+  const lang = resolveUiLang(env);
+  const title = escapeHtml3(t2(lang, "loginTitle"));
+  const subtitle = escapeHtml3(t2(lang, "loginSub"));
+  const nextUrl = escapeHtml3(safeNextPath(opts.nextUrl));
+  const err = opts.error ? `<p class="err">${escapeHtml3(t2(lang, opts.error))}</p>` : "";
+  return `<!doctype html><html lang="${htmlLang(lang)}"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${title}</title><style>${LOGIN_CSS}</style></head>
+<body><div class="wrap"><form class="card" method="post" action="/login">
+<h1>${title}</h1><p class="sub">${subtitle}</p>
+${err}
+<input type="hidden" name="next" value="${nextUrl}">
+<input name="username" type="text" placeholder="${escapeHtml3(t2(lang, "loginUsername"))}" required autocomplete="username">
+<input name="password" type="password" placeholder="${escapeHtml3(t2(lang, "loginPassword"))}" required autocomplete="current-password">
+<label class="rem"><input type="checkbox" name="remember" value="1"> ${escapeHtml3(t2(lang, "loginRemember"))}</label>
+<button type="submit">${escapeHtml3(t2(lang, "loginBtn"))}</button>
+</form></div></body></html>`;
+}
+function setWebAuthCookieHeader(value, maxAge, secure) {
+  const parts = [
+    `${WEB_AUTH_COOKIE}=${encodeURIComponent(value)}`,
+    "Path=/",
+    `Max-Age=${maxAge}`,
+    "HttpOnly",
+    "SameSite=Lax"
+  ];
+  if (secure) {
+    parts.push("Secure");
+  }
+  return parts.join("; ");
+}
+function clearWebAuthCookieHeader(secure) {
+  const parts = [
+    `${WEB_AUTH_COOKIE}=`,
+    "Path=/",
+    "Max-Age=0",
+    "HttpOnly",
+    "SameSite=Lax"
+  ];
+  if (secure) {
+    parts.push("Secure");
+  }
+  return parts.join("; ");
+}
+function requestIsHttps(req) {
+  const url = new URL(req.url);
+  if (url.protocol === "https:") {
+    return true;
+  }
+  const xf = (req.headers.get("X-Forwarded-Proto") || "").split(",")[0]?.trim().toLowerCase();
+  return xf === "https";
+}
+
+// src/mail/render.ts
+function escapeHtml4(s2) {
   return s2.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 function isDebug(env) {
@@ -14633,7 +15018,7 @@ async function resolvePreviewUrl(mail, env, mode, host) {
     return void 0;
   }
   if (mode === "web") {
-    return host ? webPreviewUrl(host, mail) : void 0;
+    return host ? webPreviewUrl(host, mail, { authEnabled: isWebAuthEnabled(env) }) : void 0;
   }
   const botUsername = await loadBotUsername(env);
   return botUsername ? miniAppStartLink(botUsername, mail.id) : void 0;
@@ -14643,25 +15028,25 @@ async function renderEmailListMode(mail, env, extract, opts) {
   const host = await loadPublicHost(env);
   const lines = [];
   if (extract?.code) {
-    const code = escapeHtml3(extract.code);
+    const code = escapeHtml4(extract.code);
     const styled = extract.source === "local" ? `<i>${code}</i>` : `<b>${code}</b>`;
     lines.push(`${t2(lang, "otp")} ${styled}`);
     if (extract.source === "local" && extract.reason && isDebug(env)) {
-      lines.push(`${t2(lang, "debug")} ${escapeHtml3(truncateDisplay(extract.reason, 80))}`);
+      lines.push(`${t2(lang, "debug")} ${escapeHtml4(truncateDisplay(extract.reason, 80))}`);
     }
   } else {
     const subject = (mail.subject || "").trim();
     if (subject) {
-      lines.push(`${t2(lang, "subject")} ${escapeHtml3(truncateDisplay(subject))}`);
+      lines.push(`${t2(lang, "subject")} ${escapeHtml4(truncateDisplay(subject))}`);
     } else {
       const preview = truncateDisplay((mail.text || "").replace(/\s+/g, " ").trim());
-      lines.push(`${t2(lang, "noSubject")} ${escapeHtml3(preview || t2(lang, "empty"))}`);
+      lines.push(`${t2(lang, "noSubject")} ${escapeHtml4(preview || t2(lang, "empty"))}`);
     }
   }
-  lines.push(`${t2(lang, "from")} ${escapeHtml3(mail.from || "")}`);
-  lines.push(`${t2(lang, "to")} ${escapeHtml3(mail.to || "")}`);
+  lines.push(`${t2(lang, "from")} ${escapeHtml4(mail.from || "")}`);
+  lines.push(`${t2(lang, "to")} ${escapeHtml4(mail.to || "")}`);
   if (mail.date) {
-    lines.push(escapeHtml3(mail.date));
+    lines.push(escapeHtml4(mail.date));
   }
   const mode = opts?.chatId ? await loadPreviewMode(env, opts.chatId) : "miniapp";
   const previewUrl = await resolvePreviewUrl(mail, env, mode, host);
@@ -14815,7 +15200,9 @@ async function runFakeMailUiTest(env) {
     html,
     backedUp: true
   };
-  attachWebPreviewMeta(mail);
+  if (!isWebAuthEnabled(env)) {
+    attachWebPreviewMeta(mail);
+  }
   const extractText = [mail.subject, mail.text].filter(Boolean).join("\n");
   const short = extractText.length <= 3e3 ? extractText : `${extractText.slice(0, 3e3)}...`;
   const extract = await extractVerificationCode(short, env);
@@ -15242,7 +15629,7 @@ async function telegramCallbackHandler(callback, env) {
           await answer(fill(t2(lang, "previewModeAlready"), { mode: modeLabel(lang, "web") }));
           return;
         }
-        await edit(t2(lang, "previewModeWarn"), {
+        await edit(t2(lang, isWebAuthEnabled(env) ? "previewModeWarnAuth" : "previewModeWarnOpen"), {
           inline_keyboard: [[
             { text: t2(lang, "previewModeYes"), callback_data: "pm:web" },
             { text: t2(lang, "previewModeNo"), callback_data: "pm:cancel" }
@@ -15382,9 +15769,74 @@ function createRouter(env, ctx) {
       }
     });
   });
+  router.get("/api/status", async (req) => {
+    const host = await dao.loadPublicHost();
+    const webAuthEnabled = isWebAuthEnabled(env);
+    const authenticated = webAuthEnabled ? await isWebAuthenticated(env, req.headers.get("Cookie")) : true;
+    return {
+      host: host || null,
+      webAuthEnabled,
+      authenticated
+    };
+  });
+  router.get("/login", async (req) => {
+    if (!isWebAuthEnabled(env)) {
+      return Response.redirect(new URL("/", req.url).toString(), 302);
+    }
+    const nextUrl = safeNextPath(String(req.query.next || "/"));
+    if (await isWebAuthenticated(env, req.headers.get("Cookie"))) {
+      return Response.redirect(new URL(nextUrl, req.url).toString(), 302);
+    }
+    return new Response(renderLoginPage(env, { nextUrl }), {
+      headers: { "content-type": "text/html; charset=utf-8" }
+    });
+  });
+  router.post("/login", async (req) => {
+    if (!isWebAuthEnabled(env)) {
+      return Response.redirect(new URL("/", req.url).toString(), 302);
+    }
+    const creds = parseWebUser(env);
+    const request = req;
+    const form = await request.formData();
+    const username = String(form.get("username") || "").trim();
+    const password = String(form.get("password") || "");
+    const remember = String(form.get("remember") || "") === "1";
+    const nextUrl = safeNextPath(String(form.get("next") || "/"));
+    if (!creds || username !== creds.username || password !== creds.password) {
+      return new Response(renderLoginPage(env, { nextUrl, error: "loginBadCredentials" }), {
+        status: 401,
+        headers: { "content-type": "text/html; charset=utf-8" }
+      });
+    }
+    const cookie = await makeWebAuthCookie(creds, remember);
+    return new Response(null, {
+      status: 302,
+      headers: {
+        Location: new URL(nextUrl, request.url).toString(),
+        "Set-Cookie": setWebAuthCookieHeader(cookie.value, cookie.maxAge, requestIsHttps(request))
+      }
+    });
+  });
+  router.get("/logout", async (req) => {
+    const nextUrl = safeNextPath(String(req.query.next || "/login"));
+    const request = req;
+    return new Response(null, {
+      status: 302,
+      headers: {
+        Location: new URL(nextUrl, request.url).toString(),
+        "Set-Cookie": clearWebAuthCookieHeader(requestIsHttps(request))
+      }
+    });
+  });
   router.get("/init", async (req) => {
     if (!DB) {
       throw new HTTPError(500, "KV binding DB is required");
+    }
+    if (isWebAuthEnabled(env)) {
+      const ok = await isWebAuthenticated(env, req.headers.get("Cookie"));
+      if (!ok) {
+        throw new HTTPError(401, "Login required");
+      }
     }
     const host = publicHostFromRequest(req);
     if (!host) {
@@ -15515,15 +15967,24 @@ function createRouter(env, ctx) {
     const id = req.params.id;
     const mode = String(req.query.mode || "page");
     const token2 = String(req.query.t || "");
-    const value = await dao.loadMailCache(id);
+    const request = req;
     const lang = resolveUiLang(env);
+    const authEnabled = isWebAuthEnabled(env);
+    if (authEnabled) {
+      const ok = await isWebAuthenticated(env, request.headers.get("Cookie"));
+      if (!ok) {
+        const next = `/email/${encodeURIComponent(id)}`;
+        return Response.redirect(new URL(`/login?next=${encodeURIComponent(next)}`, request.url).toString(), 302);
+      }
+    }
+    const value = await dao.loadMailCache(id);
     if (!value) {
       return new Response(t2(lang, "previewExpired"), {
         status: 404,
         headers: { "content-type": "text/plain; charset=utf-8" }
       });
     }
-    if (!isWebLinkValid(value, token2)) {
+    if (!authEnabled && !isWebLinkValid(value, token2)) {
       return new Response(t2(lang, "webLinkExpired"), {
         status: 403,
         headers: { "content-type": "text/plain; charset=utf-8" }
@@ -15543,9 +16004,7 @@ function createRouter(env, ctx) {
       });
     }
     const body = value.html ? sanitizeHtmlForPreview(value.html) : "";
-    const page = renderPreviewPage(value, body, env, {
-      linkExpiresAt: value.webExpiresAt || 0
-    });
+    const page = renderPreviewPage(value, body, env, authEnabled ? { showLogout: true } : { linkExpiresAt: value.webExpiresAt || 0 });
     return new Response(page, {
       headers: {
         "content-type": "text/html; charset=utf-8",
@@ -15639,7 +16098,9 @@ async function emailHandler(message, env) {
       if (originalTo) {
         mail.originalTo = originalTo;
       }
-      attachWebPreviewMeta(mail);
+      if (!isWebAuthEnabled(env)) {
+        attachWebPreviewMeta(mail);
+      }
       const extractText = [mail.subject, mail.text].filter(Boolean).join("\n");
       const short = extractText.length <= 3e3 ? extractText : `${extractText.slice(0, 3e3)}...`;
       const extract = await extractVerificationCode(short, env);

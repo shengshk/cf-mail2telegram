@@ -20,6 +20,7 @@ Secrets (recommended):
 
   TELEGRAM_BOT       token,chat_id
   GEMINI_API_KEY     Google AI Studio key (AIza…)
+  WEB_USER           username,password  (optional; web login for /email + /init)
 
 
 Vars:
@@ -40,9 +41,10 @@ No DOMAIN variable.
 Public host is saved when you open /init (KV key PUBLIC_HOST).
 
 Preview:
-  Default Mini App; /previewmode switches to Web (warns first).
-  Mail cache: hard max 100 bodies (no MAILS_TTL).
-  Web link: /email/<id>?t=<token>, hard 1d expiry + live countdown.
+  Default Mini App; /previewmode switches to Web (warns; copy depends on WEB_USER).
+  Mail cache: hard max 100 bodies.
+  Without WEB_USER: /email/<id>?t=<token>, hard 1d expiry + countdown.
+  With WEB_USER: /email/<id> needs login page; /init needs login; status page stays public.
 
 
 Mailbox:
@@ -79,10 +81,11 @@ JSON/toast should show host. Re-run /init after changing UI_LANG or switching pr
 
   [ ] KV binding name DB
   [ ] TELEGRAM_BOT
+  [ ] WEB_USER optional (username,password)
   [ ] UI_LANG if you want zh or tw
   [ ] GEMINI_API_KEY for AI OTP
   [ ] FORWARD_MAIL verified in Email Routing destinations
   [ ] BotFather Mini App URL + Privacy Policy URL
   [ ] Email Routing → this Worker
   [ ] Visited /init
-  [ ] Remove obsolete MAILS_TTL var from dashboard if present
+  [ ] Remove obsolete MAILS_TTL / INIT_SECRET vars from dashboard if present

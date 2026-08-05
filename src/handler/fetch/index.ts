@@ -12,6 +12,17 @@ import { publicHostFromRequest, savePublicHost } from '../../public-host';
 import statusHtml from '../../status.html';
 import { createTelegramBotAPI, telegramCommands, telegramWebhookHandler, tmaHTML } from '../../telegram';
 import { isMailStartParam, saveBotUsername } from '../../telegram/bot-username';
+import {
+    clearWebAuthCookieHeader,
+    isWebAuthEnabled,
+    isWebAuthenticated,
+    makeWebAuthCookie,
+    parseWebUser,
+    renderLoginPage,
+    requestIsHttps,
+    safeNextPath,
+    setWebAuthCookieHeader,
+} from '../../web-auth';
 
 class HTTPError extends Error {
     readonly status: number;
@@ -93,9 +104,81 @@ function createRouter(env: Environment, ctx?: ExecutionContext): RouterType {
         });
     });
 
+    /// Status page: compare KV PUBLIC_HOST vs browser host
+    router.get('/api/status', async (req: IRequest): Promise<any> => {
+        const host = await dao.loadPublicHost();
+        const webAuthEnabled = isWebAuthEnabled(env);
+        const authenticated = webAuthEnabled
+            ? await isWebAuthenticated(env, (req as unknown as Request).headers.get('Cookie'))
+            : true;
+        return {
+            host: host || null,
+            webAuthEnabled,
+            authenticated,
+        };
+    });
+
+    router.get('/login', async (req: IRequest): Promise<Response> => {
+        if (!isWebAuthEnabled(env)) {
+            return Response.redirect(new URL('/', req.url).toString(), 302);
+        }
+        const nextUrl = safeNextPath(String(req.query.next || '/'));
+        if (await isWebAuthenticated(env, (req as unknown as Request).headers.get('Cookie'))) {
+            return Response.redirect(new URL(nextUrl, req.url).toString(), 302);
+        }
+        return new Response(renderLoginPage(env, { nextUrl }), {
+            headers: { 'content-type': 'text/html; charset=utf-8' },
+        });
+    });
+
+    router.post('/login', async (req: IRequest): Promise<Response> => {
+        if (!isWebAuthEnabled(env)) {
+            return Response.redirect(new URL('/', req.url).toString(), 302);
+        }
+        const creds = parseWebUser(env);
+        const request = req as unknown as Request;
+        const form = await request.formData();
+        const username = String(form.get('username') || '').trim();
+        const password = String(form.get('password') || '');
+        const remember = String(form.get('remember') || '') === '1';
+        const nextUrl = safeNextPath(String(form.get('next') || '/'));
+        if (!creds || username !== creds.username || password !== creds.password) {
+            return new Response(renderLoginPage(env, { nextUrl, error: 'loginBadCredentials' }), {
+                status: 401,
+                headers: { 'content-type': 'text/html; charset=utf-8' },
+            });
+        }
+        const cookie = await makeWebAuthCookie(creds, remember);
+        return new Response(null, {
+            status: 302,
+            headers: {
+                Location: new URL(nextUrl, request.url).toString(),
+                'Set-Cookie': setWebAuthCookieHeader(cookie.value, cookie.maxAge, requestIsHttps(request)),
+            },
+        });
+    });
+
+    router.get('/logout', async (req: IRequest): Promise<Response> => {
+        const nextUrl = safeNextPath(String(req.query.next || '/login'));
+        const request = req as unknown as Request;
+        return new Response(null, {
+            status: 302,
+            headers: {
+                Location: new URL(nextUrl, request.url).toString(),
+                'Set-Cookie': clearWebAuthCookieHeader(requestIsHttps(request)),
+            },
+        });
+    });
+
     router.get('/init', async (req: IRequest): Promise<any> => {
         if (!DB) {
             throw new HTTPError(500, 'KV binding DB is required');
+        }
+        if (isWebAuthEnabled(env)) {
+            const ok = await isWebAuthenticated(env, (req as unknown as Request).headers.get('Cookie'));
+            if (!ok) {
+                throw new HTTPError(401, 'Login required');
+            }
         }
         const host = publicHostFromRequest(req as unknown as Request);
         if (!host) {
@@ -238,21 +321,32 @@ function createRouter(env: Environment, ctx?: ExecutionContext): RouterType {
         return { success: true };
     });
 
-    /// Preview（网页未鉴权；须 ?t= token；倒计时仅网页）
+    /// Preview：WEB_USER 模式需登录；否则 ?t= token + 倒计时
 
     router.get('/email/:id', async (req: IRequest): Promise<Response> => {
         const id = req.params.id;
         const mode = String(req.query.mode || 'page');
         const token = String(req.query.t || '');
-        const value = await dao.loadMailCache(id);
+        const request = req as unknown as Request;
         const lang = resolveUiLang(env);
+        const authEnabled = isWebAuthEnabled(env);
+
+        if (authEnabled) {
+            const ok = await isWebAuthenticated(env, request.headers.get('Cookie'));
+            if (!ok) {
+                const next = `/email/${encodeURIComponent(id)}`;
+                return Response.redirect(new URL(`/login?next=${encodeURIComponent(next)}`, request.url).toString(), 302);
+            }
+        }
+
+        const value = await dao.loadMailCache(id);
         if (!value) {
             return new Response(t(lang, 'previewExpired'), {
                 status: 404,
                 headers: { 'content-type': 'text/plain; charset=utf-8' },
             });
         }
-        if (!isWebLinkValid(value, token)) {
+        if (!authEnabled && !isWebLinkValid(value, token)) {
             return new Response(t(lang, 'webLinkExpired'), {
                 status: 403,
                 headers: { 'content-type': 'text/plain; charset=utf-8' },
@@ -276,9 +370,9 @@ function createRouter(env: Environment, ctx?: ExecutionContext): RouterType {
         const body = value.html
             ? sanitizeHtmlForPreview(value.html)
             : '';
-        const page = renderPreviewPage(value, body, env, {
-            linkExpiresAt: value.webExpiresAt || 0,
-        });
+        const page = renderPreviewPage(value, body, env, authEnabled
+            ? { showLogout: true }
+            : { linkExpiresAt: value.webExpiresAt || 0 });
         return new Response(page, {
             headers: {
                 'content-type': 'text/html; charset=utf-8',
