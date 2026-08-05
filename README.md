@@ -207,7 +207,7 @@ But Telegram / Preview / Mini App follow **only one** saved host (`PUBLIC_HOST` 
 
 Black/white lists are managed via Mini Apps (`/cfmail`). Mail **Preview** defaults to Mini App (authenticated). Switch to unauthenticated **Web** with `/previewmode` (warning required).
 
-BotFather must have both **Privacy Policy URL** and **Mini App URL** set (see [Configure Telegram](#0-configure-telegram)). Mini App URL = `https://<PUBLIC_HOST>/tma`.
+BotFather must have both **Privacy Policy URL** and **Mini App URL** set (see [Configure Telegram](#0-configure-telegram)). Mini App URL = `https://<PUBLIC_HOST>/tma` (chat **Open** → latest cached mail; lists via `/cfmail`).
 
 > After changing `UI_LANG` or the public host, open `/init` again so bot commands stay in sync, and update Mini App URL if the host changed.
 
@@ -453,7 +453,7 @@ pnpm pub  # wrangler deploy --keep-vars
 
 黑白名单通过小程序管理（`/cfmail`）。邮件 **预览** 默认走小程序（需鉴权）。用 `/previewmode` 可切到未鉴权 **网页**（需确认风险）。
 
-BotFather 必须同时配置 **隐私政策 URL** 与 **Mini App URL**（见 [配置 Telegram](#0-配置-telegram)）。Mini App URL = `https://<PUBLIC_HOST>/tma`。
+BotFather 必须同时配置 **隐私政策 URL** 与 **Mini App URL**（见 [配置 Telegram](#0-配置-telegram)）。Mini App URL = `https://<PUBLIC_HOST>/tma`（聊天里「打开」→ 最新缓存邮件；名单用 `/cfmail`）。
 
 > 修改 `UI_LANG` 或公网主机后，请重新打开 `/init` 以同步 Bot 命令；若主机变了，同步更新 Mini App URL。
 

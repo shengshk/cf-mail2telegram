@@ -6,12 +6,12 @@ import { json, Router } from 'itty-router';
 import { Dao } from '../../db';
 import { requireTelegram } from '../../env';
 import { htmlLang, resolveUiLang, t, tmaI18nPayload } from '../../i18n';
-import { buildPreviewBodyHtml, renderPreviewMiniAppShell, renderPreviewPage, sanitizeHtmlForPreview } from '../../mail/preview';
+import { buildPreviewBodyHtml, renderPreviewEmptyMiniApp, renderPreviewMiniAppShell, renderPreviewPage, sanitizeHtmlForPreview } from '../../mail/preview';
 import { isWebLinkValid } from '../../mail/cache-policy';
 import { publicHostFromRequest, savePublicHost } from '../../public-host';
 import statusHtml from '../../status.html';
 import { createTelegramBotAPI, telegramCommands, telegramWebhookHandler, tmaHTML } from '../../telegram';
-import { isMailStartParam, saveBotUsername } from '../../telegram/bot-username';
+import { isMailStartParam, parseListModeStartParam, saveBotUsername } from '../../telegram/bot-username';
 import {
     clearWebAuthCookieHeader,
     isWebAuthEnabled,
@@ -210,15 +210,33 @@ function createRouter(env: Environment, ctx?: ExecutionContext): RouterType {
         };
     });
 
-    /// Telegram Mini Apps：名单 + 预览（预览按钮用 web_app → /tma/email/:id，避免 startapp 确认框）
+    /// Telegram Mini Apps：默认打开最新邮件；名单仍用 /cfmail（start_param / ?mode=）
     router.get('/tma', async (req: IRequest): Promise<Response> => {
         const startParam = String(
             req.query.tgWebAppStartParam || req.query.startapp || '',
         ).trim();
-        const mode = String(req.query.mode || '');
+        const mode = String(req.query.mode || '').trim().toLowerCase();
+        const listFromQuery = mode === 'block' || mode === 'white' || mode === 'test'
+            ? mode as 'block' | 'white' | 'test'
+            : undefined;
+        const listMode = parseListModeStartParam(startParam) || listFromQuery;
+        if (listMode) {
+            const lang = resolveUiLang(env);
+            const payload = JSON.stringify(tmaI18nPayload(lang)).replace(/</g, '\\u003c');
+            const html = tmaHTML
+                .replace(/__UI_LANG__/g, htmlLang(lang))
+                .replace('__I18N_JSON__', payload);
+            return new Response(html, {
+                headers: {
+                    'content-type': 'text/html; charset=utf-8',
+                    'Referrer-Policy': 'no-referrer',
+                },
+            });
+        }
+
         const previewId = String(req.query.id || '').trim()
             || (isMailStartParam(startParam) ? startParam : '');
-        if ((mode === 'preview' || isMailStartParam(startParam)) && previewId) {
+        if (previewId) {
             const html = renderPreviewMiniAppShell(previewId, env);
             return new Response(html, {
                 headers: {
@@ -227,11 +245,12 @@ function createRouter(env: Environment, ctx?: ExecutionContext): RouterType {
                 },
             });
         }
-        const lang = resolveUiLang(env);
-        const payload = JSON.stringify(tmaI18nPayload(lang)).replace(/</g, '\\u003c');
-        const html = tmaHTML
-            .replace(/__UI_LANG__/g, htmlLang(lang))
-            .replace('__I18N_JSON__', payload);
+
+        const index = await dao.loadMailCacheIndex();
+        const latestId = index.length ? index[index.length - 1] : '';
+        const html = latestId
+            ? renderPreviewMiniAppShell(latestId, env)
+            : renderPreviewEmptyMiniApp(env);
         return new Response(html, {
             headers: {
                 'content-type': 'text/html; charset=utf-8',

@@ -275,3 +275,28 @@ ${PREVIEW_FAVICON_LINK}
 </script>
 </body></html>`;
 }
+
+/** Main Mini App empty state when no cached mail */
+export function renderPreviewEmptyMiniApp(env?: Environment): string {
+    const lang = resolveUiLang(env || {});
+    const title = escapeHtml(t(lang, 'previewTitle'));
+    const msg = escapeHtml(t(lang, 'previewNoMail')).replace(/\n/g, '<br>');
+    return `<!doctype html><html lang="${htmlLang(lang)}"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+${PREVIEW_FAVICON_LINK}
+<title>${title}</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>${PREVIEW_CSS}
+.status{padding:2.5rem 1.25rem;text-align:center;color:#6b7280;font-size:.9375rem;line-height:1.6;white-space:pre-wrap}
+</style></head>
+<body>
+<div class="status">${msg}</div>
+<script>
+(function(){
+  var tg=window.Telegram&&window.Telegram.WebApp;
+  if(tg){ try{ tg.ready(); tg.expand(); }catch(e){} }
+})();
+</script>
+</body></html>`;
+}

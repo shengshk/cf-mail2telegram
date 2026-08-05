@@ -23,6 +23,7 @@ export type I18nKey =
     | 'previewLoading'
     | 'previewAuthRequired'
     | 'previewDenied'
+    | 'previewNoMail'
     | 'openManager'
     | 'addressManager'
     | 'cmdCfmail'
@@ -106,6 +107,7 @@ const en: Record<I18nKey, string> = {
     previewLoading: 'Loading…',
     previewAuthRequired: 'Open this preview from the Telegram Mini App button.',
     previewDenied: 'Permission denied',
+    previewNoMail: 'No cached mail yet.\nUse /cfmail for block/white lists.',
     openManager: 'Open Manager',
     addressManager: 'Address Manager',
     cmdCfmail: 'Show Chat ID, Worker URL, and list managers',
@@ -190,6 +192,7 @@ const zh: Record<I18nKey, string> = {
     previewLoading: '加载中…',
     previewAuthRequired: '请从 Telegram「预览」小程序按钮打开。',
     previewDenied: '无权限',
+    previewNoMail: '暂无缓存邮件。\n名单管理请用 /cfmail。',
     openManager: '打开管理',
     addressManager: '地址管理',
     cmdCfmail: '显示 Chat ID、Worker 地址与名单管理',
@@ -274,6 +277,7 @@ const tw: Record<I18nKey, string> = {
     previewLoading: '載入中…',
     previewAuthRequired: '請從 Telegram「預覽」小程式按鈕開啟。',
     previewDenied: '無權限',
+    previewNoMail: '暫無快取郵件。\n名單管理請用 /cfmail。',
     openManager: '開啟管理',
     addressManager: '地址管理',
     cmdCfmail: '顯示 Chat ID、Worker 地址與名單管理',
