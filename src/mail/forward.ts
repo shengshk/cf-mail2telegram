@@ -70,6 +70,19 @@ export function emailsMatch(a: string, b: string): boolean {
     return normalizeEmailAddress(a) === normalizeEmailAddress(b);
 }
 
+/**
+ * Gmail auto-forward envelope rewrite:
+ * `local+caf_=fwdlocal=fwddomain@domain` → `local@domain`
+ */
+export function unwrapGmailCafAddress(address: string): string | undefined {
+    const trimmed = address.trim();
+    const m = /^([^@]+)\+caf_=[^=]+=[^@]+@([^@]+)$/i.exec(trimmed);
+    if (!m) {
+        return undefined;
+    }
+    return `${m[1]}@${m[2]}`;
+}
+
 export function extractEmailsFromHeaderValue(raw: string): string[] {
     const out: string[] = [];
     const seen = new Set<string>();
@@ -128,6 +141,42 @@ export function pickOriginalMailboxAddress(message: EmailMessage): string | unde
         }
     }
     return undefined;
+}
+
+export interface DisplayAddressFields {
+    from: string;
+    to: string;
+    /** External mailbox for Mailbox button when not backed up */
+    originalTo?: string;
+}
+
+/**
+ * For externally forwarded mail, prefer original From/To for Telegram display.
+ * Direct domain mail: leave envelope addresses unchanged.
+ */
+export function resolveDisplayAddresses(
+    message: EmailMessage,
+    envelope: { from: string; to: string },
+    mime?: { from?: string; to?: string },
+): DisplayAddressFields {
+    const originalTo = pickOriginalMailboxAddress(message);
+    if (!isExternallyForwarded(message)) {
+        return originalTo
+            ? { from: envelope.from, to: envelope.to, originalTo }
+            : { from: envelope.from, to: envelope.to };
+    }
+
+    const rawFrom = (mime?.from || '').trim() || envelope.from;
+    const from = unwrapGmailCafAddress(rawFrom) || rawFrom;
+    const to = originalTo
+        || (mime?.to && emailDomain(mime.to) !== emailDomain(envelope.to) ? mime.to : '')
+        || envelope.to;
+
+    return {
+        from,
+        to,
+        ...(originalTo ? { originalTo } : {}),
+    };
 }
 
 /**

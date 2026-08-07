@@ -15,6 +15,10 @@ export interface EmailCache {
     gmThrid?: string;
     html?: string;
     text?: string;
+    /** MIME From (before display override); used for forwarded-mail display */
+    mimeFrom?: string;
+    /** MIME To first address; used for forwarded-mail display fallback */
+    mimeTo?: string;
     /** Whether Email Routing backup to FORWARD_MAIL ran for this mail */
     backedUp?: boolean;
     /** Header To (external) for Mailbox when not backed up */

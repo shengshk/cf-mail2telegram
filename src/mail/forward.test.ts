@@ -7,7 +7,9 @@ import {
     normalizeEmailAddress,
     parseForwardMailsValue,
     pickOriginalMailboxAddress,
+    resolveDisplayAddresses,
     shouldBackupInboundMail,
+    unwrapGmailCafAddress,
 } from './forward';
 import { mailboxButtonUrl } from './mailbox';
 import { isWebLinkValid, MAIL_CACHE_MAX, WEB_LINK_TTL_MS, attachWebPreviewMeta, webPreviewUrl } from './cache-policy';
@@ -50,6 +52,12 @@ export async function runForwardTests(): Promise<void> {
     assert(normalizeEmailAddress('User+Bak@gmail.com') === 'user@gmail.com', 'gmail plus');
     assert(emailsMatch('shengshk+bak@gmail.com', 'shengshk@gmail.com'), 'plus match');
 
+    assert(
+        unwrapGmailCafAddress('shengshk+caf_=gamil=isyn.cc@gmail.com') === 'shengshk@gmail.com',
+        'caf unwrap',
+    );
+    assert(unwrapGmailCafAddress('noreply@service.com') === undefined, 'caf no match');
+
     assert(getForwardTarget(envWith('x@y.com,Backup,forwarded'))?.email === 'x@y.com', 'get FORWARD_MAIL');
     assert(getForwardTarget(envWith()) === undefined, 'no FORWARD_MAIL');
 
@@ -68,6 +76,46 @@ export async function runForwardTests(): Promise<void> {
         headers: { To: 'shengshk@gmail.com' },
     });
     assert(pickOriginalMailboxAddress(msgFwd) === 'shengshk@gmail.com', 'original To');
+
+    // forwarded display: original from/to
+    const dispFwd = resolveDisplayAddresses(
+        mockMessage({
+            from: 'shengshk+caf_=gamil=isyn.cc@gmail.com',
+            to: 'gamil@isyn.cc',
+            headers: { To: 'shengshk@gmail.com', From: 'noreply@service.com' },
+        }),
+        { from: 'shengshk+caf_=gamil=isyn.cc@gmail.com', to: 'gamil@isyn.cc' },
+        { from: 'noreply@service.com', to: 'shengshk@gmail.com' },
+    );
+    assert(dispFwd.from === 'noreply@service.com', 'fwd display from mime');
+    assert(dispFwd.to === 'shengshk@gmail.com', 'fwd display original to');
+    assert(dispFwd.originalTo === 'shengshk@gmail.com', 'fwd originalTo set');
+
+    // forwarded, CAF only (no mime from)
+    const dispCaf = resolveDisplayAddresses(
+        mockMessage({
+            from: 'shengshk+caf_=gamil=isyn.cc@gmail.com',
+            to: 'gamil@isyn.cc',
+            headers: { To: 'user@gmail.com' },
+        }),
+        { from: 'shengshk+caf_=gamil=isyn.cc@gmail.com', to: 'gamil@isyn.cc' },
+    );
+    assert(dispCaf.from === 'shengshk@gmail.com', 'fwd caf unwrap from');
+    assert(dispCaf.to === 'user@gmail.com', 'fwd caf original to');
+
+    // direct: unchanged
+    const dispDirect = resolveDisplayAddresses(
+        mockMessage({
+            from: 'svc@example.com',
+            to: 'otp@mydomain.com',
+            headers: { To: 'otp@mydomain.com' },
+        }),
+        { from: 'svc@example.com', to: 'otp@mydomain.com' },
+        { from: 'Name <svc@example.com>', to: 'otp@mydomain.com' },
+    );
+    assert(dispDirect.from === 'svc@example.com', 'direct from unchanged');
+    assert(dispDirect.to === 'otp@mydomain.com', 'direct to unchanged');
+    assert(dispDirect.originalTo === undefined, 'direct no originalTo');
 
     const noFwd = envWith('shengshk+bak@gmail.com,Backup,noforwarded');
     assert(!shouldBackupInboundMail(msgFwd, noFwd), 'noforwarded blocks gmail→domain');

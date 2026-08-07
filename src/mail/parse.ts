@@ -88,10 +88,18 @@ export async function parseEmail(
         const parser = new PostalMime();
         const email = await parser.parse(emailRaw as unknown as RawEmail);
         cache.subject = email.subject || cache.subject;
+        const mimeFrom = email.from?.address;
+        const mimeTo = email.to?.map(addr => addr.address).at(0);
+        if (mimeFrom) {
+            cache.mimeFrom = mimeFrom;
+        }
+        if (mimeTo) {
+            cache.mimeTo = mimeTo;
+        }
         if (useEmlHeaders) {
             cache.messageId = email.messageId || cache.messageId;
-            cache.from = email.from?.address || cache.from;
-            cache.to = email.to?.map(addr => addr.address).at(0) || cache.to;
+            cache.from = mimeFrom || cache.from;
+            cache.to = mimeTo || cache.to;
         }
         if (email.date) {
             const rawDate = typeof email.date === 'string'

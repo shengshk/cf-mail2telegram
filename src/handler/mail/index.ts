@@ -8,8 +8,8 @@ import {
     getForwardTarget,
     isMessageBlock,
     parseEmail,
-    pickOriginalMailboxAddress,
     renderEmailListMode,
+    resolveDisplayAddresses,
     shouldBackupInboundMail,
 } from '../../mail';
 import {
@@ -92,10 +92,18 @@ export async function emailHandler(message: ForwardableEmailMessage, env: Enviro
             const maxSizePolicy = MAX_EMAIL_SIZE_POLICY || 'truncate';
             const mail = await parseEmail(message, maxSize, maxSizePolicy, false, TIMEZONE || 'Asia/Shanghai');
             mail.backedUp = backedUp;
-            const originalTo = pickOriginalMailboxAddress(message);
-            if (originalTo) {
-                mail.originalTo = originalTo;
+            const display = resolveDisplayAddresses(
+                message,
+                { from: mail.from, to: mail.to },
+                { from: mail.mimeFrom, to: mail.mimeTo },
+            );
+            mail.from = display.from;
+            mail.to = display.to;
+            if (display.originalTo) {
+                mail.originalTo = display.originalTo;
             }
+            delete mail.mimeFrom;
+            delete mail.mimeTo;
             if (!isWebAuthEnabled(env)) {
                 attachWebPreviewMeta(mail);
             }
