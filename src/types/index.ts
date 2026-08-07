@@ -35,7 +35,7 @@ export type BlockPolicy = 'reject' | 'forward' | 'telegram';
 
 /**
  * Required: TELEGRAM_BOT, KV binding DB
- * Recommended: GEMINI_API, FORWARD_MAIL
+ * Recommended: AI_PROVIDER + provider keys, FORWARD_MAIL
  * Optional: UI_LANG (en|zh|tw, default en)
  * Public hostname is saved when you open /init (KV PUBLIC_HOST).
  */
@@ -71,9 +71,20 @@ export interface Environment {
     MAX_EMAIL_SIZE?: string;
     MAX_EMAIL_SIZE_POLICY?: MaxEmailSizePolicy;
 
-    GEMINI_API?: string;
-    /** default gemini-2.5-flash-lite */
-    GEMINI_MODEL?: string;
+    /**
+     * OTP LLM provider order, comma-separated.
+     * Supported: GEMINI_OFFICIAL, CUSTOM. Default: GEMINI_OFFICIAL,CUSTOM
+     */
+    AI_PROVIDER?: string;
+    GEMINI_OFFICIAL_API_KEY?: string;
+    /** default gemini-2.5-flash,gemini-2.5-flash-lite,gemini-2.0-flash */
+    GEMINI_OFFICIAL_API_MODEL?: string;
+    CUSTOM_API_KEY?: string;
+    /** default https://openrouter.ai/api/v1 */
+    CUSTOM_API_BASE?: string;
+    /** default google/gemma-4-26b-a4b-it:free,poolside/laguna-s-2.1:free */
+    CUSTOM_API_MODEL?: string;
+
     PROMPT_TEMPLATE?: string;
     /** default Asia/Shanghai */
     TIMEZONE?: string;

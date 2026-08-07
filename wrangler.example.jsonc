@@ -16,11 +16,14 @@
 		"UI_LANG": "en"
 		// Required: TELEGRAM_BOT=token,chat_id  +  KV binding name DB
 		// Recommended secrets/vars:
-		//   GEMINI_API=AIza...
+		//   AI_PROVIDER=GEMINI_OFFICIAL,CUSTOM
+		//   GEMINI_OFFICIAL_API_KEY=AIza...
+		//   CUSTOM_API_KEY=sk-or-v1-...
+		//   CUSTOM_API_BASE=https://openrouter.ai/api/v1
 		//   FORWARD_MAIL=you+bak@gmail.com,Backup,noforwarded
 		//   WEB_USER=username,password
-		// Optional: GEMINI_MODEL, TIMEZONE, GMAIL_U (browser Gmail u/N slot), BLOCK_POLICY,
-		//   GUARDIAN_MODE, MAX_EMAIL_SIZE, MAX_EMAIL_SIZE_POLICY, RESEND_API_KEY, DEBUG
+		// Optional: GEMINI_OFFICIAL_API_MODEL, CUSTOM_API_MODEL, TIMEZONE, GMAIL_U,
+		//   BLOCK_POLICY, GUARDIAN_MODE, MAX_EMAIL_SIZE, MAX_EMAIL_SIZE_POLICY, RESEND_API_KEY, DEBUG
 		// Preview: hard max 100 bodies. Without WEB_USER: web link token 1d.
 		// With WEB_USER: login for /email + /init. /previewmode switches Mini App ↔ Web.
 		// Public host: open https://<worker-host>/ (status) or /init (saved to KV). No DOMAIN var.

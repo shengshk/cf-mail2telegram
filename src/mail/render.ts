@@ -53,7 +53,7 @@ async function resolvePreviewButton(
     return { text: label, web_app: { url: miniAppPreviewWebAppUrl(host, mail.id) } };
 }
 
-/** OTP AI bold / local italic; DEBUG shows fallback reason */
+/** OTP AI (gemini/custom) bold / local italic; DEBUG shows fallback reason */
 export async function renderEmailListMode(
     mail: EmailCache,
     env: Environment,

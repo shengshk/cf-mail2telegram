@@ -2967,6 +2967,7 @@ var en = {
   previewLoading: "Loading\u2026",
   previewAuthRequired: "Open this preview from the Telegram Mini App button.",
   previewDenied: "Permission denied",
+  previewNoMail: "No cached mail yet.\nUse /cfmail for block/white lists.",
   openManager: "Open Manager",
   addressManager: "Address Manager",
   cmdCfmail: "Show Chat ID, Worker URL, and list managers",
@@ -2984,7 +2985,9 @@ var en = {
   tmaListMode: "List Mode",
   tmaBlockList: "Block list",
   tmaWhiteList: "White list",
-  tmaTestAddress: "Test",
+  tmaAddressManage: "Address rules",
+  tmaManageTitle: "cf-mail2telegram \xB7 address rules",
+  tmaEmptyList: "No rules yet.",
   tmaAddress: "address",
   tmaType: "type",
   tmaAction: "action",
@@ -3050,6 +3053,7 @@ var zh = {
   previewLoading: "\u52A0\u8F7D\u4E2D\u2026",
   previewAuthRequired: "\u8BF7\u4ECE Telegram\u300C\u9884\u89C8\u300D\u5C0F\u7A0B\u5E8F\u6309\u94AE\u6253\u5F00\u3002",
   previewDenied: "\u65E0\u6743\u9650",
+  previewNoMail: "\u6682\u65E0\u7F13\u5B58\u90AE\u4EF6\u3002\n\u540D\u5355\u7BA1\u7406\u8BF7\u7528 /cfmail\u3002",
   openManager: "\u6253\u5F00\u7BA1\u7406",
   addressManager: "\u5730\u5740\u7BA1\u7406",
   cmdCfmail: "\u663E\u793A Chat ID\u3001Worker \u5730\u5740\u4E0E\u540D\u5355\u7BA1\u7406",
@@ -3067,7 +3071,9 @@ var zh = {
   tmaListMode: "\u540D\u5355\u6A21\u5F0F",
   tmaBlockList: "\u9ED1\u540D\u5355",
   tmaWhiteList: "\u767D\u540D\u5355",
-  tmaTestAddress: "\u6D4B\u8BD5",
+  tmaAddressManage: "\u6536\u4FE1\u5730\u5740\u7BA1\u7406",
+  tmaManageTitle: "cf-mail2telegram \xB7 \u6536\u4FE1\u5730\u5740\u7BA1\u7406",
+  tmaEmptyList: "\u6682\u65E0\u89C4\u5219",
   tmaAddress: "\u5730\u5740",
   tmaType: "\u7C7B\u578B",
   tmaAction: "\u64CD\u4F5C",
@@ -3133,6 +3139,7 @@ var tw = {
   previewLoading: "\u8F09\u5165\u4E2D\u2026",
   previewAuthRequired: "\u8ACB\u5F9E Telegram\u300C\u9810\u89BD\u300D\u5C0F\u7A0B\u5F0F\u6309\u9215\u958B\u555F\u3002",
   previewDenied: "\u7121\u6B0A\u9650",
+  previewNoMail: "\u66AB\u7121\u5FEB\u53D6\u90F5\u4EF6\u3002\n\u540D\u55AE\u7BA1\u7406\u8ACB\u7528 /cfmail\u3002",
   openManager: "\u958B\u555F\u7BA1\u7406",
   addressManager: "\u5730\u5740\u7BA1\u7406",
   cmdCfmail: "\u986F\u793A Chat ID\u3001Worker \u5730\u5740\u8207\u540D\u55AE\u7BA1\u7406",
@@ -3150,7 +3157,9 @@ var tw = {
   tmaListMode: "\u540D\u55AE\u6A21\u5F0F",
   tmaBlockList: "\u9ED1\u540D\u55AE",
   tmaWhiteList: "\u767D\u540D\u55AE",
-  tmaTestAddress: "\u6E2C\u8A66",
+  tmaAddressManage: "\u6536\u4FE1\u5730\u5740\u7BA1\u7406",
+  tmaManageTitle: "cf-mail2telegram \xB7 \u6536\u4FE1\u5730\u5740\u7BA1\u7406",
+  tmaEmptyList: "\u66AB\u7121\u898F\u5247",
   tmaAddress: "\u5730\u5740",
   tmaType: "\u985E\u578B",
   tmaAction: "\u64CD\u4F5C",
@@ -3218,25 +3227,14 @@ function t2(lang, key) {
 }
 function tmaI18nPayload(lang) {
   return {
-    listMode: t2(lang, "tmaListMode"),
+    manageTitle: t2(lang, "tmaManageTitle"),
     blockList: t2(lang, "tmaBlockList"),
     whiteList: t2(lang, "tmaWhiteList"),
-    testAddress: t2(lang, "tmaTestAddress"),
-    address: t2(lang, "tmaAddress"),
-    type: t2(lang, "tmaType"),
-    action: t2(lang, "tmaAction"),
     add: t2(lang, "tmaAdd"),
     delete: t2(lang, "tmaDelete"),
-    test: t2(lang, "tmaTestAddress"),
+    emptyList: t2(lang, "tmaEmptyList"),
     placeholderBlock: t2(lang, "tmaPlaceholderBlock"),
     placeholderWhite: t2(lang, "tmaPlaceholderWhite"),
-    placeholderTest: t2(lang, "tmaPlaceholderTest"),
-    sendMail: t2(lang, "tmaSendMail"),
-    from: t2(lang, "tmaFrom"),
-    to: t2(lang, "tmaTo"),
-    subject: t2(lang, "tmaSubject"),
-    text: t2(lang, "tmaText"),
-    send: t2(lang, "tmaSend"),
     previewTitle: t2(lang, "previewTitle"),
     previewFrom: t2(lang, "previewFrom"),
     previewTo: t2(lang, "previewTo"),
@@ -3268,9 +3266,56 @@ line-height:1.35;word-break:break-word}
 .meta{color:#6b7280;font-size:.8125rem;line-height:1.65;margin:0}
 .mail-canvas{background:#fff;color:#111;padding:1.5rem;overflow-x:auto}
 .mail-canvas img{max-width:100%;height:auto}
+.mail-canvas a{color:#2563eb;text-decoration:underline;word-break:break-all}
 `.trim();
 function escapeHtml(s2) {
   return s2.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+var BARE_URL_RE = /https?:\/\/[^\s<>"'`]+/gi;
+function splitUrlTrail(raw) {
+  const url = raw.replace(/[),.;:!?]+$/g, "");
+  return { url, trail: raw.slice(url.length) };
+}
+function linkifyAndEscapeText(text) {
+  let out = "";
+  let last = 0;
+  BARE_URL_RE.lastIndex = 0;
+  let m;
+  while (m = BARE_URL_RE.exec(text)) {
+    out += escapeHtml(text.slice(last, m.index));
+    const { url, trail } = splitUrlTrail(m[0]);
+    if (url) {
+      const href = escapeHtml(url);
+      out += `<a href="${href}" rel="noopener noreferrer" target="_blank">${href}</a>${escapeHtml(trail)}`;
+    } else {
+      out += escapeHtml(m[0]);
+    }
+    last = m.index + m[0].length;
+  }
+  out += escapeHtml(text.slice(last));
+  return out;
+}
+function linkifyHtmlDocument(html) {
+  return html.split(/(<a\b[^>]*>[\s\S]*?<\/a>)/gi).map((part) => {
+    if (/^<a\b/i.test(part)) {
+      return part;
+    }
+    return part.replace(/(<[^>]+>)|([^<]+)/g, (chunk, tag, text) => {
+      if (tag) {
+        return tag;
+      }
+      const raw = text || "";
+      BARE_URL_RE.lastIndex = 0;
+      return raw.replace(BARE_URL_RE, (match4) => {
+        const { url, trail } = splitUrlTrail(match4);
+        if (!url) {
+          return match4;
+        }
+        const href = url.replace(/"/g, "&quot;");
+        return `<a href="${href}" rel="noopener noreferrer" target="_blank">${url}</a>${trail}`;
+      });
+    });
+  }).join("");
 }
 function sanitizeHtmlForPreview(rawHtml, maxLength = 2e5) {
   let html = rawHtml.replace(/<(script|iframe|object|embed|form|meta|link|base|style)\b[^>]*>[\s\S]*?<\/\1>/gi, "").replace(/<(script|iframe|object|embed|form|meta|link|base|style)\b[^>]*\/?>/gi, "").replace(/\son[a-z]+\s*=\s*(['"]).*?\1/gi, "").replace(/\son[a-z]+\s*=\s*[^\s>]+/gi, "").replace(/\s(href|src|xlink:href)\s*=\s*(['"])\s*javascript:[^'"]*\2/gi, "").replace(/<img\b([^>]*?)>/gi, (_m, attrs) => {
@@ -3279,6 +3324,7 @@ function sanitizeHtmlForPreview(rawHtml, maxLength = 2e5) {
     }
     return `<img referrerpolicy="no-referrer"${attrs}>`;
   });
+  html = linkifyHtmlDocument(html);
   if (html.length > maxLength) {
     html = `${html.slice(0, maxLength)}\u2026`;
   }
@@ -3288,7 +3334,7 @@ function buildPreviewBodyHtml(mail) {
   if (mail.html?.trim()) {
     return sanitizeHtmlForPreview(mail.html);
   }
-  return `<pre style="white-space:pre-wrap;margin:0">${escapeHtml(mail.text || "")}</pre>`;
+  return `<pre style="white-space:pre-wrap;margin:0">${linkifyAndEscapeText(mail.text || "")}</pre>`;
 }
 function renderPreviewPage(mail, bodyHtml, env, webBar) {
   const lang = resolveUiLang(env || {});
@@ -3414,6 +3460,29 @@ ${PREVIEW_FAVICON_LINK}
       return r.json();
     }).then(paint).catch(function(e){ show(esc(e.message||L.denied)); });
   }catch(e){ show('${authRequired}'); }
+})();
+<\/script>
+</body></html>`;
+}
+function renderPreviewEmptyMiniApp(env) {
+  const lang = resolveUiLang(env || {});
+  const title = escapeHtml(t2(lang, "previewTitle"));
+  const msg = escapeHtml(t2(lang, "previewNoMail")).replace(/\n/g, "<br>");
+  return `<!doctype html><html lang="${htmlLang(lang)}"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+${PREVIEW_FAVICON_LINK}
+<title>${title}</title>
+<script src="https://telegram.org/js/telegram-web-app.js"><\/script>
+<style>${PREVIEW_CSS}
+.status{padding:2.5rem 1.25rem;text-align:center;color:#6b7280;font-size:.9375rem;line-height:1.6;white-space:pre-wrap}
+</style></head>
+<body>
+<div class="status">${msg}</div>
+<script>
+(function(){
+  var tg=window.Telegram&&window.Telegram.WebApp;
+  if(tg){ try{ tg.ready(); tg.expand(); }catch(e){} }
 })();
 <\/script>
 </body></html>`;
@@ -4036,49 +4105,19 @@ var tma_default = `<!DOCTYPE html>
   <title>cf-mail2telegram</title>
   <script src="https://telegram.org/js/telegram-web-app.js"><\/script>
   <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"><\/script>
-  <link href="https://unpkg.com/boltcss/bolt.min.css" rel="stylesheet">
   <style>
+    * { box-sizing: border-box; }
     body {
-      max-width: 600px;
-      margin: 0 auto;
-      padding: 20px;
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: #f0f1f3;
+      color: #1f2937;
+      -webkit-font-smoothing: antialiased;
     }
-
-    table {
-      width: 100%;
-    }
-
-    th,
-    td {
-      text-align: left;
-    }
-
-    th:last-child,
-    td:last-child {
-      width: 80px;
-      text-align: center;
-    }
-
-    button {
-      padding: 5px 10px;
-      min-width: 80px;
-    }
-
-    .growContainer {
-      display: flex;
-      align-items: center;
-    }
-
-    .growItem {
-      max-width: 100%;
-      flex-grow: 1;
-    }
-
-    /* mail preview */
     .preview {
       max-width: 820px;
       margin: 0 auto;
-      padding: 0 0 2rem;
+      padding: 1.25rem 1rem 2.5rem;
     }
     .preview-bar {
       display: flex;
@@ -4090,6 +4129,7 @@ var tma_default = `<!DOCTYPE html>
       border-bottom: 1px solid #e5e7eb;
       font-size: .8125rem;
       color: #6b7280;
+      letter-spacing: .01em;
     }
     .preview-sheet {
       background: #fff;
@@ -4122,15 +4162,118 @@ var tma_default = `<!DOCTYPE html>
       padding: 1.5rem;
       overflow-x: auto;
     }
-    .mail-canvas img {
-      max-width: 100%;
-      height: auto;
+    .mail-canvas img { max-width: 100%; height: auto; }
+    .mail-canvas a {
+      color: #2563eb;
+      text-decoration: underline;
+      word-break: break-all;
     }
     .status {
       padding: 2.5rem 1.25rem;
       text-align: center;
       color: #6b7280;
       font-size: .9375rem;
+    }
+    .list-tabs {
+      display: flex;
+      gap: .5rem;
+      padding: 1rem 1.25rem 0;
+      border-bottom: 1px solid #eceef1;
+    }
+    .list-tabs button {
+      flex: 1;
+      border: none;
+      background: transparent;
+      padding: .55rem .75rem;
+      margin-bottom: -1px;
+      font: inherit;
+      font-size: .875rem;
+      font-weight: 600;
+      color: #6b7280;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+    }
+    .list-tabs button.active {
+      color: #111827;
+      border-bottom-color: #3ecf8e;
+    }
+    .list-body { padding: 1.25rem 1.5rem 1.5rem; }
+    .list-tip {
+      margin: 0 0 .75rem;
+      font-size: .8125rem;
+      color: #b45309;
+      word-break: break-word;
+    }
+    .list-add {
+      display: flex;
+      gap: .5rem;
+      margin-bottom: 1rem;
+    }
+    .list-add input {
+      flex: 1;
+      min-width: 0;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: .55rem .75rem;
+      font: inherit;
+      font-size: .875rem;
+      background: #fff;
+    }
+    .list-add input:focus {
+      outline: none;
+      border-color: #3ecf8e;
+      box-shadow: 0 0 0 2px rgba(62, 207, 142, .15);
+    }
+    .btn-primary {
+      border: none;
+      border-radius: 8px;
+      padding: .55rem 1rem;
+      font: inherit;
+      font-size: .875rem;
+      font-weight: 600;
+      background: #3ecf8e;
+      color: #0b1210;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn-ghost {
+      border: none;
+      background: transparent;
+      padding: .25rem .5rem;
+      font: inherit;
+      font-size: .8125rem;
+      font-weight: 500;
+      color: #6b7280;
+      cursor: pointer;
+    }
+    .btn-ghost:hover { color: #ef4444; }
+    .list-items {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    .list-items li {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: .75rem;
+      padding: .65rem 0;
+      border-bottom: 1px solid #f3f4f6;
+      font-size: .875rem;
+    }
+    .list-items li:last-child { border-bottom: none; }
+    .list-addr {
+      flex: 1;
+      min-width: 0;
+      word-break: break-all;
+      color: #111827;
+    }
+    .list-empty {
+      margin: 0;
+      text-align: center;
+      color: #9ca3af;
+      font-size: .875rem;
+      padding: 1.5rem 0 .5rem;
     }
   </style>
 </head>
@@ -4155,91 +4298,28 @@ var tma_default = `<!DOCTYPE html>
         </div>
       </div>
     </div>
-    <div v-else-if="func === 'list'">
-      <h3 class="growContainer">
-        {{ i18n.listMode }}
-        <select class="growItem" style="margin-left: 10px;" v-model="mode">
-          <option value="block">{{ i18n.blockList }}</option>
-          <option value="white">{{ i18n.whiteList }}</option>
-          <option value="test">{{ i18n.testAddress }}</option>
-        </select>
-      </h3>
-      <p v-if="tipMessage">{{ tipMessage }}</p>
-      <table>
-        <thead>
-          <tr>
-            <th>{{ i18n.address }}</th>
-            <th>{{ mode === 'test' ? i18n.type : i18n.action }}</th>
-          </tr>
-        </thead>
-        <tbody v-if="mode!=='test'">
-          <tr>
-            <td class="growContainer">
-              <input :placeholder="inputPlaceholder" class="growItem" v-model="inputAddress">
-            </td>
-            <td>
-              <button @click="addAddress">{{ i18n.add }}</button>
-            </td>
-          </tr>
-          <tr :key="index" v-for="(address, index) in addresses">
-            <td>{{ address }}</td>
-            <td>
-              <button @click="removeAddress(index)">{{ i18n.delete }}</button>
-            </td>
-          </tr>
-        </tbody>
-        <tbody v-else>
-          <tr>
-            <td class="growContainer">
-              <input :placeholder="inputPlaceholder" class="growItem" v-model="inputAddress">
-            </td>
-            <td>
-              <button @click="testAddress">{{ i18n.test }}</button>
-            </td>
-          </tr>
-          <tr :key="index" v-for="(item, index) in testList">
-            <td>{{ item.address }}</td>
-            <td>{{ item.result }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <div v-if="func === 'sendmail'">
-      <h3>{{ i18n.sendMail }}</h3>
-      <p v-if="tipMessage">{{ tipMessage }}</p>
-      <table>
-        <tbody>
-          <tr>
-            <td>{{ i18n.from }}</td>
-            <td class="growContainer">
-              <input v-model="sendMail.from" class="growItem">
-            </td>
-          </tr>
-          <tr>
-            <td>{{ i18n.to }}</td>
-            <td class="growContainer">
-              <input v-model="sendMail.to" class="growItem">
-            </td>
-          </tr>
-          <tr>
-            <td>{{ i18n.subject }}</td>
-            <td class="growContainer">
-              <input v-model="sendMail.subject" class="growItem">
-            </td>
-          </tr>
-          <tr>
-            <td>{{ i18n.text }}</td>
-            <td class="growContainer">
-              <textarea v-model="sendMail.text" class="growItem"></textarea>
-            </td>
-          </tr>
-          <tr>
-            <td colspan="2">
-              <button>{{ i18n.send }}</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <div v-else-if="func === 'list'" class="preview">
+      <div class="preview-bar"><span>{{ i18n.manageTitle }}</span></div>
+      <div class="preview-sheet">
+        <div class="list-tabs">
+          <button type="button" :class="{ active: mode === 'block' }" @click="mode = 'block'">{{ i18n.blockList }}</button>
+          <button type="button" :class="{ active: mode === 'white' }" @click="mode = 'white'">{{ i18n.whiteList }}</button>
+        </div>
+        <div class="list-body">
+          <p v-if="tipMessage" class="list-tip">{{ tipMessage }}</p>
+          <div class="list-add">
+            <input v-model="inputAddress" :placeholder="inputPlaceholder" @keyup.enter="addAddress">
+            <button type="button" class="btn-primary" @click="addAddress">{{ i18n.add }}</button>
+          </div>
+          <ul v-if="addresses.length" class="list-items">
+            <li v-for="(address, index) in addresses" :key="mode + ':' + index">
+              <span class="list-addr">{{ address }}</span>
+              <button type="button" class="btn-ghost" @click="removeAddress(index)">{{ i18n.delete }}</button>
+            </li>
+          </ul>
+          <p v-else class="list-empty">{{ i18n.emptyList }}</p>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -4270,16 +4350,29 @@ var tma_default = `<!DOCTYPE html>
     function listModeFromStart(s) {
       if (s === 'list_block') return 'block';
       if (s === 'list_white') return 'white';
-      if (s === 'list_test') return 'test';
       return '';
+    }
+
+    function emailIdFromPath() {
+      const direct = location.pathname.match(/\\/tma\\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\\/?$/i);
+      if (direct) return direct[1];
+      const legacy = location.pathname.match(/\\/tma\\/email\\/([^/]+)\\/?$/i);
+      return legacy ? decodeURIComponent(legacy[1]) : '';
+    }
+
+    function isListPath() {
+      return /\\/tma\\/list(\\/(block|white))?\\/?$/i.test(location.pathname);
+    }
+
+    function listModeFromPath() {
+      const m = location.pathname.match(/\\/tma\\/list(?:\\/(block|white))?\\/?$/i);
+      if (!m) return '';
+      return (m[1] || 'block').toLowerCase();
     }
 
     class Client {
       constructor(tma) {
         this.tma = tma;
-        this.addAddress = this.addAddress.bind(this);
-        this.removeAddress = this.removeAddress.bind(this);
-        this.loadAddress = this.loadAddress.bind(this);
       }
 
       async request(path, method, body) {
@@ -4331,77 +4424,49 @@ var tma_default = `<!DOCTYPE html>
         const urlParams = new URLSearchParams(window.location.search);
         const i18n = I18N;
         const startParam = readStartParam();
-        const listMode = listModeFromStart(startParam);
+        const pathListMode = listModeFromPath();
+        const listMode = listModeFromStart(startParam) || pathListMode;
+        const queryMode = urlParams.get('mode');
+        const isListQuery = queryMode === 'block' || queryMode === 'white';
 
         const blockList = ref([]);
         const whiteList = ref([]);
-        const testList = ref([]);
         const tipMessage = ref('');
         const inputAddress = ref('');
         const previewMail = ref(null);
         const previewError = ref('');
 
-        const sendMail = ref({
-          from: '',
-          to: '',
-          subject: '',
-          text: '',
-        });
-
-        const initialFunc = isMailId(startParam)
-          || (urlParams.get('mode') === 'preview' && urlParams.get('id'))
+        const pathEmailId = emailIdFromPath();
+        const initialFunc = isMailId(startParam) || pathEmailId
+          || (queryMode === 'preview' && urlParams.get('id'))
           ? 'preview'
-          : (urlParams.get('func') || 'list');
+          : (isListPath() || listMode || isListQuery ? 'list' : 'list');
         const func = ref(initialFunc);
-        const mode = ref(listMode || urlParams.get('mode') || 'block');
+        const mode = ref(listMode || (isListQuery ? queryMode : 'block'));
         const previewId = isMailId(startParam)
           ? startParam
-          : (urlParams.get('id') || '');
+          : (pathEmailId || urlParams.get('id') || '');
         const client = new Client('');
 
-        const addresses = computed(() => {
-          switch (mode.value) {
-            case 'block':
-              return blockList.value;
-            case 'white':
-              return whiteList.value;
-            case 'test':
-              return testList.value;
-          }
-        });
+        const addresses = computed(() => mode.value === 'white' ? whiteList.value : blockList.value);
 
-        const inputPlaceholder = computed(() => {
-          switch (mode.value) {
-            case 'block':
-              return i18n.placeholderBlock;
-            case 'white':
-              return i18n.placeholderWhite;
-            case 'test':
-              return i18n.placeholderTest;
-          }
-        });
+        const inputPlaceholder = computed(() =>
+          mode.value === 'white' ? i18n.placeholderWhite : i18n.placeholderBlock);
 
         const addAddress = async () => {
           try {
-            if (!inputAddress.value) {
-              return;
-            }
             const address = inputAddress.value.trim();
+            if (!address) return;
             await client.addAddress(address, mode.value);
             inputAddress.value = '';
-            switch (mode.value) {
-              case 'block':
-                blockList.value.push(address);
-                break;
-              case 'white':
-                whiteList.value.push(address);
-                break;
-              case 'test':
-                break;
+            if (mode.value === 'white') {
+              whiteList.value.push(address);
+            } else {
+              blockList.value.push(address);
             }
-            tipMessage.value = null;
+            tipMessage.value = '';
           } catch (error) {
-            tipMessage.value = \`ERROR: \` + error;
+            tipMessage.value = String(error.message || error);
           }
         };
 
@@ -4409,52 +4474,20 @@ var tma_default = `<!DOCTYPE html>
           try {
             const address = addresses.value[index];
             await client.removeAddress(address, mode.value);
-            switch (mode.value) {
-              case 'block':
-                blockList.value.splice(index, 1);
-                break;
-              case 'white':
-                whiteList.value.splice(index, 1);
-                break;
-              case 'test':
-                break;
+            if (mode.value === 'white') {
+              whiteList.value.splice(index, 1);
+            } else {
+              blockList.value.splice(index, 1);
             }
-            tipMessage.value = null;
+            tipMessage.value = '';
           } catch (error) {
-            tipMessage.value = \`ERROR: \` + error;
+            tipMessage.value = String(error.message || error);
           }
-        };
-
-        const testAddressWithPattern = (pattern, address) => {
-          if (pattern.toLowerCase() === address.toLowerCase()) {
-            return true;
-          }
-          try {
-            const regex = new RegExp(pattern, 'i');
-            return !!regex.test(address);
-          } catch (e) {
-            return false;
-          }
-        };
-
-        const testAddress = () => {
-          const test = [];
-          const address = inputAddress.value.trim();
-          for (const pattern of blockList.value) {
-            if (testAddressWithPattern(pattern, address)) {
-              test.push({ address: pattern, result: 'block' });
-            }
-          }
-          for (const pattern of whiteList.value) {
-            if (testAddressWithPattern(pattern, address)) {
-              test.push({ address: pattern, result: 'white' });
-            }
-          }
-          testList.value = test;
         };
 
         watch(mode, () => {
           inputAddress.value = '';
+          tipMessage.value = '';
         });
 
         onMounted(async () => {
@@ -4481,7 +4514,7 @@ var tma_default = `<!DOCTYPE html>
             if (func.value === 'preview') {
               previewError.value = error.message || String(error);
             } else {
-              tipMessage.value = \`ERROR: \` + error.message;
+              tipMessage.value = String(error.message || error);
             }
           }
         });
@@ -4492,15 +4525,12 @@ var tma_default = `<!DOCTYPE html>
           tipMessage,
           inputAddress,
           inputPlaceholder,
-          sendMail,
           mode,
           func,
           previewMail,
           previewError,
-          testList,
           addAddress,
           removeAddress,
-          testAddress,
         };
       },
     }).mount('#app');
@@ -4592,37 +4622,21 @@ async function saveBotUsername(dao, username) {
   await dao.saveBotUsername(normalized);
   return normalized;
 }
-async function loadBotUsername(env) {
-  if (!env.DB) {
-    return void 0;
-  }
-  const dao = new Dao(env.DB);
-  const cached = await dao.loadBotUsername();
-  if (cached) {
-    return cached;
-  }
-  try {
-    const { token: token2 } = requireTelegram(env);
-    const api = createTelegramBotAPI(token2);
-    const me = await api.getMeWithReturns({});
-    if (!me.ok || !me.result?.username) {
-      return void 0;
-    }
-    return await saveBotUsername(dao, me.result.username);
-  } catch (e) {
-    console.error("[bot-username]", e);
-    return void 0;
-  }
-}
-function miniAppStartLink(botUsername, startParam) {
-  const u3 = botUsername.trim().replace(/^@/, "");
-  return `https://t.me/${u3}?startapp=${encodeURIComponent(startParam)}`;
-}
 function isMailStartParam(param) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(param);
 }
-function listModeStartParam(mode) {
-  return `list_${mode}`;
+function parseListModeStartParam(param) {
+  switch (param) {
+    case "list_block":
+      return "block";
+    case "list_white":
+      return "white";
+    default:
+      return void 0;
+  }
+}
+function tmaListWebAppUrl(host) {
+  return `https://${host}/tma/list`;
 }
 
 // src/telegram/const.ts
@@ -4725,7 +4739,12 @@ async function isMessageBlock(message, env) {
 }
 
 // src/mail/extract.ts
-var GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/";
+var GEMINI_OPENAI_BASE = "https://generativelanguage.googleapis.com/v1beta/openai/";
+var DEFAULT_CUSTOM_BASE = "https://openrouter.ai/api/v1";
+var DEFAULT_AI_PROVIDER = "GEMINI_OFFICIAL,CUSTOM";
+var DEFAULT_GEMINI_MODELS = "gemini-2.5-flash,gemini-2.5-flash-lite,gemini-2.0-flash";
+var DEFAULT_CUSTOM_MODELS = "google/gemma-4-26b-a4b-it:free,poolside/laguna-s-2.1:free";
+var SUPPORTED_PROVIDERS = ["GEMINI_OFFICIAL", "CUSTOM"];
 var DEFAULT_PROMPT = "\u4ECE\u4EE5\u4E0B\u6587\u672C\u4E2D\u63D0\u53D6\u9A8C\u8BC1\u7801\u3002\u53EA\u8F93\u51FA\u9A8C\u8BC1\u7801\uFF0C\u4E0D\u8981\u6709\u4EFB\u4F55\u5176\u4ED6\u6587\u5B57\u3002\u5982\u679C\u6CA1\u6709\u9A8C\u8BC1\u7801\uFF0C\u53EA\u8F93\u51FA'None'\u3002\n\n\u6587\u672C\uFF1A{input_text}\n\n\u9A8C\u8BC1\u7801\uFF1A";
 var VERIFICATION_KEYWORDS = [
   "\u9A8C\u8BC1\u7801",
@@ -4824,11 +4843,25 @@ var VERIFICATION_KEYWORDS = [
   "\u4E34\u65F6\u9A8C\u8BC1\u7801",
   "\u81E8\u6642\u9A57\u8B49\u78BC"
 ];
+var PERMANENT_MARKERS = [
+  "USER LOCATION IS NOT SUPPORTED",
+  "FAILED_PRECONDITION",
+  "PAYMENT REQUIRED",
+  "INSUFFICIENT CREDITS",
+  "INSUFFICIENT_QUOTA",
+  "INVALID API KEY",
+  "API KEY NOT VALID",
+  "PERMISSION DENIED"
+];
 var LlmNetworkError = class extends Error {
-  constructor(message) {
+  constructor(message, permanent = false, status) {
     super(message);
+    this.permanent = permanent;
+    this.status = status;
     this.name = "LlmNetworkError";
   }
+  permanent;
+  status;
 };
 function desensitizeText(text) {
   return text.replace(/&nbsp;|&#160;|\u00a0/gi, " ").replace(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g, "***.***.***.***").replace(/http[s]?:\/\/\S+/g, "http://****").replace(/\b\d{10,11}\b/g, "**********").replace(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, "****@****.***").replace(/\b\d{13,19}\b/g, "********************");
@@ -4873,29 +4906,99 @@ function normalizeCode(raw) {
   }
   return value;
 }
-async function extractCodeGemini(text, env) {
-  const apiKey = env.GEMINI_API;
-  if (!apiKey) {
-    throw new LlmNetworkError("GEMINI_API \u672A\u914D\u7F6E");
+function splitCsv(raw) {
+  return (raw || "").split(",").map((s2) => s2.trim()).filter(Boolean);
+}
+function isAiProvider(name2) {
+  return SUPPORTED_PROVIDERS.includes(name2);
+}
+function parseProviders(env) {
+  const raw = (env.AI_PROVIDER || DEFAULT_AI_PROVIDER).trim();
+  const list = splitCsv(raw).map((s2) => s2.toUpperCase());
+  const out = [];
+  for (const item of list) {
+    if (!isAiProvider(item)) {
+      console.warn(`[extract] \u4E0D\u652F\u6301\u7684 AI_PROVIDER: ${item}\uFF0C\u5DF2\u5FFD\u7565`);
+      continue;
+    }
+    if (!out.includes(item)) {
+      out.push(item);
+    }
   }
-  if (apiKey.startsWith("sk-")) {
-    console.warn("[extract] GEMINI_API \u4EE5 sk- \u5F00\u5934\uFF0C\u5B98\u65B9 Gemini \u8BF7\u7528 AIza...");
+  return out;
+}
+function isPermanentLlmFailure(status, detail) {
+  if (status !== void 0 && [400, 401, 402, 403].includes(status)) {
+    return true;
   }
-  const model = env.GEMINI_MODEL || "gemini-2.5-flash-lite";
-  const promptTemplate = env.PROMPT_TEMPLATE || DEFAULT_PROMPT;
-  const prompt = promptTemplate.replace("{input_text}", desensitizeText(text));
-  const maxTokens = model.toLowerCase().includes("gemini-2.5") ? 1024 : 256;
-  const resp = await fetch(`${GEMINI_BASE_URL}chat/completions`, {
+  const upper = detail.toUpperCase();
+  return PERMANENT_MARKERS.some((m) => upper.includes(m));
+}
+function shouldSkipProvider(provider, err) {
+  if (err.permanent) {
+    return true;
+  }
+  if (provider === "GEMINI_OFFICIAL" && err.status === 429) {
+    return true;
+  }
+  return false;
+}
+function resolveChatCompletionsUrl(provider, env) {
+  if (provider === "GEMINI_OFFICIAL") {
+    return `${GEMINI_OPENAI_BASE}chat/completions`;
+  }
+  let base = (env.CUSTOM_API_BASE || DEFAULT_CUSTOM_BASE).trim().replace(/\/+$/, "");
+  if (!base) {
+    throw new LlmNetworkError("CUSTOM \u7F3A\u5C11 CUSTOM_API_BASE", true);
+  }
+  if (base.endsWith("/chat/completions")) {
+    return base;
+  }
+  if (!base.endsWith("/v1")) {
+    base += "/v1";
+  }
+  return `${base}/chat/completions`;
+}
+function resolveApiKey(provider, env) {
+  const key = provider === "GEMINI_OFFICIAL" ? (env.GEMINI_OFFICIAL_API_KEY || "").trim() : (env.CUSTOM_API_KEY || "").trim();
+  if (!key) {
+    throw new LlmNetworkError(`${provider} \u7F3A\u5C11 API_KEY`, true);
+  }
+  return key;
+}
+function resolveModels(provider, env) {
+  const raw = provider === "GEMINI_OFFICIAL" ? env.GEMINI_OFFICIAL_API_MODEL || DEFAULT_GEMINI_MODELS : env.CUSTOM_API_MODEL || DEFAULT_CUSTOM_MODELS;
+  const models = splitCsv(raw);
+  if (!models.length) {
+    throw new LlmNetworkError(`${provider} \u7F3A\u5C11 API_MODEL`, true);
+  }
+  return models;
+}
+function maxTokensForModel(model) {
+  return model.toLowerCase().includes("gemini-2.5") ? 1024 : 256;
+}
+function sourceForProvider(provider) {
+  return provider === "GEMINI_OFFICIAL" ? "gemini" : "custom";
+}
+async function chatCompletions(provider, model, prompt, env) {
+  const apiKey = resolveApiKey(provider, env);
+  const url = resolveChatCompletionsUrl(provider, env);
+  const headers = {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${apiKey}`
+  };
+  if (provider === "CUSTOM") {
+    headers["HTTP-Referer"] = "https://github.com/shengshk/cf-mail2telegram";
+    headers["X-Title"] = "cf-mail2telegram";
+  }
+  const resp = await fetch(url, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${apiKey}`
-    },
+    headers,
     body: JSON.stringify({
       model,
       messages: [{ role: "user", content: prompt }],
       temperature: 0,
-      max_tokens: maxTokens
+      max_tokens: maxTokensForModel(model)
     })
   });
   if (!resp.ok) {
@@ -4908,13 +5011,14 @@ async function extractCodeGemini(text, env) {
       }
     } catch {
     }
-    throw new LlmNetworkError(`Gemini API ${resp.status}: ${detail}`);
+    const msg = `${provider}/${model} HTTP ${resp.status}: ${detail}`;
+    throw new LlmNetworkError(msg, isPermanentLlmFailure(resp.status, detail), resp.status);
   }
   const data = await resp.json();
   const choice = data.choices?.[0];
   if (choice?.finish_reason === "length") {
-    console.warn(`[extract] Gemini \u8F93\u51FA\u88AB\u622A\u65AD(finish_reason=length): ${JSON.stringify(choice.message?.content)}`);
-    throw new LlmNetworkError("LLM output truncated");
+    console.warn(`[extract] ${provider}/${model} \u8F93\u51FA\u88AB\u622A\u65AD(finish_reason=length): ${JSON.stringify(choice.message?.content)}`);
+    throw new LlmNetworkError(`${provider}/${model} LLM output truncated`, false, void 0);
   }
   return normalizeCode(choice?.message?.content);
 }
@@ -4922,28 +5026,57 @@ async function extractVerificationCode(text, env) {
   if (!text || !containsVerificationKeywords(text)) {
     return { reason: "no_keywords" };
   }
-  try {
-    const code = await extractCodeGemini(text, env);
-    if (code) {
-      console.log(`[extract] gemini \u63D0\u53D6\u6210\u529F: ${code}`);
-      return { code, source: "gemini" };
-    }
-    console.log("[extract] gemini \u8FD4\u56DE None\uFF0C\u4E0D\u8FDB\u884C\u672C\u5730\u515C\u5E95");
-    return { reason: "llm_none" };
-  } catch (e) {
-    const errMsg = e instanceof Error ? e.message : String(e);
-    if (!(e instanceof LlmNetworkError)) {
-      console.warn(`[extract] gemini \u8C03\u7528\u5F02\u5E38\uFF0C\u542F\u7528\u672C\u5730\u6B63\u5219\u515C\u5E95: ${errMsg}`);
-    } else {
-      console.warn(`[extract] gemini \u8C03\u7528\u5931\u8D25\uFF0C\u542F\u7528\u672C\u5730\u6B63\u5219\u515C\u5E95: ${errMsg}`);
-    }
-    const code = extractCodeLocal(text);
-    if (code) {
-      console.log(`[extract] \u672C\u5730\u6B63\u5219\u63D0\u53D6\u6210\u529F: ${code}`);
-      return { code, source: "local", reason: errMsg };
-    }
-    return { reason: `local_none_after_error: ${errMsg}` };
+  const providers = parseProviders(env);
+  if (!providers.length) {
+    console.warn("[extract] AI_PROVIDER \u4E3A\u7A7A\uFF0C\u542F\u7528\u672C\u5730\u6B63\u5219\u515C\u5E95");
+    const code2 = extractCodeLocal(text);
+    return code2 ? { code: code2, source: "local", reason: "AI_PROVIDER empty" } : { reason: "local_none_after_error: AI_PROVIDER empty" };
   }
+  const promptTemplate = env.PROMPT_TEMPLATE || DEFAULT_PROMPT;
+  const prompt = promptTemplate.replace("{input_text}", desensitizeText(text));
+  const errors = [];
+  for (const provider of providers) {
+    let models;
+    try {
+      resolveApiKey(provider, env);
+      if (provider === "CUSTOM" && !(env.CUSTOM_API_BASE || DEFAULT_CUSTOM_BASE).trim()) {
+        throw new LlmNetworkError("CUSTOM \u7F3A\u5C11 CUSTOM_API_BASE", true);
+      }
+      models = resolveModels(provider, env);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      errors.push(msg);
+      console.warn(`[extract] ${msg}\uFF0C\u8DF3\u8FC7`);
+      continue;
+    }
+    for (const model of models) {
+      try {
+        const code2 = await chatCompletions(provider, model, prompt, env);
+        if (code2) {
+          console.log(`[extract] ${provider}/${model} \u63D0\u53D6\u6210\u529F: ${code2}`);
+          return { code: code2, source: sourceForProvider(provider) };
+        }
+        console.log(`[extract] ${provider}/${model} \u8FD4\u56DE None\uFF0C\u4E0D\u8FDB\u884C\u540E\u7EED\u515C\u5E95`);
+        return { reason: "llm_none" };
+      } catch (e) {
+        const err = e instanceof LlmNetworkError ? e : new LlmNetworkError(e instanceof Error ? e.message : String(e), false);
+        errors.push(err.message);
+        console.warn(`[extract] ${provider}/${model} \u8C03\u7528\u5931\u8D25: ${err.message}`);
+        if (shouldSkipProvider(provider, err)) {
+          console.warn(`[extract] ${provider} \u6C38\u4E45/\u9650\u6D41\u9519\u8BEF\uFF0C\u8DF3\u8FC7\u8BE5 Provider \u5269\u4F59\u6A21\u578B`);
+          break;
+        }
+      }
+    }
+  }
+  const errMsg = errors.join(" | ") || "all providers failed";
+  console.warn(`[extract] \u5168\u90E8 LLM \u5931\u8D25\uFF0C\u542F\u7528\u672C\u5730\u6B63\u5219\u515C\u5E95: ${errMsg}`);
+  const code = extractCodeLocal(text);
+  if (code) {
+    console.log(`[extract] \u672C\u5730\u6B63\u5219\u63D0\u53D6\u6210\u529F: ${code}`);
+    return { code, source: "local", reason: errMsg };
+  }
+  return { reason: `local_none_after_error: ${errMsg}` };
 }
 function truncateDisplay(text, maxLen = 80) {
   const t3 = (text || "").replace(/\s+/g, " ").trim();
@@ -4999,6 +5132,14 @@ function normalizeEmailAddress(address) {
 function emailsMatch(a2, b) {
   return normalizeEmailAddress(a2) === normalizeEmailAddress(b);
 }
+function unwrapGmailCafAddress(address) {
+  const trimmed = address.trim();
+  const m = /^([^@]+)\+caf_=[^=]+=[^@]+@([^@]+)$/i.exec(trimmed);
+  if (!m) {
+    return void 0;
+  }
+  return `${m[1]}@${m[2]}`;
+}
 function extractEmailsFromHeaderValue(raw) {
   const out = [];
   const seen = /* @__PURE__ */ new Set();
@@ -5020,10 +5161,11 @@ var RELATED_HEADER_KEYS = [
   "X-Forwarded-To",
   "Resent-To"
 ];
-function relatedRecipientAddresses(message) {
+var VISIBLE_RECIPIENT_HEADER_KEYS = ["To", "Cc", "Resent-To"];
+function addressesFromHeaders(message, keys) {
   const out = [];
   const seen = /* @__PURE__ */ new Set();
-  for (const key of RELATED_HEADER_KEYS) {
+  for (const key of keys) {
     const raw = message.headers.get(key);
     if (!raw) {
       continue;
@@ -5038,35 +5180,83 @@ function relatedRecipientAddresses(message) {
   }
   return out;
 }
+function relatedRecipientAddresses(message) {
+  return addressesFromHeaders(message, RELATED_HEADER_KEYS);
+}
 function pickOriginalMailboxAddress(message) {
   const routedTo = (message.to || "").trim().toLowerCase();
   const routedDomain = emailDomain(routedTo);
   if (!routedDomain) {
     return void 0;
   }
-  for (const addr of relatedRecipientAddresses(message)) {
+  const prefer = [
+    ...addressesFromHeaders(message, VISIBLE_RECIPIENT_HEADER_KEYS),
+    ...relatedRecipientAddresses(message)
+  ];
+  const seen = /* @__PURE__ */ new Set();
+  for (const addr of prefer) {
+    if (seen.has(addr)) {
+      continue;
+    }
+    seen.add(addr);
     if (emailDomain(addr) && emailDomain(addr) !== routedDomain) {
       return addr;
     }
   }
   return void 0;
 }
+function pickDisplayFrom(envelopeFrom, mimeFrom, headerFrom) {
+  for (const cand of [mimeFrom, headerFrom, envelopeFrom]) {
+    const raw = (cand || "").trim();
+    if (!raw) {
+      continue;
+    }
+    if (unwrapGmailCafAddress(raw)) {
+      continue;
+    }
+    return raw;
+  }
+  return unwrapGmailCafAddress(envelopeFrom) || envelopeFrom;
+}
+function resolveDisplayAddresses(message, envelope, mime) {
+  const cafOwner = unwrapGmailCafAddress(envelope.from) || unwrapGmailCafAddress(mime?.from || "");
+  const forwarded = !!cafOwner || isExternallyForwarded(message);
+  const originalTo = pickOriginalMailboxAddress(message) || cafOwner || void 0;
+  if (!forwarded) {
+    return originalTo ? { from: envelope.from, to: envelope.to, originalTo } : { from: envelope.from, to: envelope.to };
+  }
+  const headerFrom = extractEmailsFromHeaderValue(message.headers.get("From") || "")[0];
+  const from = pickDisplayFrom(envelope.from, mime?.from, headerFrom);
+  const to = originalTo || (mime?.to && emailDomain(mime.to) !== emailDomain(envelope.to) ? mime.to : "") || envelope.to;
+  return {
+    from,
+    to,
+    ...originalTo ? { originalTo } : {}
+  };
+}
 function isExternallyForwarded(message) {
+  if (unwrapGmailCafAddress(message.from || "")) {
+    return true;
+  }
   const routedTo = (message.to || "").trim().toLowerCase();
   const routedDomain = emailDomain(routedTo);
   if (!routedTo || !routedDomain) {
     return false;
   }
-  const headers = relatedRecipientAddresses(message);
-  if (headers.length === 0) {
+  const visible = addressesFromHeaders(message, VISIBLE_RECIPIENT_HEADER_KEYS);
+  if (visible.length === 0) {
     return false;
   }
-  for (const addr of headers) {
+  let sawOffDomain = false;
+  for (const addr of visible) {
     if (addr === routedTo || emailDomain(addr) === routedDomain) {
-      return false;
+      continue;
+    }
+    if (emailDomain(addr)) {
+      sawOffDomain = true;
     }
   }
-  return true;
+  return sawOffDomain;
 }
 function getForwardTarget(env) {
   return parseForwardMailsValue(env.FORWARD_MAIL || "");
@@ -5174,10 +5364,10 @@ function mailboxButtonUrl(mail, env) {
   }
   return providerHomeUrl(original, env);
 }
-function buildKeyboard(previewUrl, mailboxUrl, lang) {
+function buildKeyboard(previewBtn, mailboxUrl, lang) {
   const row = [];
-  if (previewUrl) {
-    row.push({ text: t2(lang, "previewBtn"), url: previewUrl });
+  if (previewBtn) {
+    row.push(previewBtn);
   }
   if (mailboxUrl) {
     row.push({ text: t2(lang, "mailboxBtn"), url: mailboxUrl });
@@ -14941,10 +15131,18 @@ async function parseEmail(message, maxSize, maxSizePolicy, useEmlHeaders = false
     const parser = new PostalMime();
     const email = await parser.parse(emailRaw);
     cache.subject = email.subject || cache.subject;
+    const mimeFrom = email.from?.address;
+    const mimeTo = email.to?.map((addr) => addr.address).at(0);
+    if (mimeFrom) {
+      cache.mimeFrom = mimeFrom;
+    }
+    if (mimeTo) {
+      cache.mimeTo = mimeTo;
+    }
     if (useEmlHeaders) {
       cache.messageId = email.messageId || cache.messageId;
-      cache.from = email.from?.address || cache.from;
-      cache.to = email.to?.map((addr) => addr.address).at(0) || cache.to;
+      cache.from = mimeFrom || cache.from;
+      cache.to = mimeTo || cache.to;
     }
     if (email.date) {
       const rawDate = typeof email.date === "string" ? email.date : email.date.toISOString();
@@ -15182,16 +15380,20 @@ function escapeHtml4(s2) {
 function isDebug(env) {
   return (env.DEBUG || "").toLowerCase() === "true";
 }
-async function resolvePreviewUrl(mail, env, mode, host) {
+function miniAppPreviewWebAppUrl(host, mailId) {
+  return `https://${host}/tma/${encodeURIComponent(mailId)}`;
+}
+async function resolvePreviewButton(mail, env, mode, host, lang) {
   const hasBody = !!(mail.html || mail.text);
-  if (!hasBody) {
+  if (!hasBody || !host) {
     return void 0;
   }
+  const label = t2(lang, "previewBtn");
   if (mode === "web") {
-    return host ? webPreviewUrl(host, mail, { authEnabled: isWebAuthEnabled(env) }) : void 0;
+    const url = webPreviewUrl(host, mail, { authEnabled: isWebAuthEnabled(env) });
+    return url ? { text: label, url } : void 0;
   }
-  const botUsername = await loadBotUsername(env);
-  return botUsername ? miniAppStartLink(botUsername, mail.id) : void 0;
+  return { text: label, web_app: { url: miniAppPreviewWebAppUrl(host, mail.id) } };
 }
 async function renderEmailListMode(mail, env, extract, opts) {
   const lang = resolveUiLang(env);
@@ -15219,9 +15421,9 @@ async function renderEmailListMode(mail, env, extract, opts) {
     lines.push(escapeHtml4(mail.date));
   }
   const mode = opts?.chatId ? await loadPreviewMode(env, opts.chatId) : "miniapp";
-  const previewUrl = await resolvePreviewUrl(mail, env, mode, host);
+  const previewBtn = await resolvePreviewButton(mail, env, mode, host, lang);
   const mailboxUrl = mailboxButtonUrl(mail, env);
-  const reply_markup = buildKeyboard(previewUrl, mailboxUrl, lang);
+  const reply_markup = buildKeyboard(previewBtn, mailboxUrl, lang);
   return {
     text: lines.join("\n"),
     parse_mode: "HTML",
@@ -15406,8 +15608,7 @@ function modeLabel(lang, mode) {
 function fill(template, vars) {
   return template.replace(/\{(\w+)\}/g, (_, k) => String(vars[k] ?? ""));
 }
-var CMD_DELETE_WAIT_MS = 6e4;
-var CMD_DELETE_ATTEMPTS = 3;
+var CMD_DELETE_WAIT_MS = 25e3;
 function logTelegram(event, data) {
   console.log(`[telegram] ${event}${data ? ` ${JSON.stringify(data)}` : ""}`);
 }
@@ -15443,37 +15644,46 @@ async function sleepMs(ms) {
   }
   await new Promise((resolve) => setTimeout(resolve, ms));
 }
-async function deleteUserCommandWithRetry(token2, chatId, messageId) {
-  const api = createTelegramBotAPI(token2);
+async function deleteEphemeralMessage(token2, chatId, messageId) {
   await sleepMs(CMD_DELETE_WAIT_MS);
-  for (let attempt = 1; attempt <= CMD_DELETE_ATTEMPTS; attempt++) {
-    try {
-      const response = await api.deleteMessage({
-        chat_id: chatId,
-        message_id: messageId
-      });
-      if (response.ok) {
-        logTelegram("cmd.delete.ok", { chatId, messageId, attempt });
-        return;
-      }
-      await logTelegramResponse("deleteMessage", response);
-      logTelegram("cmd.delete.fail", { chatId, messageId, attempt, status: response.status });
-    } catch (e) {
-      logTelegramError("cmd.delete.error", e, { chatId, messageId, attempt });
+  const api = createTelegramBotAPI(token2);
+  try {
+    const response = await api.deleteMessage({
+      chat_id: chatId,
+      message_id: messageId
+    });
+    if (response.ok) {
+      logTelegram("ephemeral.delete.ok", { chatId, messageId });
+      return;
     }
-    if (attempt < CMD_DELETE_ATTEMPTS) {
-      await sleepMs(CMD_DELETE_WAIT_MS);
-    }
+    await logTelegramResponse("deleteMessage", response);
+    logTelegram("ephemeral.delete.fail", { chatId, messageId, status: response.status });
+  } catch (e) {
+    logTelegramError("ephemeral.delete.error", e, { chatId, messageId });
   }
-  logTelegram("cmd.delete.give_up", { chatId, messageId });
 }
-function scheduleDeleteUserCommand(ctx, token2, chatId, messageId) {
-  const task = deleteUserCommandWithRetry(token2, chatId, messageId);
+function scheduleDeleteMessage(ctx, token2, chatId, messageId) {
+  if (messageId == null || !Number.isFinite(messageId)) {
+    return;
+  }
+  const task = deleteEphemeralMessage(token2, chatId, messageId);
   if (ctx?.waitUntil) {
     ctx.waitUntil(task);
   } else {
     void task;
   }
+}
+async function sentMessageId(response) {
+  try {
+    const data = await response.clone().json();
+    const id = data?.result?.message_id;
+    return typeof id === "number" ? id : void 0;
+  } catch {
+    return void 0;
+  }
+}
+async function scheduleDeleteSent(ctx, token2, chatId, response) {
+  scheduleDeleteMessage(ctx, token2, chatId, await sentMessageId(response));
 }
 function handlePreviewModeCommand(env, ctx) {
   return async (msg) => {
@@ -15498,7 +15708,8 @@ function handlePreviewModeCommand(env, ctx) {
       },
       disable_web_page_preview: true
     });
-    scheduleDeleteUserCommand(ctx, token2, msg.chat.id, msg.message_id);
+    scheduleDeleteMessage(ctx, token2, msg.chat.id, msg.message_id);
+    await scheduleDeleteSent(ctx, token2, msg.chat.id, response);
     return response;
   };
 }
@@ -15517,49 +15728,20 @@ function handleCfmailCommand(env, ctx) {
       disable_web_page_preview: true
     };
     if (msg.chat.type === "private" && host) {
-      const botUsername = await loadBotUsername(env);
-      if (botUsername) {
-        params.reply_markup = {
-          inline_keyboard: [
-            [
-              {
-                text: t2(lang, "tmaBlockList"),
-                url: miniAppStartLink(botUsername, listModeStartParam("block"))
-              },
-              {
-                text: t2(lang, "tmaWhiteList"),
-                url: miniAppStartLink(botUsername, listModeStartParam("white"))
-              },
-              {
-                text: t2(lang, "tmaTestAddress"),
-                url: miniAppStartLink(botUsername, listModeStartParam("test"))
-              }
-            ]
+      params.reply_markup = {
+        inline_keyboard: [
+          [
+            {
+              text: t2(lang, "tmaAddressManage"),
+              web_app: { url: tmaListWebAppUrl(host) }
+            }
           ]
-        };
-      } else {
-        params.reply_markup = {
-          inline_keyboard: [
-            [
-              {
-                text: t2(lang, "tmaBlockList"),
-                web_app: { url: `https://${host}/tma?mode=block` }
-              },
-              {
-                text: t2(lang, "tmaWhiteList"),
-                web_app: { url: `https://${host}/tma?mode=white` }
-              },
-              {
-                text: t2(lang, "tmaTestAddress"),
-                web_app: { url: `https://${host}/tma?mode=test` }
-              }
-            ]
-          ]
-        };
-      }
+        ]
+      };
     }
     const response = await createTelegramBotAPI(token2).sendMessage(params);
-    scheduleDeleteUserCommand(ctx, token2, msg.chat.id, msg.message_id);
+    scheduleDeleteMessage(ctx, token2, msg.chat.id, msg.message_id);
+    await scheduleDeleteSent(ctx, token2, msg.chat.id, response);
     return response;
   };
 }
@@ -15570,13 +15752,17 @@ function handleTestCommand(env, ctx) {
     const lang = resolveUiLang(env);
     const chatId = msg.chat.id;
     const fromId = msg.from?.id;
-    const reply = async (text) => api.sendMessage({
-      chat_id: chatId,
-      text,
-      reply_parameters: { message_id: msg.message_id }
-    });
+    const reply = async (text) => {
+      const response = await api.sendMessage({
+        chat_id: chatId,
+        text,
+        reply_parameters: { message_id: msg.message_id }
+      });
+      await scheduleDeleteSent(ctx, token2, chatId, response);
+      return response;
+    };
     const finish = async (response) => {
-      scheduleDeleteUserCommand(ctx, token2, chatId, msg.message_id);
+      scheduleDeleteMessage(ctx, token2, chatId, msg.message_id);
       return response;
     };
     if (!isAllowedTestUser(env, chatId, fromId)) {
@@ -15595,7 +15781,7 @@ function handleTestCommand(env, ctx) {
     try {
       logTelegram("test.run", { chatId, fromId });
       await runFakeMailUiTest(env);
-      scheduleDeleteUserCommand(ctx, token2, chatId, msg.message_id);
+      scheduleDeleteMessage(ctx, token2, chatId, msg.message_id);
       return new Response("ok");
     } catch (e) {
       logTelegramError("test.error", e, { chatId, fromId });
@@ -15603,7 +15789,7 @@ function handleTestCommand(env, ctx) {
     }
   };
 }
-async function handleReplyEmailCommand(message, env) {
+async function handleReplyEmailCommand(message, env, ctx) {
   const { token: token2 } = requireTelegram(env);
   const {
     RESEND_API_KEY,
@@ -15611,49 +15797,52 @@ async function handleReplyEmailCommand(message, env) {
   } = env;
   const dao = new Dao(DB);
   const api = createTelegramBotAPI(token2);
+  const chatId = message.chat.id;
+  scheduleDeleteMessage(ctx, token2, chatId, message.message_id);
   const reply = async (text) => {
-    await api.sendMessage({
-      chat_id: message.chat.id,
+    const response = await api.sendMessage({
+      chat_id: chatId,
       reply_parameters: {
         message_id: message.message_id
       },
       text
     });
+    await scheduleDeleteSent(ctx, token2, chatId, response);
   };
   if (!RESEND_API_KEY) {
-    logTelegram("reply_email.disabled", { chatId: message.chat.id, messageId: message.message_id });
+    logTelegram("reply_email.disabled", { chatId, messageId: message.message_id });
     await reply("Resend API is not enabled.");
     return;
   }
   if (!message.text) {
-    logTelegram("reply_email.missing_text", { chatId: message.chat.id, messageId: message.message_id });
+    logTelegram("reply_email.missing_text", { chatId, messageId: message.message_id });
     await reply("Please provide a message to resend.");
     return;
   }
   try {
     const messageID = message.reply_to_message?.message_id;
     if (!messageID) {
-      logTelegram("reply_email.missing_reply", { chatId: message.chat.id, messageId: message.message_id });
+      logTelegram("reply_email.missing_reply", { chatId, messageId: message.message_id });
       await reply("Please reply to a message to resend.");
       return;
     }
     const mailID = await dao.telegramIDToMailID(`${messageID}`);
     if (!mailID) {
-      logTelegram("reply_email.mail_id_not_found", { chatId: message.chat.id, messageId: message.message_id, replyMessageId: messageID });
+      logTelegram("reply_email.mail_id_not_found", { chatId, messageId: message.message_id, replyMessageId: messageID });
       await reply("Message not found.");
       return;
     }
     const mail = await dao.loadMailCache(mailID);
     if (!mail) {
-      logTelegram("reply_email.mail_not_found", { chatId: message.chat.id, messageId: message.message_id, mailId: mailID });
+      logTelegram("reply_email.mail_not_found", { chatId, messageId: message.message_id, mailId: mailID });
       await reply("Message not found or expired.");
       return;
     }
-    logTelegram("reply_email.send", { chatId: message.chat.id, messageId: message.message_id, mailId: mailID });
+    logTelegram("reply_email.send", { chatId, messageId: message.message_id, mailId: mailID });
     await replyToEmail(RESEND_API_KEY, mail, message.text);
     await reply("Reply sent successfully.");
   } catch (e) {
-    logTelegramError("reply_email.error", e, { chatId: message.chat.id, messageId: message.message_id });
+    logTelegramError("reply_email.error", e, { chatId, messageId: message.message_id });
     await reply(e.message);
   }
 }
@@ -15666,7 +15855,7 @@ async function telegramCommandHandler(message, env, ctx) {
     isReply: !!message?.reply_to_message
   });
   if (message?.reply_to_message) {
-    await handleReplyEmailCommand(message, env);
+    await handleReplyEmailCommand(message, env, ctx);
     return;
   }
   let [command] = message.text?.split(/ (.*)/) || [""];
@@ -15693,7 +15882,7 @@ async function telegramCommandHandler(message, env, ctx) {
   logTelegram("command.unknown", { command, chatId: message.chat.id, messageId: message.message_id });
   await cfmail(message);
 }
-async function telegramCallbackHandler(callback, env) {
+async function telegramCallbackHandler(callback, env, ctx) {
   const { token: token2 } = requireTelegram(env);
   const { DB } = env;
   const data = callback.data;
@@ -15787,16 +15976,19 @@ async function telegramCallbackHandler(callback, env) {
       if (arg === "mini") {
         if (current === "miniapp") {
           await answer(fill(t2(lang, "previewModeAlready"), { mode: modeLabel(lang, "miniapp") }));
+          scheduleDeleteMessage(ctx, token2, chatId, messageId);
           return;
         }
         await savePreviewMode(env, chatKey, "miniapp");
         await edit(fill(t2(lang, "previewModeSetOk"), { mode: modeLabel(lang, "miniapp") }));
         await answer();
+        scheduleDeleteMessage(ctx, token2, chatId, messageId);
         return;
       }
       if (arg === "webwarn") {
         if (current === "web") {
           await answer(fill(t2(lang, "previewModeAlready"), { mode: modeLabel(lang, "web") }));
+          scheduleDeleteMessage(ctx, token2, chatId, messageId);
           return;
         }
         await edit(t2(lang, isWebAuthEnabled(env) ? "previewModeWarnAuth" : "previewModeWarnOpen"), {
@@ -15806,20 +15998,24 @@ async function telegramCallbackHandler(callback, env) {
           ]]
         });
         await answer();
+        scheduleDeleteMessage(ctx, token2, chatId, messageId);
         return;
       }
       if (arg === "web") {
         await savePreviewMode(env, chatKey, "web");
         await edit(fill(t2(lang, "previewModeSetOk"), { mode: modeLabel(lang, "web") }));
         await answer();
+        scheduleDeleteMessage(ctx, token2, chatId, messageId);
         return;
       }
       if (arg === "cancel") {
         await edit(t2(lang, "previewModeCancel"));
         await answer();
+        scheduleDeleteMessage(ctx, token2, chatId, messageId);
         return;
       }
       await answer();
+      scheduleDeleteMessage(ctx, token2, chatId, messageId);
     } catch (e) {
       logTelegramError("callback.previewmode.error", e, { data, chatId, messageId });
       const response = await api.answerCallbackQuery({
@@ -15828,6 +16024,7 @@ async function telegramCallbackHandler(callback, env) {
         show_alert: true
       });
       await logTelegramResponse("answerCallbackQuery", response);
+      scheduleDeleteMessage(ctx, token2, chatId, messageId);
     }
     return;
   }
@@ -15861,7 +16058,7 @@ async function telegramWebhookHandler(req, env, ctx) {
     return;
   }
   if (body?.callback_query) {
-    await telegramCallbackHandler(body?.callback_query, env);
+    await telegramCallbackHandler(body?.callback_query, env, ctx);
     return;
   }
   logTelegram("webhook.unhandled_update", { updateId: body?.update_id, keys: body ? Object.keys(body) : [] });
@@ -15920,6 +16117,17 @@ function errorHandler(error2) {
   return new Response(JSON.stringify({
     error: error2.message
   }), { status: 500 });
+}
+function renderTmaListApp(env) {
+  const lang = resolveUiLang(env);
+  const payload = JSON.stringify(tmaI18nPayload(lang)).replace(/</g, "\\u003c");
+  const html = tma_default.replace(/__UI_LANG__/g, htmlLang(lang)).replace("__I18N_JSON__", payload);
+  return new Response(html, {
+    headers: {
+      "content-type": "text/html; charset=utf-8",
+      "Referrer-Policy": "no-referrer"
+    }
+  });
 }
 function createRouter(env, ctx) {
   const router = t({
@@ -16037,34 +16245,53 @@ function createRouter(env, ctx) {
       commands: await commands.json()
     };
   });
-  router.get("/tma", async (req) => {
-    const startParam = String(
-      req.query.tgWebAppStartParam || req.query.startapp || ""
-    ).trim();
-    const mode = String(req.query.mode || "");
-    const previewId = String(req.query.id || "").trim() || (isMailStartParam(startParam) ? startParam : "");
-    if ((mode === "preview" || isMailStartParam(startParam)) && previewId) {
-      const html2 = renderPreviewMiniAppShell(previewId, env);
-      return new Response(html2, {
-        headers: {
-          "content-type": "text/html; charset=utf-8",
-          "Referrer-Policy": "no-referrer"
-        }
-      });
-    }
-    const lang = resolveUiLang(env);
-    const payload = JSON.stringify(tmaI18nPayload(lang)).replace(/</g, "\\u003c");
-    const html = tma_default.replace(/__UI_LANG__/g, htmlLang(lang)).replace("__I18N_JSON__", payload);
+  const renderMailPreviewMiniApp = (id) => {
+    const html = renderPreviewMiniAppShell(id, env);
     return new Response(html, {
       headers: {
         "content-type": "text/html; charset=utf-8",
         "Referrer-Policy": "no-referrer"
       }
     });
+  };
+  router.get("/tma/list", async () => renderTmaListApp(env));
+  router.get("/tma/list/:mode", async (req) => {
+    const raw = String(req.params.mode || "").trim().toLowerCase();
+    if (raw !== "block" && raw !== "white") {
+      throw new HTTPError(404, "Not found");
+    }
+    return renderTmaListApp(env);
   });
   router.get("/tma/email/:id", async (req) => {
-    const id = req.params.id;
-    const html = renderPreviewMiniAppShell(id, env);
+    return renderMailPreviewMiniApp(req.params.id);
+  });
+  router.get("/tma/:id", async (req) => {
+    const id = String(req.params.id || "").trim();
+    if (!isMailStartParam(id)) {
+      throw new HTTPError(404, "Not found");
+    }
+    return renderMailPreviewMiniApp(id);
+  });
+  router.get("/tma", async (req) => {
+    const startParam = String(
+      req.query.tgWebAppStartParam || req.query.startapp || ""
+    ).trim();
+    const mode = String(req.query.mode || "").trim().toLowerCase();
+    const listFromQuery = mode === "block" || mode === "white" ? mode : void 0;
+    const listMode = parseListModeStartParam(startParam) || listFromQuery;
+    if (listMode) {
+      return renderTmaListApp(env);
+    }
+    const previewId = String(req.query.id || "").trim() || (isMailStartParam(startParam) ? startParam : "");
+    if (previewId) {
+      return renderMailPreviewMiniApp(previewId);
+    }
+    const index = await dao.loadMailCacheIndex();
+    const latestId = index.length ? index[index.length - 1] : "";
+    if (latestId) {
+      return renderMailPreviewMiniApp(latestId);
+    }
+    const html = renderPreviewEmptyMiniApp(env);
     return new Response(html, {
       headers: {
         "content-type": "text/html; charset=utf-8",
@@ -16264,10 +16491,18 @@ async function emailHandler(message, env) {
       const maxSizePolicy = MAX_EMAIL_SIZE_POLICY || "truncate";
       const mail = await parseEmail(message, maxSize, maxSizePolicy, false, TIMEZONE || "Asia/Shanghai");
       mail.backedUp = backedUp;
-      const originalTo = pickOriginalMailboxAddress(message);
-      if (originalTo) {
-        mail.originalTo = originalTo;
+      const display = resolveDisplayAddresses(
+        message,
+        { from: mail.from, to: mail.to },
+        { from: mail.mimeFrom, to: mail.mimeTo }
+      );
+      mail.from = display.from;
+      mail.to = display.to;
+      if (display.originalTo) {
+        mail.originalTo = display.originalTo;
       }
+      delete mail.mimeFrom;
+      delete mail.mimeTo;
       if (!isWebAuthEnabled(env)) {
         attachWebPreviewMeta(mail);
       }

@@ -97,6 +97,7 @@ export function extractEmailsFromHeaderValue(raw: string): string[] {
     return out;
 }
 
+/** Headers that may name the pre-forward mailbox (and/or the CF destination). */
 const RELATED_HEADER_KEYS = [
     'To',
     'Cc',
@@ -106,11 +107,16 @@ const RELATED_HEADER_KEYS = [
     'Resent-To',
 ] as const;
 
-/** Addresses from common recipient-related headers */
-export function relatedRecipientAddresses(message: EmailMessage): string[] {
+/**
+ * Visible recipient headers only. Do NOT use Delivered-To / X-Forwarded-To here —
+ * those often list the CF routing address and would hide Gmail auto-forwards.
+ */
+const VISIBLE_RECIPIENT_HEADER_KEYS = ['To', 'Cc', 'Resent-To'] as const;
+
+function addressesFromHeaders(message: EmailMessage, keys: readonly string[]): string[] {
     const out: string[] = [];
     const seen = new Set<string>();
-    for (const key of RELATED_HEADER_KEYS) {
+    for (const key of keys) {
         const raw = message.headers.get(key);
         if (!raw) {
             continue;
@@ -126,8 +132,14 @@ export function relatedRecipientAddresses(message: EmailMessage): string[] {
     return out;
 }
 
+/** Addresses from common recipient-related headers */
+export function relatedRecipientAddresses(message: EmailMessage): string[] {
+    return addressesFromHeaders(message, RELATED_HEADER_KEYS);
+}
+
 /**
  * First header recipient that is not on the CF routing domain — typical Gmail/Outlook auto-forward source.
+ * Prefer visible To/Cc; fall back to Delivered-To / X-*-To only if needed.
  */
 export function pickOriginalMailboxAddress(message: EmailMessage): string | undefined {
     const routedTo = (message.to || '').trim().toLowerCase();
@@ -135,7 +147,16 @@ export function pickOriginalMailboxAddress(message: EmailMessage): string | unde
     if (!routedDomain) {
         return undefined;
     }
-    for (const addr of relatedRecipientAddresses(message)) {
+    const prefer = [
+        ...addressesFromHeaders(message, VISIBLE_RECIPIENT_HEADER_KEYS),
+        ...relatedRecipientAddresses(message),
+    ];
+    const seen = new Set<string>();
+    for (const addr of prefer) {
+        if (seen.has(addr)) {
+            continue;
+        }
+        seen.add(addr);
         if (emailDomain(addr) && emailDomain(addr) !== routedDomain) {
             return addr;
         }
@@ -150,6 +171,26 @@ export interface DisplayAddressFields {
     originalTo?: string;
 }
 
+function pickDisplayFrom(
+    envelopeFrom: string,
+    mimeFrom?: string,
+    headerFrom?: string,
+): string {
+    for (const cand of [mimeFrom, headerFrom, envelopeFrom]) {
+        const raw = (cand || '').trim();
+        if (!raw) {
+            continue;
+        }
+        // Never show Gmail CAF rewrite as the sender.
+        if (unwrapGmailCafAddress(raw)) {
+            continue;
+        }
+        return raw;
+    }
+    // Last resort: CAF owner mailbox (forwarding account), still better than +caf_=…
+    return unwrapGmailCafAddress(envelopeFrom) || envelopeFrom;
+}
+
 /**
  * For externally forwarded mail, prefer original From/To for Telegram display.
  * Direct domain mail: leave envelope addresses unchanged.
@@ -159,15 +200,19 @@ export function resolveDisplayAddresses(
     envelope: { from: string; to: string },
     mime?: { from?: string; to?: string },
 ): DisplayAddressFields {
-    const originalTo = pickOriginalMailboxAddress(message);
-    if (!isExternallyForwarded(message)) {
+    const cafOwner = unwrapGmailCafAddress(envelope.from)
+        || unwrapGmailCafAddress(mime?.from || '');
+    const forwarded = !!cafOwner || isExternallyForwarded(message);
+    const originalTo = pickOriginalMailboxAddress(message) || cafOwner || undefined;
+
+    if (!forwarded) {
         return originalTo
             ? { from: envelope.from, to: envelope.to, originalTo }
             : { from: envelope.from, to: envelope.to };
     }
 
-    const rawFrom = (mime?.from || '').trim() || envelope.from;
-    const from = unwrapGmailCafAddress(rawFrom) || rawFrom;
+    const headerFrom = extractEmailsFromHeaderValue(message.headers.get('From') || '')[0];
+    const from = pickDisplayFrom(envelope.from, mime?.from, headerFrom);
     const to = originalTo
         || (mime?.to && emailDomain(mime.to) !== emailDomain(envelope.to) ? mime.to : '')
         || envelope.to;
@@ -180,25 +225,35 @@ export function resolveDisplayAddresses(
 }
 
 /**
- * True when the message was delivered to the CF routing address but the
- * visible To/Cc (etc.) only reference other mailboxes — typical of auto-forward.
+ * True when mail reached the CF address via another mailbox (Gmail/Outlook auto-forward).
+ * Gmail CAF envelope From is definitive; otherwise look for an off-domain visible To/Cc.
+ *
+ * Note: Delivered-To / X-Forwarded-To alone must NOT force "not forwarded" — they usually
+ * name the CF destination even for auto-forwarded mail.
  */
 export function isExternallyForwarded(message: EmailMessage): boolean {
+    if (unwrapGmailCafAddress(message.from || '')) {
+        return true;
+    }
     const routedTo = (message.to || '').trim().toLowerCase();
     const routedDomain = emailDomain(routedTo);
     if (!routedTo || !routedDomain) {
         return false;
     }
-    const headers = relatedRecipientAddresses(message);
-    if (headers.length === 0) {
+    const visible = addressesFromHeaders(message, VISIBLE_RECIPIENT_HEADER_KEYS);
+    if (visible.length === 0) {
         return false;
     }
-    for (const addr of headers) {
+    let sawOffDomain = false;
+    for (const addr of visible) {
         if (addr === routedTo || emailDomain(addr) === routedDomain) {
-            return false;
+            continue;
+        }
+        if (emailDomain(addr)) {
+            sawOffDomain = true;
         }
     }
-    return true;
+    return sawOffDomain;
 }
 
 /** Single backup target from FORWARD_MAIL only. */

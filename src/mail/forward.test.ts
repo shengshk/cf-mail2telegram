@@ -70,6 +70,32 @@ export async function runForwardTests(): Promise<void> {
         'gmail auto-forward detected',
     );
 
+    // Real Gmail CAF: Delivered-To is CF domain — must still count as forwarded
+    assert(
+        isExternallyForwarded(mockMessage({
+            from: 'shengshk+caf_=gamil=isyn.cc@gmail.com',
+            to: 'gamil@isyn.cc',
+            headers: {
+                To: 'shengshk@gmail.com',
+                'Delivered-To': 'gamil@isyn.cc',
+                'X-Forwarded-To': 'gamil@isyn.cc',
+                From: 'noreply@service.com',
+            },
+        })),
+        'caf + Delivered-To still forwarded',
+    );
+    assert(
+        isExternallyForwarded(mockMessage({
+            from: 'shengshk+caf_=gamil=isyn.cc@gmail.com',
+            to: 'gamil@isyn.cc',
+            headers: {
+                To: 'gamil@isyn.cc',
+                'Delivered-To': 'gamil@isyn.cc',
+            },
+        })),
+        'caf envelope alone is forwarded',
+    );
+
     const msgFwd = mockMessage({
         from: 'svc@example.com',
         to: 'otp@mydomain.com',
@@ -77,12 +103,16 @@ export async function runForwardTests(): Promise<void> {
     });
     assert(pickOriginalMailboxAddress(msgFwd) === 'shengshk@gmail.com', 'original To');
 
-    // forwarded display: original from/to
+    // forwarded display: original from/to (Delivered-To present like production)
     const dispFwd = resolveDisplayAddresses(
         mockMessage({
             from: 'shengshk+caf_=gamil=isyn.cc@gmail.com',
             to: 'gamil@isyn.cc',
-            headers: { To: 'shengshk@gmail.com', From: 'noreply@service.com' },
+            headers: {
+                To: 'shengshk@gmail.com',
+                'Delivered-To': 'gamil@isyn.cc',
+                From: 'noreply@service.com',
+            },
         }),
         { from: 'shengshk+caf_=gamil=isyn.cc@gmail.com', to: 'gamil@isyn.cc' },
         { from: 'noreply@service.com', to: 'shengshk@gmail.com' },
@@ -90,6 +120,23 @@ export async function runForwardTests(): Promise<void> {
     assert(dispFwd.from === 'noreply@service.com', 'fwd display from mime');
     assert(dispFwd.to === 'shengshk@gmail.com', 'fwd display original to');
     assert(dispFwd.originalTo === 'shengshk@gmail.com', 'fwd originalTo set');
+
+    // CAF + CF To only → From from mime, To from CAF owner
+    const dispCafCfTo = resolveDisplayAddresses(
+        mockMessage({
+            from: 'shengshk+caf_=gamil=isyn.cc@gmail.com',
+            to: 'gamil@isyn.cc',
+            headers: {
+                To: 'gamil@isyn.cc',
+                'Delivered-To': 'gamil@isyn.cc',
+                From: 'billing@shop.example',
+            },
+        }),
+        { from: 'shengshk+caf_=gamil=isyn.cc@gmail.com', to: 'gamil@isyn.cc' },
+        { from: 'billing@shop.example', to: 'gamil@isyn.cc' },
+    );
+    assert(dispCafCfTo.from === 'billing@shop.example', 'caf+cf To uses mime from');
+    assert(dispCafCfTo.to === 'shengshk@gmail.com', 'caf+cf To uses caf owner as to');
 
     // forwarded, CAF only (no mime from)
     const dispCaf = resolveDisplayAddresses(
@@ -102,7 +149,6 @@ export async function runForwardTests(): Promise<void> {
     );
     assert(dispCaf.from === 'shengshk@gmail.com', 'fwd caf unwrap from');
     assert(dispCaf.to === 'user@gmail.com', 'fwd caf original to');
-
     // direct: unchanged
     const dispDirect = resolveDisplayAddresses(
         mockMessage({

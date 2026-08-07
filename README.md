@@ -3,8 +3,8 @@ cf-mail2telegram
 </h1>
 
 <p align="center">
-    <em>Forward email to Telegram via Cloudflare Email Routing — with Gemini OTP extraction.<br>
-    通过 Cloudflare Email Routing 将邮件转发到 Telegram，并支持 Gemini 验证码提取。</em>
+    <em>Forward email to Telegram via Cloudflare Email Routing — with AI OTP extraction.<br>
+    通过 Cloudflare Email Routing 将邮件转发到 Telegram，并支持 AI 验证码提取。</em>
 </p>
 
 <p align="center">
@@ -23,7 +23,7 @@ cf-mail2telegram
 # English
 
 This project is a Cloudflare Email Routing Worker that turns inbound mail into Telegram messages.  
-OTP / verification-code recognition uses **Gemini**, with a local regex fallback.  
+OTP / verification-code recognition uses **AI providers** (`GEMINI_OFFICIAL` → `CUSTOM`), with a local regex fallback when all LLMs fail.  
 Buttons: **Preview** + **Mailbox**. UI: `UI_LANG=en` (default) / `zh` / `tw`.
 
 Source of truth is `src/`.
@@ -170,7 +170,10 @@ But Telegram / Preview / Mini App follow **only one** saved host (`PUBLIC_HOST` 
 
 | Key | Description |
 |:----|:------------|
-| `GEMINI_API` | Google AI Studio key (`AIza…`) for OTP extraction. Worker egress may hit region limits; on failure falls back to local regex. |
+| `AI_PROVIDER` | OTP LLM order, comma-separated: `GEMINI_OFFICIAL`, `CUSTOM`. Default `GEMINI_OFFICIAL,CUSTOM`. |
+| `GEMINI_OFFICIAL_API_KEY` | Google AI Studio key (`AIza…`). Region / account limits skip the whole Gemini provider (no model churn). |
+| `CUSTOM_API_KEY` | OpenAI-compatible key (e.g. OpenRouter) used when Gemini fails. |
+| `CUSTOM_API_BASE` | OpenAI-compatible base URL. Default `https://openrouter.ai/api/v1`. |
 | `FORWARD_MAIL` | Single backup destination (must be a verified Email Routing destination). Formats: `email` \| `email,Folder` \| `email,Folder,noforwarded\|forwarded` \| `email,forwarded`. Example: `you+bak@gmail.com,Backup,noforwarded`. Default policy `noforwarded`: backup only mail addressed to the CF domain; skip auto-forwards from other mailboxes (Telegram notify still runs). `forwarded`: also backup those. Never backup when From / related To headers match this address (Gmail `+` normalized). |
 | `WEB_USER` | `username,password` (split on first comma). When set: web login protects `/email` preview and `/init` (optional remember 30 days). When unset: `/init` is open; web preview uses a 1-day token + countdown. |
 | `UI_LANG` | UI language: `en` (default), `zh` (Simplified), or `tw` (Traditional). Affects Telegram labels/buttons, preview chrome, Mini App, and bot command descriptions. Re-open `/init` after changing. |
@@ -179,7 +182,8 @@ But Telegram / Preview / Mini App follow **only one** saved host (`PUBLIC_HOST` 
 
 | Key | Description |
 |:----|:------------|
-| `GEMINI_MODEL` | Gemini model id. Default `gemini-2.5-flash-lite`. |
+| `GEMINI_OFFICIAL_API_MODEL` | Comma-separated Gemini models. Default `gemini-2.5-flash,gemini-2.5-flash-lite,gemini-2.0-flash`. |
+| `CUSTOM_API_MODEL` | Comma-separated CUSTOM models. Default `google/gemma-4-26b-a4b-it:free,poolside/laguna-s-2.1:free`. |
 | `TIMEZONE` | Timezone for the mail **Time** line in Telegram. Default `Asia/Shanghai`. |
 | `GMAIL_U` | Browser Gmail account slot for the **Mailbox** button URL (`/mail/u/N/…`). Default `0` (first signed-in Google account). Not Worker multi-account receive — only change if the button opens the wrong Gmail profile. |
 | `BLOCK_POLICY` | What to do when a sender hits the block list: `reject`, `forward`, `telegram` (comma-separated). Default `telegram` (still notify). |
@@ -187,7 +191,7 @@ But Telegram / Preview / Mini App follow **only one** saved host (`PUBLIC_HOST` 
 | `MAX_EMAIL_SIZE` | Soft size limit in bytes before `MAX_EMAIL_SIZE_POLICY` applies. Default `512*1024` (512 KiB). |
 | `MAX_EMAIL_SIZE_POLICY` | When over size: `unhandled` / `truncate` / `continue`. Default `truncate`. |
 | `RESEND_API_KEY` | Enable reply-to-email via [Resend](https://resend.com/docs/introduction). |
-| `DEBUG` | `true`: show Gemini error reasons in Telegram on local fallback, and verbose webhook logs. |
+| `DEBUG` | `true`: show LLM error reasons in Telegram on local fallback, and verbose webhook logs. |
 | `PROMPT_TEMPLATE` | Custom OTP extraction prompt template (advanced). |
 
 ## Mailbox button rules
@@ -253,7 +257,7 @@ This bot does not render attachments. Use `FORWARD_MAIL` to keep a real mailbox 
 
 ## Known limitations
 
-1. **Gemini region** — Worker egress IPs may get `User location is not supported`; local regex still runs.
+1. **Gemini region** — Worker egress IPs may get `User location is not supported`; provider is skipped and `CUSTOM` / local regex still run.
 2. **No attachment UI** — rely on `FORWARD_MAIL` backup.
 3. **Preview needs KV** — missing `DB` binding can break cache; Telegram send tries not to fail solely because of cache errors, but Preview may 404.
 
@@ -266,7 +270,7 @@ Released under the MIT license. See [LICENSE](LICENSE).
 # 中文
 
 本项目是一个基于 Cloudflare Email Routing Worker 的 Telegram 邮件通知机器人：把任意前缀收件地址收到的邮件转成 Telegram 消息。  
-用 **Gemini** 提取验证码，失败时回退本地正则。按钮 **预览** + **邮箱**（`/previewmode` 可把预览切到网页）。界面：`UI_LANG=en`（默认）/ `zh` / `tw`。
+用 **AI Provider**（`GEMINI_OFFICIAL` → `CUSTOM`）提取验证码，全部失败时回退本地正则。按钮 **预览** + **邮箱**（`/previewmode` 可把预览切到网页）。界面：`UI_LANG=en`（默认）/ `zh` / `tw`。
 
 配置与逻辑以 `src/` 为准。
 
@@ -412,7 +416,10 @@ pnpm pub  # wrangler deploy --keep-vars
 
 | KEY | 描述 |
 |:----|:-----|
-| `GEMINI_API` | Google AI Studio Key（`AIza…`），用于抽验证码。出网可能受地区限制；失败时自动本地正则兜底。 |
+| `AI_PROVIDER` | 抽码 LLM 顺序，逗号分隔：`GEMINI_OFFICIAL`、`CUSTOM`。默认 `GEMINI_OFFICIAL,CUSTOM`。 |
+| `GEMINI_OFFICIAL_API_KEY` | Google AI Studio Key（`AIza…`）。地区/账号类错误会跳过整个 Gemini Provider，不空扫模型列表。 |
+| `CUSTOM_API_KEY` | OpenAI 兼容 Key（如 OpenRouter），Gemini 失败后使用。 |
+| `CUSTOM_API_BASE` | OpenAI 兼容 Base URL。默认 `https://openrouter.ai/api/v1`。 |
 | `FORWARD_MAIL` | 单一备份目的地（须为已验证的 Email Routing 目的地）。格式：`邮箱` \| `邮箱,文件夹` \| `邮箱,文件夹,noforwarded\|forwarded` \| `邮箱,forwarded`。例：`you+bak@gmail.com,Backup,noforwarded`。默认策略 `noforwarded`：只备份真正发到域名邮箱的信；外站自动转发进域名的不备份（仍推 Telegram）。`forwarded`：转发进来的也备份。From / 相关 To 头命中该备份地址（Gmail `+` 归一）则永不备份。 |
 | `WEB_USER` | `用户名,密码`（按第一个逗号拆分）。配置后：网页登录保护 `/email` 预览与 `/init`（可记住 30 天）。未配置：`/init` 放开；网页预览用 1 天 token + 倒计时。 |
 | `UI_LANG` | 界面语言：`en`（默认）、`zh`（简体）或 `tw`（繁体）。影响 TG 文案/按钮、预览页、小程序、Bot 命令描述。修改后请重新打开 `/init`。 |
@@ -421,7 +428,8 @@ pnpm pub  # wrangler deploy --keep-vars
 
 | KEY | 描述 |
 |:----|:-----|
-| `GEMINI_MODEL` | Gemini 模型 id。默认 `gemini-2.5-flash-lite`。 |
+| `GEMINI_OFFICIAL_API_MODEL` | 逗号分隔的 Gemini 模型。默认 `gemini-2.5-flash,gemini-2.5-flash-lite,gemini-2.0-flash`。 |
+| `CUSTOM_API_MODEL` | 逗号分隔的 CUSTOM 模型。默认 `google/gemma-4-26b-a4b-it:free,poolside/laguna-s-2.1:free`。 |
 | `TIMEZONE` | Telegram 消息里**时间**行的时区。默认 `Asia/Shanghai`。 |
 | `GMAIL_U` | 「邮箱」按钮打开 Gmail 网页时用的浏览器账号槽位（`/mail/u/N/…`）。默认 `0`（当前浏览器里第一个已登录的 Google 账号）。不是 Worker 多账户收信——仅当按钮总进错 Gmail 账号时再改成 `1`/`2`。 |
 | `BLOCK_POLICY` | 命中黑名单时的行为：`reject` / `forward` / `telegram`（可逗号组合）。默认 `telegram`（仍推送通知）。 |
@@ -429,7 +437,7 @@ pnpm pub  # wrangler deploy --keep-vars
 | `MAX_EMAIL_SIZE` | 触发大小策略前的软上限（字节）。默认 `512*1024`（512 KiB）。 |
 | `MAX_EMAIL_SIZE_POLICY` | 超限时：`unhandled` / `truncate` / `continue`。默认 `truncate`。 |
 | `RESEND_API_KEY` | 通过 [Resend](https://resend.com/docs/introduction) 启用回复邮件。 |
-| `DEBUG` | `true`：本地兜底时在 TG 显示 Gemini 错误原因，并打开更详细的 webhook 日志。 |
+| `DEBUG` | `true`：本地兜底时在 TG 显示 LLM 错误原因，并打开更详细的 webhook 日志。 |
 | `PROMPT_TEMPLATE` | 自定义抽码 prompt 模板（进阶）。 |
 
 ## 「邮箱」按钮规则
@@ -495,7 +503,7 @@ BotFather：**Mini App URL** = `https://<PUBLIC_HOST>/tma`，**隐私政策 URL*
 
 ## 已知限制
 
-1. **Gemini 地区**：Worker 出网 IP 可能被 Google 拒绝（`User location is not supported`），会回退本地正则。
+1. **Gemini 地区**：Worker 出网 IP 可能被 Google 拒绝（`User location is not supported`），会跳过该 Provider，继续 `CUSTOM` / 本地正则。
 2. **无附件展示**：大附件靠 `FORWARD_MAIL` 备份到真实邮箱查看。
 3. **预览依赖 KV**：未绑定 `DB` 会导致缓存失败；发 TG 已尽量不因缓存失败中断，但预览链接可能 404。
 

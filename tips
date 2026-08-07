@@ -1,7 +1,7 @@
 cf-mail2telegram CF Worker notes
 ================================
 
-Inbound mail → Gemini OTP (local regex fallback) → Telegram (Preview + Mailbox)
+Inbound mail → AI OTP (Gemini → CUSTOM free → local regex) → Telegram (Preview + Mailbox)
 
 
 1) KV (required)
@@ -18,14 +18,23 @@ Bind a KV namespace to this Worker:
 
 Secrets (recommended):
 
-  TELEGRAM_BOT       token,chat_id
-  GEMINI_API         Google AI Studio key (AIza…)
-  WEB_USER           username,password  (optional; web login for /email + /init)
+  TELEGRAM_BOT              token,chat_id
+  GEMINI_OFFICIAL_API_KEY   Google AI Studio key (AIza…)
+  CUSTOM_API_KEY            OpenRouter (or other OpenAI-compatible) key
+  WEB_USER                  username,password  (optional; web login for /email + /init)
 
 
 Vars:
 
   UI_LANG            en (default) | zh | tw
+
+  AI_PROVIDER        GEMINI_OFFICIAL,CUSTOM   (order = fallback order)
+
+  GEMINI_OFFICIAL_API_MODEL
+                     gemini-2.5-flash,gemini-2.5-flash-lite,gemini-2.0-flash
+
+  CUSTOM_API_BASE    https://openrouter.ai/api/v1
+  CUSTOM_API_MODEL   google/gemma-4-26b-a4b-it:free,poolside/laguna-s-2.1:free
 
   FORWARD_MAIL      Single backup:
                      email[,GmailFolder][,noforwarded|forwarded]
@@ -34,7 +43,7 @@ Vars:
                      Hard rule: never backup when From / To-related
                      headers match the backup address (Gmail +tag)
 
-  DEBUG              true → show Gemini error on local OTP fallback
+  DEBUG              true → show LLM error on local OTP fallback
 
 
 No DOMAIN variable.
@@ -53,10 +62,9 @@ Mailbox:
 
 
 Required:  TELEGRAM_BOT, DB (KV binding name must be DB)
-Recommended: GEMINI_API, FORWARD_MAIL, WEB_USER, UI_LANG
+Recommended: AI_PROVIDER + keys, FORWARD_MAIL, WEB_USER, UI_LANG
 
 Optional defaults (usually leave alone):
-  GEMINI_MODEL       gemini-2.5-flash-lite
   TIMEZONE           Asia/Shanghai   (mail Time line)
   GMAIL_U            0               (Mailbox → Gmail /mail/u/N/ slot; not multi-inbox)
 
@@ -85,9 +93,9 @@ JSON/toast should show host. Re-run /init after changing UI_LANG or switching pr
   [ ] TELEGRAM_BOT
   [ ] WEB_USER optional (username,password)
   [ ] UI_LANG if you want zh or tw
-  [ ] GEMINI_API for AI OTP
+  [ ] AI_PROVIDER + GEMINI_OFFICIAL_API_KEY / CUSTOM_API_KEY for AI OTP
   [ ] FORWARD_MAIL verified in Email Routing destinations
   [ ] BotFather Mini App URL + Privacy Policy URL
   [ ] Email Routing → this Worker
   [ ] Visited /init
-  [ ] Remove obsolete MAILS_TTL / INIT_SECRET vars from dashboard if present
+  [ ] Remove obsolete GEMINI_API / GEMINI_MODEL / MAILS_TTL / INIT_SECRET vars if present
