@@ -144,7 +144,13 @@ dist
 # End of https://www.toptal.com/developers/gitignore/api/node
 
 # build
-# wrangler.jsonc is committed for Cloudflare Builds
+# wrangler.jsonc is committed for Cloudflare Builds (private Gitea only)
 .idea
 .wrangler
 example
+.dev.vars
+*.code-workspace
+bun.lock
+
+# 00-readme
+.machine
